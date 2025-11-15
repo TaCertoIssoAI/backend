@@ -1,68 +1,87 @@
-# Dockerfile para Backend - Fake News Detector
-# Multi-stage build para otimizar tamanho da imagem
+# Dockerfile para Backend com Selenium/Chrome integrado
+# Container único para deploy no Render Free Tier
 
-# Stage 1: Builder
-FROM python:3.11-slim as builder
+FROM python:3.11-slim
 
 # Definir diretório de trabalho
 WORKDIR /app
 
-# Instalar dependências do sistema necessárias para build
+# Instalar dependências do sistema + Chrome + ChromeDriver
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Dependências Python build
     gcc \
     g++ \
     libxml2-dev \
     libxslt-dev \
     libssl-dev \
     libffi-dev \
+    # Dependências runtime
+    curl \
+    wget \
+    gnupg \
+    unzip \
+    # Dependências Chrome
+    libnss3 \
+    libfontconfig1 \
+    libxss1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnspr4 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    xdg-utils \
+    fonts-liberation \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar apenas os arquivos de requisitos primeiro (para cache de layers)
-COPY requirements.txt .
+# Instalar Google Chrome
+RUN wget -q -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt-get update \
+    && apt-get install -y /tmp/google-chrome.deb \
+    && rm /tmp/google-chrome.deb \
+    && rm -rf /var/lib/apt/lists/*
 
-# Criar ambiente virtual e instalar dependências
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Instalar ChromeDriver (versão estável conhecida)
+RUN wget -q -O /tmp/chromedriver-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/142.0.7444.162/linux64/chromedriver-linux64.zip \
+    && unzip /tmp/chromedriver-linux64.zip -d /tmp/ \
+    && mv /tmp/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+    && rm -rf /tmp/chromedriver* \
+    && chmod +x /usr/local/bin/chromedriver \
+    && chromedriver --version
+
+# Copiar requirements e instalar dependências Python
+COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Runtime
-FROM python:3.11-slim
-
-# Instalar dependências do sistema necessárias para runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    libxml2 \
-    libxslt1.1 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Criar usuário não-root para segurança
-RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app && \
-    chown -R appuser:appuser /app
-
-# Definir diretório de trabalho
-WORKDIR /app
-
-# Copiar ambiente virtual do builder
-COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv
-
-# Configurar PATH para usar o venv
-ENV PATH="/opt/venv/bin:$PATH"
-
 # Copiar código da aplicação
-COPY --chown=appuser:appuser . .
+COPY . .
+
+# Criar usuário não-root (mas Chrome precisa rodar como usuário normal)
+RUN useradd -m -u 1000 appuser && \
+    chown -R appuser:appuser /app
 
 # Mudar para usuário não-root
 USER appuser
 
-# Expor porta padrão da API
+# Expor porta
 EXPOSE 8000
 
-# Variáveis de ambiente padrão (podem ser sobrescritas no docker-compose)
+# Variáveis de ambiente
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PORT=8000
+# Configurar para usar Selenium LOCAL (não remoto)
+ENV USE_SELENIUM_REMOTE=false
+ENV SELENIUM_REMOTE_URL=http://localhost:4444/wd/hub
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
@@ -70,4 +89,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # Comando para iniciar a aplicação
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-

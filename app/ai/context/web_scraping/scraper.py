@@ -117,6 +117,10 @@ def _get_content_with_selenium(url: str, max_chars: int = MAX_CHAR_LIMIT) -> Tup
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--disable-software-rasterizer")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_argument(
         "user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
         "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
