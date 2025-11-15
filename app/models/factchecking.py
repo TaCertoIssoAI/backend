@@ -8,7 +8,6 @@ class UserInput(BaseModel):
     text: str = Field(..., description="Raw unstructured text from user")
     locale: str = Field(default="pt-BR", description="Language locale")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
-    context: Optional[str] = Field(None, description="Additional context or previous messages")
 
     class Config:
         json_schema_extra = {
@@ -16,19 +15,40 @@ class UserInput(BaseModel):
                 "text": "I heard that vaccine X causes infertility in women, is this true?",
                 "locale": "pt-BR",
                 "timestamp": "2024-09-20T15:30:00Z",
-                "context": "Previous discussion about vaccine safety"
             }
         }
 
+# ===== STEP 2: ORIGINAL CONTEXT ENRICHMENT =====
+class ExpandedUserInput(BaseModel):
+    """User input augmented with sources included in the message, like external web links"""
+    original_message: str = Field(..., description="Raw unstructured text from user (includes links and other sources)")
+    
+    user_text: str = Field(..., description="Pure text from user (links filtered out)")
+    expanded_context: str = Field(...,description="String with all the expanded context that should be pre-pended to the original text")
+    expanded_context_by_source: dict = Field(default_factory=dict,description=" dict that maps each message source (links) to the extracted context from it")
+    
+    locale: str = Field(default="pt-BR", description="Language locale")
+    timestamp: Optional[str] = Field(None, description="When the message was sent")
 
-# ===== STEP 2: CLAIM EXTRACTION =====
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "text": "I heard that vaccine X causes infertility in women, is this true?",
+                "locale": "pt-BR",
+                "timestamp": "2024-09-20T15:30:00Z",
+            }
+        }
+
+# -> ExpandedUserInput, BaseData
+
+# ===== STEP 3: CLAIM EXTRACTION =====
 class ExtractedClaim(BaseModel):
     """A single claim extracted from user input"""
     text: str = Field(..., description="The normalized claim text")
     links: List[str] = Field(default_factory=list, description="Any URLs found in the original text")
     llm_comment: str = Field(..., description="LLM's analysis/comment about this claim")
     entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
-
+    
     class Config:
         json_schema_extra = {
             "example": {
@@ -69,76 +89,24 @@ class EnrichedLink(BaseModel):
     url: str = Field(..., description="The original URL")
     title: str = Field(default="", description="Title extracted from the webpage")
     content: str = Field(default="", description="Main text content extracted from the webpage")
-    summary: str = Field(default="", description="AI-generated summary of the content")
     extraction_status: str = Field(default="pending", description="Status: 'success', 'failed', 'timeout', 'blocked'")
-    extraction_notes: Optional[str] = Field(None, description="Notes about the extraction process")
-    
+    extraction_tool: str = Field(default="", description="Status: 'selenium', 'cloudscraper'")
+        
     class Config:
         json_schema_extra = {
             "example": {
                 "url": "https://example.com/vaccine-study",
                 "title": "Study on Vaccine Safety",
                 "content": "This comprehensive study examined the safety profile of vaccines...",
-                "summary": "Large-scale study found no link between vaccines and autism",
                 "extraction_status": "success",
                 "extraction_notes": "Content extracted successfully via web scraping"
             }
         }
 
 
-class EnrichedClaim(BaseModel):
-    """A claim with enriched link content"""
-    text: str = Field(..., description="The normalized claim text")
-    original_links: List[str] = Field(default_factory=list, description="Original URLs from claim extraction")
-    enriched_links: List[EnrichedLink] = Field(default_factory=list, description="Links with extracted content")
-    llm_comment: str = Field(..., description="LLM's analysis/comment about this claim")
-    entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "text": "Vaccine X causes infertility in women",
-                "original_links": ["https://example.com/study"],
-                "enriched_links": [
-                    {
-                        "url": "https://example.com/study",
-                        "title": "Vaccine Safety Study",
-                        "content": "Study content...",
-                        "summary": "Study summary...",
-                        "extraction_status": "success"
-                    }
-                ],
-                "llm_comment": "Medical claim requiring scientific evidence",
-                "entities": ["vaccine X", "infertility", "women"]
-            }
-        }
-
-
-class LinkEnrichmentResult(BaseModel):
-    """Output of the link enrichment step"""
-    original_claims: List[ExtractedClaim] = Field(..., description="Original claims from extraction")
-    enriched_claims: List[EnrichedClaim] = Field(..., description="Claims with enriched link content")
-    total_links_processed: int = Field(default=0, description="Total number of links processed")
-    successful_extractions: int = Field(default=0, description="Number of successful content extractions")
-    processing_time_ms: int = Field(default=0, description="Time taken for link enrichment")
-    processing_notes: Optional[str] = Field(None, description="Notes about the enrichment process")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "original_claims": [],
-                "enriched_claims": [],
-                "total_links_processed": 2,
-                "successful_extractions": 1,
-                "processing_time_ms": 3500,
-                "processing_notes": "1 of 2 links successfully enriched with content"
-            }
-        }
-
-
-# ===== STEP 3: EVIDENCE RETRIEVAL =====
+# ===== STEP 4: EVIDENCE RETRIEVAL =====
 class Citation(BaseModel):
-    """A single source citation"""
+    """A single source citation extracted from external sources (ex: google fact checking API or web search)"""
     url: str
     title: str
     publisher: str
@@ -163,7 +131,6 @@ class ClaimEvidence(BaseModel):
     claim_text: str = Field(..., description="The claim this evidence relates to")
     citations: List[Citation] = Field(default_factory=list, description="Sources supporting or refuting the claim")
     search_queries: List[str] = Field(default_factory=list, description="Queries used to find evidence")
-    enriched_links: List[EnrichedLink] = Field(default_factory=list, description="Enriched links from the claim")
     retrieval_notes: Optional[str] = Field(None, description="Notes about the evidence retrieval process")
 
     class Config:
@@ -215,9 +182,9 @@ class EvidenceRetrievalResult(BaseModel):
 class AdjudicationInput(BaseModel):
     """Input to the adjudication step"""
     original_user_text: str = Field(..., description="Original raw user input")
-    enriched_claims: List[EnrichedClaim] = Field(..., description="Claims with enriched links from step 2.5")
     evidence_map: Dict[str, ClaimEvidence] = Field(..., description="Evidence for each claim")
     additional_context: Optional[str] = Field(None, description="Any additional context")
+    timestamp: Optional[str] = Field(None, description="When the message was sent")
 
     class Config:
         json_schema_extra = {
@@ -251,16 +218,3 @@ class FactCheckResult(BaseModel):
 
 
 # ===== PIPELINE FLOW SUMMARY =====
-"""
-Updated Pipeline Flow (5 Steps):
-1. UserInput -> 
-2. ClaimExtractionResult -> 
-2.5. LinkEnrichmentResult -> 
-3. EvidenceRetrievalResult -> 
-4. AdjudicationInput -> FactCheckResult
-
-Step 2.5 (Link Enrichment) extracts content from URLs found in claims,
-providing additional context for evidence retrieval and adjudication.
-
-Each step has clear inputs and outputs, making the pipeline traceable and debuggable.
-"""

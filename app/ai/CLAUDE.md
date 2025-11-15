@@ -14,11 +14,11 @@
 
 ## 3) Core Principles
 
-- **Runnable interface + LCEL composition.** Build chains declaratively and get streaming, retries, parallelism, and batch for free. citeturn0search10turn0search1
-- **Retrieval as a first‑class boundary.** Wrap vector stores as **retrievers**; swap implementations without touching prompts. citeturn0search2turn0search19
-- **Structured outputs.** Bind schemas so models return typed objects; prefer `with_structured_output(...)` or Pydantic parsers. citeturn0search23turn0search17
+- **Runnable interface + LCEL composition.** Build chains declaratively and get streaming, retries, parallelism, and batch for free. 
+- **Retrieval as a first‑class boundary.** Wrap vector stores as **retrievers**; swap implementations without touching prompts. 
+- **Structured outputs.** Bind schemas so models return typed objects; prefer `with_structured_output(...)` or Pydantic parsers. 
 - **Streaming UX.** Stream tokens and tool events via callbacks for responsive UIs. citeturn0search4turn0search22
-- **Agents when needed.** For tool‑using workflows or multi‑step control, use LangGraph‑based agents. citeturn0search3turn0search9
+- **Agents when needed.** For tool‑using workflows or multi‑step control, use LangGraph‑based agents. 
 
 ---
 
@@ -134,10 +134,3 @@ Streaming is enabled via model support and callback handlers. citeturn0sea
 
 ---
 
-## Appendix — Useful Links
-
-- **Concepts:** LCEL, Runnable, Streaming, Tools, Vectorstores. citeturn0search10  
-- **How‑tos:** Vectorstore retriever; Structured output; Tool streaming; Streaming. citeturn0search2turn0search23turn0search22turn0search4  
-- **APIs:** Callbacks and StreamingStdOut handler. citeturn0search21turn0search15  
-- **Deploy & Evaluate:** LangServe; LangSmith eval concepts and quickstart. citeturn0search7turn0search8turn0search18  
-- **Agents:** Migration note to LangGraph; LangGraph overview. citeturn0search3turn0search9

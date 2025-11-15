@@ -13,12 +13,6 @@ class Settings:
         self.DEBUG = os.getenv("DEBUG", "False").lower() == "true"
         self.PORT = int(os.getenv("PORT", 8000))
 
-        # Database
-        self.DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/fakenews")
-
-        # Redis (for caching)
-        self.REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-
         # Evolution API
         self.EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "")
         self.EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "")
