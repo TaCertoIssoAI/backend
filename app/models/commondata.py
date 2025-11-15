@@ -1,5 +1,5 @@
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from . import (
      UserInput,
@@ -16,24 +16,33 @@ from . import (
 
 class CommonPipelineData(BaseModel):
     """Common data that is crucial for the fact-checking pipeline but is used at several different steps"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "message_id": "msg-2024-09-20-001",
+            "message_text": "I heard that vaccine X causes infertility in women, is this true?",
+            "locale": "pt-BR",
+            "timestamp": "2024-09-20T15:30:00Z",
+        }
+    })
+
     message_id: str = Field(..., description="Internal id for the request")
     message_text: str = Field(..., description="Original Message text")
-    
+
     locale: str = Field(default="pt-BR", description="Language locale")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "message_id": "msg-2024-09-20-001",
-                "message_text": "I heard that vaccine X causes infertility in women, is this true?",
-                "locale": "pt-BR",
-                "timestamp": "2024-09-20T15:30:00Z",
-            }
-        }
-
 
 class StepTiming(BaseModel):
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "step_name": "claim_extraction",
+            "duration_ms": 180,
+            "model_name": "gpt-4o-mini",
+            "prompt_tokens": 320,
+            "completion_tokens": 95,
+        }
+    })
+
     step_name: str = Field(..., description="Logical name of the pipeline step")
     duration_ms: int = Field(..., description="Time spent in this step in milliseconds")
     model_name: Optional[str] = Field(
@@ -49,19 +58,44 @@ class StepTiming(BaseModel):
         description="Number of completion tokens produced in this step, if applicable"
     )
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "step_name": "claim_extraction",
-                "duration_ms": 180,
-                "model_name": "gpt-4o-mini",
-                "prompt_tokens": 320,
-                "completion_tokens": 95,
-            }
-        }
-
 
 class EngineeringAnalytics(BaseModel):
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "total_latency_ms": 950,
+            "step_timings": [
+                {
+                    "step_name": "input_expansion",
+                    "duration_ms": 120,
+                    "model_name": None,
+                    "prompt_tokens": None,
+                    "completion_tokens": None,
+                },
+                {
+                    "step_name": "claim_extraction",
+                    "duration_ms": 180,
+                    "model_name": "gpt-4o-mini",
+                    "prompt_tokens": 320,
+                    "completion_tokens": 95,
+                },
+                {
+                    "step_name": "evidence_retrieval",
+                    "duration_ms": 400,
+                    "model_name": None,
+                    "prompt_tokens": None,
+                    "completion_tokens": None,
+                },
+                {
+                    "step_name": "adjudication",
+                    "duration_ms": 250,
+                    "model_name": "gpt-4o",
+                    "prompt_tokens": 520,
+                    "completion_tokens": 210,
+                },
+            ],
+        }
+    })
+
     total_latency_ms: Optional[int] = Field(
         None,
         description="Total end to end latency for the pipeline in milliseconds"
@@ -71,43 +105,6 @@ class EngineeringAnalytics(BaseModel):
         description="Per step timing and token usage information"
     )
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "total_latency_ms": 950,
-                "step_timings": [
-                    {
-                        "step_name": "input_expansion",
-                        "duration_ms": 120,
-                        "model_name": None,
-                        "prompt_tokens": None,
-                        "completion_tokens": None,
-                    },
-                    {
-                        "step_name": "claim_extraction",
-                        "duration_ms": 180,
-                        "model_name": "gpt-4o-mini",
-                        "prompt_tokens": 320,
-                        "completion_tokens": 95,
-                    },
-                    {
-                        "step_name": "evidence_retrieval",
-                        "duration_ms": 400,
-                        "model_name": None,
-                        "prompt_tokens": None,
-                        "completion_tokens": None,
-                    },
-                    {
-                        "step_name": "adjudication",
-                        "duration_ms": 250,
-                        "model_name": "gpt-4o",
-                        "prompt_tokens": 520,
-                        "completion_tokens": 210,
-                    },
-                ],
-            }
-        }
-
 class PublicAnalytics(BaseModel):
     """
     Full snapshot of a single pipeline run, used for:
@@ -115,57 +112,7 @@ class PublicAnalytics(BaseModel):
     - anonymized analytics datasets
     - dashboards for researchers, journalists, and policy makers
     """
-
-    # Original input (after multimodal preprocessing)
-    user_input: Optional["UserInput"] = Field(
-        None,
-        description="Original user input object used by the pipeline",
-    )
-
-    # Text plus expanded context from links
-    expanded_input: Optional["ExpandedUserInput"] = Field(
-        None,
-        description="User input enriched with context extracted from links",
-    )
-
-    # Enriched links (from input and possibly from other stages)
-    enriched_links: List["EnrichedLink"] = Field(
-        default_factory=list,
-        description="All links that were enriched with extracted content",
-    )
-
-    # Claims extracted from the user text
-    extracted_claims: List["ExtractedClaim"] = Field(
-        default_factory=list,
-        description="List of claims extracted from the original text",
-    )
-
-    # Claims enriched with external evidence (fact checking, search, etc.)
-    enriched_claims: List["EnrichedClaim"] = Field(
-        default_factory=list,
-        description="Claims with attached evidence and search metadata",
-    )
-
-    # Raw result of the evidence retrieval step
-    evidence_result: Optional["EvidenceRetrievalResult"] = Field(
-        None,
-        description="Full object returned by the evidence retrieval step",
-    )
-
-    # Structured input that was sent to the final adjudication model
-    adjudication_input: Optional["AdjudicationInput"] = Field(
-        None,
-        description="Structured input passed to the final adjudication step",
-    )
-
-    # Final result shown to the user
-    fact_check_result: Optional["FactCheckResult"] = Field(
-        None,
-        description="Final fact checking result that was delivered to the user",
-    )
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(json_schema_extra={
             "example": {
                 "user_input": {
                     "text": "I heard that vaccine X causes infertility in women, is this true?",
@@ -254,4 +201,52 @@ class PublicAnalytics(BaseModel):
                     "analysis_text": "The user asked about a possible link between vaccine X and female infertility. Available evidence does not support this claim. The vaccine has not been associated with infertility in clinical or observational studies.",
                 },
             }
-        }
+        })
+
+    # Original input (after multimodal preprocessing)
+    user_input: Optional["UserInput"] = Field(
+        None,
+        description="Original user input object used by the pipeline",
+    )
+
+    # Text plus expanded context from links
+    expanded_input: Optional["ExpandedUserInput"] = Field(
+        None,
+        description="User input enriched with context extracted from links",
+    )
+
+    # Enriched links (from input and possibly from other stages)
+    enriched_links: List["EnrichedLink"] = Field(
+        default_factory=list,
+        description="All links that were enriched with extracted content",
+    )
+
+    # Claims extracted from the user text
+    extracted_claims: List["ExtractedClaim"] = Field(
+        default_factory=list,
+        description="List of claims extracted from the original text",
+    )
+
+    # Claims enriched with external evidence (fact checking, search, etc.)
+    enriched_claims: List["EnrichedClaim"] = Field(
+        default_factory=list,
+        description="Claims with attached evidence and search metadata",
+    )
+
+    # Raw result of the evidence retrieval step
+    evidence_result: Optional["EvidenceRetrievalResult"] = Field(
+        None,
+        description="Full object returned by the evidence retrieval step",
+    )
+
+    # Structured input that was sent to the final adjudication model
+    adjudication_input: Optional["AdjudicationInput"] = Field(
+        None,
+        description="Structured input passed to the final adjudication step",
+    )
+
+    # Final result shown to the user
+    fact_check_result: Optional["FactCheckResult"] = Field(
+        None,
+        description="Final fact checking result that was delivered to the user",
+    )
