@@ -47,7 +47,7 @@ class ExpandedUserInput(BaseModel):
 # ===== STEP 2.1: LINK ENRICHMENT =====
 class EnrichedLink(BaseModel):
     """A single enriched link with extracted content"""
-    link_id = Field(..., description="UUID for the link")
+    id: str = Field(..., description="UUID for the link")
     url: str = Field(..., description="The original URL")
     title: str = Field(default="", description="Title extracted from the webpage")
     content: str = Field(default="", description="Main text content extracted from the webpage")
@@ -57,6 +57,7 @@ class EnrichedLink(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "id": "link-uuid-123",
                 "url": "https://example.com/vaccine-study",
                 "title": "Study on Vaccine Safety",
                 "content": "This comprehensive study examined the safety profile of vaccines...",
@@ -73,12 +74,13 @@ class ExtractedClaim(BaseModel):
     id: str = Field(..., description="UUID for the claim")
     text: str = Field(..., description="The normalized claim text")
     links: List[str] = Field(default_factory=list, description="Any URLs found in the original text relating to this claim") 
-    llm_comment: str = Field(..., description="LLM's analysis/comment about this claim") #unsure about this field
+    llm_comment: Optional[str] = Field(..., description="LLM's analysis/comment about this claim") #unsure about this field
     entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
     
     class Config:
         json_schema_extra = {
             "example": {
+                "id": "claim-uuid-456",
                 "text": "Vaccine X causes infertility in women",
                 "links": ["https://example.com/article"],
                 "llm_comment": "This is a specific medical claim that can be fact-checked against scientific literature",
@@ -112,7 +114,7 @@ class Citation(BaseModel):
 
 class EnrichedClaim(BaseModel):
     """Claim enriched with evidence from external fact checking"""
-    claim_id = Field(..., description="UUID for the claim")
+    id:str = Field(..., description="UUID for the claim")
     claim_text: str = Field(..., description="The claim this evidence relates to")
     citations: List[Citation] = Field(default_factory=list, description="Sources supporting or refuting the claim")
     search_queries: List[str] = Field(default_factory=list, description="Queries used to find evidence")
@@ -121,6 +123,7 @@ class EnrichedClaim(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
+                "id": "claim-uuid-789",
                 "claim_text": "Vaccine X causes infertility in women",
                 "citations": [
                     {
@@ -142,7 +145,7 @@ class EvidenceRetrievalResult(BaseModel):
     """Output of the evidence retrieval step"""
     claim_evidence_map: Dict[str, EnrichedClaim] = Field(
         ..., 
-        description="Maps each claim text to its evidence"
+        description="Maps each claim id to its evidence"
     )
     total_sources_found: int = Field(default=0, description="Total number of sources found")
     retrieval_time_ms: int = Field(default=0, description="Time taken for retrieval")
@@ -168,7 +171,7 @@ class EvidenceRetrievalResult(BaseModel):
 class AdjudicationInput(BaseModel):
     """Input to the adjudication step"""
     original_user_text: str = Field(..., description="Original raw user input")
-    evidence_map: Dict[str, EnrichedClaim] = Field(..., description="Evidence for each claim")
+    evidence_map: Dict[str, EnrichedClaim] = Field(..., description="Evidence for each claim id")
     additional_context: Optional[str] = Field(None, description="Any additional context")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
 
