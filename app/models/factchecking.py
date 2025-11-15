@@ -1,6 +1,8 @@
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 
+# This file defines models from each step of the fact-checking pipeline, with a focus on NEW data from one step to another. Common and repeated data from other steps are saved in
+# the commondata.py file classes, whereas this file focuses on the new aggregated data between each step
 
 # ===== STEP 1: USER INPUT =====
 class UserInput(BaseModel):
@@ -20,27 +22,19 @@ class UserInput(BaseModel):
 
 # ===== STEP 2: ORIGINAL CONTEXT ENRICHMENT =====
 class ExpandedUserInput(BaseModel):
-    """User input augmented with sources included in the message, like external web links"""
-    original_message: str = Field(..., description="Raw unstructured text from user (includes links and other sources)")
-    
+    """User input augmented with sources included in the message, like external web links"""    
     user_text: str = Field(..., description="Pure text from user (links filtered out)")
     expanded_context: str = Field(...,description="String with all the expanded context that should be pre-pended to the original text")
-    expanded_context_by_source: dict = Field(default_factory=dict,description=" dict that maps each message source (links) to the extracted context from it")
+    expanded_context_by_source: dict[str,str] = Field(default_factory=dict,description=" dict that maps each message source (links) to the extracted context from it")
     
-    locale: str = Field(default="pt-BR", description="Language locale")
-    timestamp: Optional[str] = Field(None, description="When the message was sent")
-
     class Config:
         json_schema_extra = {
             "example": {
-                "original_message": "Check this out: https://example.com/article - I heard that vaccine X causes infertility in women, is this true?",
                 "user_text": "I heard that vaccine X causes infertility in women, is this true?",
                 "expanded_context": "Article Title: Vaccine Study\nContent: This article discusses vaccine safety...\n\n",
                 "expanded_context_by_source": {
                     "https://example.com/article": "Article Title: Vaccine Study\nContent: This article discusses vaccine safety..."
-                },
-                "locale": "pt-BR",
-                "timestamp": "2024-09-20T15:30:00Z",
+                }
             }
         }
 
@@ -66,7 +60,6 @@ class EnrichedLink(BaseModel):
             }
         }
 
-# -> ExpandedUserInput, BaseData
 
 # ===== STEP 3: CLAIM EXTRACTION =====
 class ExtractedClaim(BaseModel):
@@ -147,22 +140,19 @@ class EvidenceRetrievalResult(BaseModel):
         ..., 
         description="Maps each claim id to its evidence"
     )
-    total_sources_found: int = Field(default=0, description="Total number of sources found")
-    retrieval_time_ms: int = Field(default=0, description="Time taken for retrieval")
 
     class Config:
         json_schema_extra = {
             "example": {
                 "claim_evidence_map": {
-                    "Vaccine X causes infertility in women": {
+                    "claim-uuid-1": {
+                        "id": "claim-uuid-1",
                         "claim_text": "Vaccine X causes infertility in women",
                         "citations": [],
                         "search_queries": ["vaccine X infertility"],
                         "retrieval_notes": "Found multiple contradicting sources"
                     }
-                },
-                "total_sources_found": 8,
-                "retrieval_time_ms": 2500
+                }
             }
         }
 
@@ -170,33 +160,33 @@ class EvidenceRetrievalResult(BaseModel):
 # ===== STEP 5: ADJUDICATION =====
 class AdjudicationInput(BaseModel):
     """Input to the adjudication step"""
-    original_user_text: str = Field(..., description="Original raw user input")
     evidence_map: Dict[str, EnrichedClaim] = Field(..., description="Evidence for each claim id")
     additional_context: Optional[str] = Field(None, description="Any additional context")
-    timestamp: Optional[str] = Field(None, description="When the message was sent")
 
     class Config:
         json_schema_extra = {
             "example": {
-                "original_user_text": "I heard that vaccine X causes infertility in women, is this true?",
                 "evidence_map": {
-                    "vacinas causam autismo" : "objeto de evidencia"
+                    "claim-uuid-1": {
+                        "id": "claim-uuid-1",
+                        "claim_text": "Vaccine X causes infertility in women",
+                        "citations": [],
+                        "search_queries": ["vaccine X infertility"],
+                        "retrieval_notes": "Found multiple contradicting sources"
+                    }
                 },
-                "additional_context": "User seems concerned about vaccine safety",
-                "timestamp": "2024-09-20T15:30:00Z"
+                "additional_context": "User seems concerned about vaccine safety"
             }
         }
 
 
 class FactCheckResult(BaseModel):
     """Final result of the fact-checking pipeline"""
-    original_query: str
-    analysis_text: str = Field(..., description="Complete analysis as formatted text")
+    analysis_text: str = Field(..., description="Complete analysis as formatted text") #this should probably be structured somehow
 
     class Config:
         json_schema_extra = {
             "example": {
-                "original_query": "I heard that vaccine X causes infertility in women, is this true?",
                 "analysis_text": """O usuário questionou sobre a relação entre vacina X e infertilidade feminina. Esta é uma preocupação comum que circula em redes sociais mas não tem base científica sólida.
 
                 Análise por alegação:

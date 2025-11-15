@@ -22,16 +22,91 @@ class CommonPipelineData(BaseModel):
     locale: str = Field(default="pt-BR", description="Language locale")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "message_id": "msg-2024-09-20-001",
+                "message_text": "I heard that vaccine X causes infertility in women, is this true?",
+                "locale": "pt-BR",
+                "timestamp": "2024-09-20T15:30:00Z",
+            }
+        }
+
+
 class StepTiming(BaseModel):
-    step_name: str
-    duration_ms: int
-    model_name: Optional[str] = None
-    prompt_tokens: Optional[int] = None
-    completion_tokens: Optional[int] = None
+    step_name: str = Field(..., description="Logical name of the pipeline step")
+    duration_ms: int = Field(..., description="Time spent in this step in milliseconds")
+    model_name: Optional[str] = Field(
+        None,
+        description="Name of the model used in this step, if applicable"
+    )
+    prompt_tokens: Optional[int] = Field(
+        None,
+        description="Number of prompt tokens consumed in this step, if applicable"
+    )
+    completion_tokens: Optional[int] = Field(
+        None,
+        description="Number of completion tokens produced in this step, if applicable"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "step_name": "claim_extraction",
+                "duration_ms": 180,
+                "model_name": "gpt-4o-mini",
+                "prompt_tokens": 320,
+                "completion_tokens": 95,
+            }
+        }
+
 
 class EngineeringAnalytics(BaseModel):
-    total_latency_ms: Optional[int] = None
-    step_timings: List[StepTiming] = Field(default_factory=list)
+    total_latency_ms: Optional[int] = Field(
+        None,
+        description="Total end to end latency for the pipeline in milliseconds"
+    )
+    step_timings: List[StepTiming] = Field(
+        default_factory=list,
+        description="Per step timing and token usage information"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "total_latency_ms": 950,
+                "step_timings": [
+                    {
+                        "step_name": "input_expansion",
+                        "duration_ms": 120,
+                        "model_name": None,
+                        "prompt_tokens": None,
+                        "completion_tokens": None,
+                    },
+                    {
+                        "step_name": "claim_extraction",
+                        "duration_ms": 180,
+                        "model_name": "gpt-4o-mini",
+                        "prompt_tokens": 320,
+                        "completion_tokens": 95,
+                    },
+                    {
+                        "step_name": "evidence_retrieval",
+                        "duration_ms": 400,
+                        "model_name": None,
+                        "prompt_tokens": None,
+                        "completion_tokens": None,
+                    },
+                    {
+                        "step_name": "adjudication",
+                        "duration_ms": 250,
+                        "model_name": "gpt-4o",
+                        "prompt_tokens": 520,
+                        "completion_tokens": 210,
+                    },
+                ],
+            }
+        }
 
 class PublicAnalytics(BaseModel):
     """
