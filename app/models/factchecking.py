@@ -66,10 +66,10 @@ class ExtractedClaim(BaseModel):
     """A single claim extracted from user input"""
     id: str = Field(..., description="UUID for the claim")
     text: str = Field(..., description="The normalized claim text")
-    links: List[str] = Field(default_factory=list, description="Any URLs found in the original text relating to this claim") 
+    links: List[str] = Field(default_factory=list, description="Any URLs found in the original text relating to this claim")
     llm_comment: Optional[str] = Field(..., description="LLM's analysis/comment about this claim") #unsure about this field
     entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
-    
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -78,6 +78,29 @@ class ExtractedClaim(BaseModel):
                 "links": ["https://example.com/article"],
                 "llm_comment": "This is a specific medical claim that can be fact-checked against scientific literature",
                 "entities": ["vaccine X", "infertility", "women"]
+            }
+        }
+
+
+class ClaimExtractionOutput(BaseModel):
+    """Output of the claim extraction step - a list of extracted claims"""
+    claims: List[ExtractedClaim] = Field(
+        default_factory=list,
+        description="List of fact-checkable claims extracted from the user message"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "claims": [
+                    {
+                        "id": "claim-uuid-456",
+                        "text": "Vaccine X causes infertility in women",
+                        "links": ["https://example.com/article"],
+                        "llm_comment": "This is a specific medical claim that can be fact-checked against scientific literature",
+                        "entities": ["vaccine X", "infertility", "women"]
+                    }
+                ]
             }
         }
 
