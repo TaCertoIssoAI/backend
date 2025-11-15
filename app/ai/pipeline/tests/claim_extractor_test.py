@@ -29,12 +29,29 @@ from app.ai.pipeline import (
 
 # ===== HELPER FUNCTIONS =====
 
-def print_claim_results(claims: List[ExtractedClaim], test_name: str):
-    """Print claim extraction results for debugging."""
+def print_claim_results(
+    claims: List[ExtractedClaim],
+    test_name: str,
+    user_message: str| None = None,
+    expanded_context: str | None = None
+):
+    """Print claim extraction results for debugging, including input for verification."""
     print("\n" + "=" * 80)
     print(f"TEST: {test_name}")
     print("=" * 80)
-    print(f"\n Extracted {len(claims)} claim(s):\n")
+    # Print input for verification
+    if user_message:
+        print(f"\n📥 INPUT:")
+        print(f"  User Message: {user_message}")
+
+    if expanded_context:
+        print(f"\n  Expanded Context:")
+        # Print first 200 chars to avoid clutter
+        print(f"  {expanded_context}")
+
+    # Print output
+    print(f"\n📤 OUTPUT:")
+    print(f"  Extracted {len(claims)} claim(s):\n")
 
     for i, claim in enumerate(claims, 1):
         print(f"  Claim {i}:")
@@ -115,7 +132,12 @@ Vaccine X to fertility issues in women. The study examined over
     )
 
     # Print for debugging
-    print_claim_results(claims, "Basic Claim Extraction")
+    print_claim_results(
+        claims,
+        "Basic Claim Extraction",
+        user_message=user_message,
+        expanded_context=expanded_context
+    )
 
     # Validate structure
     validate_claims_list(claims)
@@ -160,7 +182,12 @@ Additionally, the government will invest $100 billion in renewable energy over t
     )
 
     # Print for debugging
-    print_claim_results(claims, "Multiple Claims Extraction")
+    print_claim_results(
+        claims,
+        "Multiple Claims Extraction",
+        user_message=user_message,
+        expanded_context=expanded_context_text
+    )
 
     # Validate structure
     validate_claims_list(claims)
@@ -201,7 +228,12 @@ Pesquisa realizada pela Fiocruz demonstra que a vacina contra COVID-19
     )
 
     # Print for debugging
-    print_claim_results(claims, "Portuguese Message Extraction")
+    print_claim_results(
+        claims,
+        "Portuguese Message Extraction",
+        user_message=user_message,
+        expanded_context=expanded_context
+    )
 
     # Validate structure
     validate_claims_list(claims)
@@ -232,7 +264,12 @@ def test_no_context_extraction():
     )
 
     # Print for debugging
-    print_claim_results(claims, "No Context Extraction")
+    print_claim_results(
+        claims,
+        "No Context Extraction",
+        user_message=user_message,
+        expanded_context=""
+    )
 
     # Validate structure
     validate_claims_list(claims)
@@ -263,7 +300,12 @@ def test_empty_message():
     )
 
     # Print for debugging
-    print_claim_results(claims, "Empty Message")
+    print_claim_results(
+        claims,
+        "Empty Message",
+        user_message=user_message,
+        expanded_context=""
+    )
 
     # Validate structure
     validate_claims_list(claims)
@@ -295,7 +337,12 @@ def test_opinion_vs_claim():
     )
 
     # Print for debugging
-    print_claim_results(claims, "Opinion vs Claim")
+    print_claim_results(
+        claims,
+        "Opinion vs Claim",
+        user_message=user_message,
+        expanded_context=""
+    )
 
     # Validate structure
     validate_claims_list(claims)
