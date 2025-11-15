@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.endpoints import text, images, multimodal
+from app.api.endpoints import text
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -21,9 +21,6 @@ app.add_middleware(
 )
 
 app.include_router(text.router, prefix="/api", tags=["text"])
-app.include_router(images.router, prefix="/api", tags=["images"])
-app.include_router(multimodal.router, prefix="/api", tags=["multimodal"])
-
 
 @app.get("/")
 async def root():
