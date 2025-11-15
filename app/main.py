@@ -1,14 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.endpoints import text, scraping
+# APENAS SCRAPING - Comentar text para evitar erros de dependências
+from app.api.endpoints import scraping
+# from app.api.endpoints import text  # Descomente quando precisar do pipeline completo
 from app.core.config import get_settings
 
 settings = get_settings()
 
 app = FastAPI(
-    title="Fake News Detector API",
-    description="WhatsApp chatbot backend for fact-checking and claim verification",
+    title="Fake News Detector API - Web Scraping",
+    description="API de Web Scraping com Selenium integrado",
     version="1.0.0"
 )
 
@@ -20,8 +22,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(text.router, prefix="/api", tags=["text"])
+# Apenas rota de scraping por enquanto
 app.include_router(scraping.router, prefix="/api", tags=["scraping"])
+
+# Descomentar quando precisar do pipeline completo:
+# app.include_router(text.router, prefix="/api", tags=["text"])
 
 @app.get("/")
 async def root():
