@@ -3,7 +3,7 @@ import time
 import json
 import os
 from datetime import datetime
-from app.models.schemas import TextRequest, AnalysisResponse
+from app.models.api import TextRequest, AnalysisResponse
 from app.ai.pipeline import process_text_request, test_adjudicator, test_evidence_retrieval, test_full_pipeline_steps_1_3_4
 
 router = APIRouter()

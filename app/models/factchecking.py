@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional, Dict
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 
 
@@ -33,59 +33,21 @@ class ExpandedUserInput(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "text": "I heard that vaccine X causes infertility in women, is this true?",
+                "original_message": "Check this out: https://example.com/article - I heard that vaccine X causes infertility in women, is this true?",
+                "user_text": "I heard that vaccine X causes infertility in women, is this true?",
+                "expanded_context": "Article Title: Vaccine Study\nContent: This article discusses vaccine safety...\n\n",
+                "expanded_context_by_source": {
+                    "https://example.com/article": "Article Title: Vaccine Study\nContent: This article discusses vaccine safety..."
+                },
                 "locale": "pt-BR",
                 "timestamp": "2024-09-20T15:30:00Z",
             }
         }
 
-# -> ExpandedUserInput, BaseData
-
-# ===== STEP 3: CLAIM EXTRACTION =====
-class ExtractedClaim(BaseModel):
-    """A single claim extracted from user input"""
-    text: str = Field(..., description="The normalized claim text")
-    links: List[str] = Field(default_factory=list, description="Any URLs found in the original text")
-    llm_comment: str = Field(..., description="LLM's analysis/comment about this claim")
-    entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "text": "Vaccine X causes infertility in women",
-                "links": ["https://example.com/article"],
-                "llm_comment": "This is a specific medical claim that can be fact-checked against scientific literature",
-                "entities": ["vaccine X", "infertility", "women"]
-            }
-        }
-
-
-class ClaimExtractionResult(BaseModel):
-    """Output of the claim extraction step"""
-    original_text: str = Field(..., description="The original user input")
-    claims: List[ExtractedClaim] = Field(..., description="List of extracted claims")
-    processing_notes: Optional[str] = Field(None, description="Notes about the extraction process")
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "original_text": "I heard that vaccine X causes infertility in women, is this true?",
-                "claims": [
-                    {
-                        "text": "Vaccine X causes infertility in women",
-                        "links": [],
-                        "llm_comment": "Medical claim about vaccine safety that requires scientific evidence",
-                        "entities": ["vaccine X", "infertility", "women"]
-                    }
-                ],
-                "processing_notes": "Extracted 1 verifiable claim from user question"
-            }
-        }
-
-
-# ===== STEP 2.5: LINK ENRICHMENT =====
+# ===== STEP 2.1: LINK ENRICHMENT =====
 class EnrichedLink(BaseModel):
     """A single enriched link with extracted content"""
+    link_id = Field(..., description="UUID for the link")
     url: str = Field(..., description="The original URL")
     title: str = Field(default="", description="Title extracted from the webpage")
     content: str = Field(default="", description="Main text content extracted from the webpage")
@@ -99,7 +61,28 @@ class EnrichedLink(BaseModel):
                 "title": "Study on Vaccine Safety",
                 "content": "This comprehensive study examined the safety profile of vaccines...",
                 "extraction_status": "success",
-                "extraction_notes": "Content extracted successfully via web scraping"
+                "extraction_tool": "selenium"
+            }
+        }
+
+# -> ExpandedUserInput, BaseData
+
+# ===== STEP 3: CLAIM EXTRACTION =====
+class ExtractedClaim(BaseModel):
+    """A single claim extracted from user input"""
+    id: str = Field(..., description="UUID for the claim")
+    text: str = Field(..., description="The normalized claim text")
+    links: List[str] = Field(default_factory=list, description="Any URLs found in the original text relating to this claim") 
+    llm_comment: str = Field(..., description="LLM's analysis/comment about this claim") #unsure about this field
+    entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "text": "Vaccine X causes infertility in women",
+                "links": ["https://example.com/article"],
+                "llm_comment": "This is a specific medical claim that can be fact-checked against scientific literature",
+                "entities": ["vaccine X", "infertility", "women"]
             }
         }
 
@@ -120,14 +103,16 @@ class Citation(BaseModel):
                 "url": "https://health.gov/vaccine-safety",
                 "title": "Vaccine Safety Study Results",
                 "publisher": "Ministry of Health",
-                "published_at": "2024-11-05",
-                "quoted": "No associations with infertility were observed in clinical studies"
+                "quoted": "No associations with infertility were observed in clinical studies",
+                "rating": "Falso",
+                "review_date": "2024-11-05"
             }
         }
 
 
-class ClaimEvidence(BaseModel):
-    """Evidence gathered for a specific claim"""
+class EnrichedClaim(BaseModel):
+    """Claim enriched with evidence from external fact checking"""
+    claim_id = Field(..., description="UUID for the claim")
     claim_text: str = Field(..., description="The claim this evidence relates to")
     citations: List[Citation] = Field(default_factory=list, description="Sources supporting or refuting the claim")
     search_queries: List[str] = Field(default_factory=list, description="Queries used to find evidence")
@@ -142,8 +127,9 @@ class ClaimEvidence(BaseModel):
                         "url": "https://health.gov/vaccine-safety",
                         "title": "Vaccine Safety Study",
                         "publisher": "Ministry of Health",
-                        "published_at": "2024-11-05",
-                        "quoted": "No associations with infertility were observed"
+                        "quoted": "No associations with infertility were observed",
+                        "rating": "Falso",
+                        "review_date": "2024-11-05"
                     }
                 ],
                 "search_queries": ["vaccine X infertility", "vaccine safety women fertility"],
@@ -154,7 +140,7 @@ class ClaimEvidence(BaseModel):
 
 class EvidenceRetrievalResult(BaseModel):
     """Output of the evidence retrieval step"""
-    claim_evidence_map: Dict[str, ClaimEvidence] = Field(
+    claim_evidence_map: Dict[str, EnrichedClaim] = Field(
         ..., 
         description="Maps each claim text to its evidence"
     )
@@ -178,11 +164,11 @@ class EvidenceRetrievalResult(BaseModel):
         }
 
 
-# ===== STEP 4: ADJUDICATION =====
+# ===== STEP 5: ADJUDICATION =====
 class AdjudicationInput(BaseModel):
     """Input to the adjudication step"""
     original_user_text: str = Field(..., description="Original raw user input")
-    evidence_map: Dict[str, ClaimEvidence] = Field(..., description="Evidence for each claim")
+    evidence_map: Dict[str, EnrichedClaim] = Field(..., description="Evidence for each claim")
     additional_context: Optional[str] = Field(None, description="Any additional context")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
 
@@ -190,9 +176,11 @@ class AdjudicationInput(BaseModel):
         json_schema_extra = {
             "example": {
                 "original_user_text": "I heard that vaccine X causes infertility in women, is this true?",
-                "claims": [],
-                "evidence_map": {},
-                "additional_context": "User seems concerned about vaccine safety"
+                "evidence_map": {
+                    "vacinas causam autismo" : "objeto de evidencia"
+                },
+                "additional_context": "User seems concerned about vaccine safety",
+                "timestamp": "2024-09-20T15:30:00Z"
             }
         }
 
@@ -215,6 +203,5 @@ class FactCheckResult(BaseModel):
                 - Ministerio da Saúde: nenhuma ligação entre vacinas e autismo foi encontrada """
             }
         }
-
 
 # ===== PIPELINE FLOW SUMMARY =====
