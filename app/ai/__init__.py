@@ -4,12 +4,10 @@ AI Module for Fact-Checking Pipeline
 This module contains all AI/LLM-related functionality for the fact-checking system.
 
 Submodules:
+- main_pipeline: Main pipeline orchestration
 - pipeline: Individual pipeline steps (claim extraction, evidence gathering, adjudication)
+- claim_extractor: Extract claims from text
+- adjudicator: Adjudicate claims with LLM
 """
 
-# Import pipeline module for easier access
-from . import pipeline
-
-__all__ = [
-    "pipeline",
-]
+__all__ = []

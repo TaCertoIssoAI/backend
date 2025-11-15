@@ -12,13 +12,13 @@ Follows LangChain best practices with structured inputs/outputs and async proces
 
 import time
 from typing import Optional
-from app.models.schemas import TextRequest, AnalysisResponse
+from app.models.api import TextRequest, AnalysisResponse
 from app.models.factchecking import (
     UserInput, 
-    ClaimExtractionResult, 
+    ClaimExtractionOutput, 
     ExtractedClaim,
     AdjudicationInput,
-    ClaimEvidence,
+    EnrichedClaim,
     Citation
 )
 from app.ai.claim_extractor import create_claim_extractor
@@ -153,7 +153,7 @@ async def process_text_request(request: TextRequest) -> AnalysisResponse:
         
         # Step 2: Extract claims
         claim_extractor = create_claim_extractor()
-        claims_result: ClaimExtractionResult = await claim_extractor.extract_claims(user_input)
+        claims_result: ClaimExtractionOutput = await claim_extractor.extract_claims(user_input)
         
         # Save Step 1 output using common function
         step1_output = {
@@ -303,7 +303,7 @@ async def test_adjudicator() -> dict:
     
     # Create realistic evidence with citations
     evidence_map = {
-        "Vacinas causam autismo": ClaimEvidence(
+        "Vacinas causam autismo": EnrichedClaim(
             claim_text="Vacinas causam autismo",
             citations=[
                 Citation(
@@ -328,7 +328,7 @@ async def test_adjudicator() -> dict:
             search_queries=["vaccines autism link", "MMR autism studies", "vaccine safety autism"],
             retrieval_notes="Encontradas múltiplas fontes autoritativas contradizendo a alegação"
         ),
-        "Pessoas com olhos azuis são mais inteligentes": ClaimEvidence(
+        "Pessoas com olhos azuis são mais inteligentes": EnrichedClaim(
             claim_text="Pessoas com olhos azuis são mais inteligentes",
             citations=[
                 Citation(
@@ -398,7 +398,7 @@ async def test_full_pipeline_steps_1_3_4() -> dict:
     import json
     import os
     from datetime import datetime
-    from app.models.factchecking import ClaimExtractionResult, UserInput, AdjudicationInput
+    from app.models.factchecking import ClaimExtractionOutput, UserInput, AdjudicationInput
     from app.ai.claim_extractor import create_claim_extractor
     
     start_time = time.time()
@@ -574,7 +574,7 @@ async def test_evidence_retrieval() -> dict:
         Dict with test results and evidence found
     """
     import time
-    from app.models.factchecking import ClaimExtractionResult
+    from app.models.factchecking import ClaimExtractionOutput
     
     start_time = time.time()
     
@@ -594,8 +594,8 @@ async def test_evidence_retrieval() -> dict:
         )
     ]
     
-    # Create ClaimExtractionResult
-    claims_result = ClaimExtractionResult(
+    # Create ClaimExtractionOutput
+    claims_result = ClaimExtractionOutput(
         original_text="vacina causa autismo e pessoas com olhos azuis sao mais inteligente",
         claims=claims,
         processing_notes="Teste do sistema de recuperação de evidências"

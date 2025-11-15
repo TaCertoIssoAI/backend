@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime
 from app.models.api import TextRequest, AnalysisResponse
-from app.ai.pipeline import process_text_request, test_adjudicator, test_evidence_retrieval, test_full_pipeline_steps_1_3_4
+from app.ai.main_pipeline import process_text_request, test_adjudicator, test_evidence_retrieval, test_full_pipeline_steps_1_3_4
 
 router = APIRouter()
 
@@ -104,7 +104,7 @@ async def test_link_enrichment_endpoint(url: str = None):
         url: Optional URL to test. If not provided, uses default test URLs
     """
     try:
-        from app.models.factchecking import ClaimExtractionResult, ExtractedClaim
+        from app.models.factchecking import ClaimExtractionOutput, ExtractedClaim
         from app.ai.factchecking.link_enricher import create_link_enricher
         
         start_time = time.time()
@@ -150,7 +150,7 @@ async def test_link_enrichment_endpoint(url: str = None):
                 )
             ]
         
-        claims_result = ClaimExtractionResult(
+        claims_result = ClaimExtractionOutput(
             original_text="Test text with multiple URLs for link enrichment",
             claims=test_claims,
             processing_notes="Teste de enriquecimento de links"

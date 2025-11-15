@@ -40,11 +40,11 @@ except ImportError:
     # Logger will be defined later, so we'll handle this warning in the functions
 
 from app.models.factchecking import (
-    ClaimExtractionResult,
+    ClaimExtractionOutput,
     ExtractedClaim,
     EnrichedLink,
     EnrichedClaim,
-    LinkEnrichmentResult
+    LinkEnrichmentOutput
 )
 
 logger = logging.getLogger(__name__)
@@ -681,7 +681,7 @@ class LinkEnricher:
         # Content limit for extracted text
         self.content_limit = content_limit
 
-    async def enrich_links(self, claims_result: ClaimExtractionResult) -> LinkEnrichmentResult:
+    async def enrich_links(self, claims_result: ClaimExtractionOutput) -> LinkEnrichmentOutput:
         """
         Main method to enrich all claims with link content.
         
@@ -689,7 +689,7 @@ class LinkEnricher:
             claims_result: Result from claim extraction step
             
         Returns:
-            LinkEnrichmentResult with enriched claims
+            LinkEnrichmentOutput with enriched claims
         """
         start_time = time.time()
         
@@ -727,7 +727,7 @@ class LinkEnricher:
             f"{total_links - successful_extractions} falhas."
         )
         
-        return LinkEnrichmentResult(
+        return LinkEnrichmentOutput(
             original_claims=claims_result.claims,
             enriched_claims=enriched_claims,
             total_links_processed=total_links,
@@ -867,15 +867,15 @@ def create_link_enricher(content_limit: int = 5000) -> LinkEnricher:
 
 
 # Async helper function for direct usage
-async def enrich_claim_links(claims_result: ClaimExtractionResult) -> LinkEnrichmentResult:
+async def enrich_claim_links(claims_result: ClaimExtractionOutput) -> LinkEnrichmentOutput:
     """
     Convenience function to enrich links from claim extraction result.
     
     Args:
-        claims_result: ClaimExtractionResult from step 2
+        claims_result: ClaimExtractionOutput from step 2
         
     Returns:
-        LinkEnrichmentResult with enriched claims
+        LinkEnrichmentOutput with enriched claims
     """
     enricher = create_link_enricher()
     return await enricher.enrich_links(claims_result)

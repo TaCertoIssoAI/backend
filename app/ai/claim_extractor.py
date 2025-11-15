@@ -20,7 +20,7 @@ from langchain_core.exceptions import OutputParserException
 
 from app.models.factchecking import (
     UserInput,
-    ClaimExtractionResult
+    ClaimExtractionOutput
 )
 from app.core.config import get_settings
 
@@ -60,7 +60,7 @@ class ClaimExtractor:
         # Create LCEL chain with structured output
         self.chain = (
             self.prompt
-            | self.model.with_structured_output(ClaimExtractionResult)
+            | self.model.with_structured_output(ClaimExtractionOutput)
         )
 
     def _get_system_prompt(self) -> str:
@@ -143,7 +143,7 @@ Se não houver alegações verificáveis, retorne uma lista vazia mas explique o
         urls = re.findall(url_pattern, text)
         return urls
 
-    async def extract_claims(self, user_input: UserInput) -> ClaimExtractionResult:
+    async def extract_claims(self, user_input: UserInput) -> ClaimExtractionOutput:
         """
         Extract claims from user input using async LLM call.
 
@@ -151,7 +151,7 @@ Se não houver alegações verificáveis, retorne uma lista vazia mas explique o
             user_input: UserInput model with text and metadata
 
         Returns:
-            ClaimExtractionResult: Structured output with extracted claims
+            ClaimExtractionOutput: Structured output with extracted claims
 
         Raises:
             OutputParserException: If LLM output doesn't match expected schema
@@ -187,7 +187,7 @@ Se não houver alegações verificáveis, retorne uma lista vazia mas explique o
 
         except OutputParserException as e:
             # Handle structured output parsing errors
-            fallback_result = ClaimExtractionResult(
+            fallback_result = ClaimExtractionOutput(
                 original_text=user_input.text,
                 claims=[],
                 processing_notes=f"Erro ao processar resposta do LLM: {str(e)}"
@@ -196,7 +196,7 @@ Se não houver alegações verificáveis, retorne uma lista vazia mas explique o
 
         except Exception as e:
             # Handle other errors gracefully
-            fallback_result = ClaimExtractionResult(
+            fallback_result = ClaimExtractionOutput(
                 original_text=user_input.text,
                 claims=[],
                 processing_notes=f"Erro durante extração de alegações: {str(e)}"
@@ -219,7 +219,7 @@ def create_claim_extractor(model_name: str = "gpt-4o") -> ClaimExtractor:
 
 
 # Async helper function for direct usage
-async def extract_claims_from_text(text: str) -> ClaimExtractionResult:
+async def extract_claims_from_text(text: str) -> ClaimExtractionOutput:
     """
     Convenience function to extract claims from raw text.
 
@@ -227,7 +227,7 @@ async def extract_claims_from_text(text: str) -> ClaimExtractionResult:
         text: Raw text to analyze
 
     Returns:
-        ClaimExtractionResult with extracted claims
+        ClaimExtractionOutput with extracted claims
     """
     extractor = create_claim_extractor()
 

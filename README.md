@@ -63,6 +63,35 @@ It was 12 hours of deep immersion in this application with my teammates passing 
 - OpenAI API Key
 - Google Fact-Check API Key (optional)
 
+**OR** (Recommended for Production):
+
+- [**Docker**](https://docs.docker.com/get-docker/) and Docker Compose
+- OpenAI API Key
+
+## How to Use
+
+### 🐳 Docker (Recommended)
+
+**Quick Start:**
+```bash
+# 1. Configure environment
+cp env.example .env
+# Edit .env and add your OPENAI_API_KEY
+
+# 2. Start everything
+./docker-start.sh
+
+# 3. Test
+./docker-test.sh
+```
+
+**Access:**
+- API: http://localhost:8000
+- Docs: http://localhost:8000/docs
+- Selenium Grid: http://localhost:4444
+
+📚 **Full Docker documentation**: See [DOCKER.md](DOCKER.md) and [QUICKSTART.md](QUICKSTART.md)
+
 ### Manual Execution
 
 If you want to run manually or customize parameters:

@@ -5,7 +5,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.models.factchecking import (
     AdjudicationInput, 
     FactCheckResult, 
-    ClaimEvidence,
+    EnrichedClaim,
     Citation,
     EnrichedClaim,
 )
@@ -136,7 +136,7 @@ def _format_claims_for_prompt(claims: List[EnrichedClaim]) -> str:
     return "\n".join(formatted_claims)
 
 
-def _format_evidence_for_prompt(evidence_map: Dict[str, ClaimEvidence]) -> str:
+def _format_evidence_for_prompt(evidence_map: Dict[str, EnrichedClaim]) -> str:
     """Format evidence for the LLM prompt"""
     if not evidence_map:
         return "Nenhuma evidência foi coletada."

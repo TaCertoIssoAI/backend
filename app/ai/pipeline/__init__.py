@@ -10,6 +10,9 @@ Each step follows LangChain best practices with LCEL chains, structured outputs,
 and stateless design.
 """
 
+# Note: Main pipeline orchestration functions are in app.ai.pipeline module (file)
+# not in this directory. This directory contains step-by-step implementations.
+
 from .claim_extractor import (
     extract_claims,
     extract_claims_async,

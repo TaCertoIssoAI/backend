@@ -2,7 +2,7 @@
 Evidence Retrieval Module - Step 3 of Fact-Checking Pipeline
 
 This module implements evidence retrieval using the Google Fact-Check Tools API.
-Takes ClaimExtractionResult from Step 2 and retrieves fact-check evidence for each claim.
+Takes ClaimExtractionOutput from Step 2 and retrieves fact-check evidence for each claim.
 
 Outputs structured data models for Step 4 (Adjudication).
 """
@@ -12,9 +12,9 @@ from typing import List, Optional
 import logging
 
 from app.models.factchecking import (
-    LinkEnrichmentResult,
+    LinkEnrichmentOutput,
     Citation,
-    ClaimEvidence,
+    EnrichedClaim,
     EvidenceRetrievalResult
 )
 from app.core.config import get_settings
@@ -117,7 +117,7 @@ class GoogleFactCheckRetriever:
             return None
 
 
-async def retrieve_evidence_from_enriched(enrichment_result: LinkEnrichmentResult) -> EvidenceRetrievalResult:
+async def retrieve_evidence_from_enriched(enrichment_result: LinkEnrichmentOutput) -> EvidenceRetrievalResult:
     """
     Evidence retrieval function that works with enriched claims from Step 2.5
     
@@ -140,10 +140,10 @@ async def retrieve_evidence_from_enriched(enrichment_result: LinkEnrichmentResul
         # Use the SAME Google Fact-Check search logic as before
         citations = await retriever.search_claim(enriched_claim.text)
         
-        # Create ClaimEvidence that includes BOTH:
+        # Create EnrichedClaim that includes BOTH:
         # 1. External evidence (Google Fact-Check citations)
         # 2. Enriched links (user-provided URL content from Step 2.5)
-        claim_evidence = ClaimEvidence(
+        claim_evidence = EnrichedClaim(
             claim_text=enriched_claim.text,
             citations=citations,  # External evidence from Google API
             search_queries=[f"Google Fact-Check for: {enriched_claim.text}"],

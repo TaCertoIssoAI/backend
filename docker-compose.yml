@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # Backend FastAPI - Fake News Detector
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fakenews-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # App Configuration
+      - APP_NAME=Fake News Detector API
+      - DEBUG=false
+      - PORT=8000
+      
+      # Selenium (aponta para o container selenium)
+      - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
+      - USE_SELENIUM_REMOTE=true
+      
+      # AI Services (será sobrescrito por .env se existir)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      
+      # Processing Limits
+      - MAX_TEXT_LENGTH=10000
+      - MAX_IMAGE_SIZE_MB=10
+      - TEXT_PROCESSING_TIMEOUT=5
+      - IMAGE_PROCESSING_TIMEOUT=12
+    volumes:
+      # Mount código para desenvolvimento (comentar em produção)
+      - ./app:/app/app:ro
+      # Mount para logs (opcional)
+      - ./logs:/app/logs
+    networks:
+      - webscraping-network
+    depends_on:
+      selenium:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Selenium para Web Scraping
+  selenium:
+    image: selenium/standalone-chrome:latest
+    container_name: selenium-chrome
+    ports:
+      - "4444:4444"
+      - "7900:7900"  # VNC para debug (acesse via VNC viewer)
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+      - SE_NODE_MAX_SESSIONS=4
+      - SE_NODE_SESSION_TIMEOUT=300
+      - SE_NODE_MAX_INSTANCES=4
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - webscraping-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/wd/hub/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # Limites de recursos (ajuste conforme necessário)
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+networks:
+  webscraping-network:
+    driver: bridge
+    name: fakenews-network
+
+volumes:
+  logs:
+    driver: local
+
