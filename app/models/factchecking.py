@@ -32,7 +32,6 @@ class ExpandedUserInput(BaseModel):
         }
     })
 
-    user_text: str = Field(..., description="Pure text from user (links filtered out)")
     expanded_context: str = Field(...,description="String with all the expanded context that should be pre-pended to the original text")
     expanded_context_by_source: dict[str,str] = Field(default_factory=dict,description=" dict that maps each message source (links) to the extracted context from it")
 
