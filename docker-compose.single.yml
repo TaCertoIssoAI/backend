@@ -1,5 +1,5 @@
 # Docker Compose para container único (teste local)
-# Simula o ambiente do Render Free Tier
+# Backend FastAPI simples sem serviços externos
 
 version: '3.8'
 
@@ -16,9 +16,6 @@ services:
       - APP_NAME=Fake News Detector API
       - DEBUG=false
       - PORT=8000
-      
-      # Selenium LOCAL (dentro do mesmo container)
-      - USE_SELENIUM_REMOTE=false
       
       # AI Services
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -52,4 +49,3 @@ services:
 networks:
   default:
     name: backend-network
-
