@@ -1,3 +1,1362 @@
 ---
 alwaysApply: true
 ---
+
+# Apify integration
+
+Este arquivo orienta o Cursor/LLM sobre **como usar o Apify** neste projeto para scrapping de links da web.
+
+---
+
+## 1) Introduction
+
+Copy for LLM
+
+The [Apify client for Python](https://github.com/apify/apify-client-python) is the official library to access the [Apify REST API](https://docs.apify.com/api/v2) from your Python applications. It provides useful features like automatic retries and convenience functions that improve the experience of using the Apify API. All requests and responses (including errors) are encoded in JSON format with UTF-8 encoding. The client provides both synchronous and asynchronous interfaces.
+
+- async client  
+- sync client  
+
+**Important for this repo:**
+
+- the Apify token **must never be hardcoded** in the code.
+- the token is stored in `.env` under the name **`APIFY_TOKEN`**.
+- always read it from the environment (e.g. using `os.getenv("APIFY_TOKEN")` or similar).
+- if `APIFY_TOKEN` is missing, fail fast with a clear error.
+
+---
+
+## 2) Authentication and configuration
+
+Rules for this project:
+
+- token:
+  - stored in `.env` as `APIFY_TOKEN`
+  - loaded from environment in the app, not from code constants
+- do **not** commit or log the token anywhere.
+- when generating new code, always:
+  - read `APIFY_TOKEN` from environment
+  - check if it is present
+  - raise a clear exception if it is not
+
+Example pattern to follow in all integration code:
+
+```python
+import os
+from apify_client import ApifyClient
+
+def getApifyClient() -> ApifyClient:
+    apifyToken = os.getenv("APIFY_TOKEN")
+    if not apifyToken:
+        raise RuntimeError("missing APIFY_TOKEN in environment")
+    
+    # create and return the apify client using project token
+    return ApifyClient(apifyToken)
+````
+
+* comments are short, start with lowercase, and are in English.
+* variable and function names start with lowercase and are written in English, following the project code style.
+
+---
+
+## 3) Async client example (recommended)
+
+Use the async client for new scraping flows when possível.
+
+```python
+import os
+from apify_client import ApifyClientAsync
+
+APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
+
+
+async def runApifyActor(actorId: str, inputConfig: dict | None = None) -> dict | None:
+    apifyToken = os.getenv(APIFY_TOKEN_ENV_KEY)
+    if not apifyToken:
+        raise RuntimeError("missing APIFY_TOKEN in environment")
+    
+    apifyClient = ApifyClientAsync(apifyToken)
+
+    # start actor run and wait for it to finish
+    actorClient = apifyClient.actor(actorId)
+    callResult = await actorClient.call(input=inputConfig or {})
+
+    if callResult is None:
+        # actor run failed or returned no data
+        return None
+
+    # fetch items from default dataset
+    datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
+    listItemsResult = await datasetClient.list_items()
+    return listItemsResult
+```
+
+Guidelines applied:
+
+* code in English with lowercase variable and function names (`runApifyActor`, `apifyToken`, `actorId`).
+* comments are short, objective, and start with lowercase.
+* token read from environment via `APIFY_TOKEN`.
+
+---
+
+## 4) Sync client example
+
+Use the sync client only when async is not required or would complicate the existing code base.
+
+```python
+import os
+from apify_client import ApifyClient
+
+APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
+
+
+def runApifyActorSync(actorId: str, inputConfig: dict | None = None) -> dict | None:
+    apifyToken = os.getenv(APIFY_TOKEN_ENV_KEY)
+    if not apifyToken:
+        raise RuntimeError("missing APIFY_TOKEN in environment")
+    
+    apifyClient = ApifyClient(apifyToken)
+
+    # start actor run and wait for it to finish
+    actorClient = apifyClient.actor(actorId)
+    callResult = actorClient.call(input=inputConfig or {})
+
+    if callResult is None:
+        # actor run failed or returned no data
+        return None
+
+    # fetch items from default dataset
+    datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
+    listItemsResult = datasetClient.list_items()
+    return listItemsResult
+```
+
+Again:
+
+* do not hardcode the token.
+* keep comments minimal and in English.
+* function and variable names start with lowercase.
+
+---
+
+## 5) How to use Apify in this project
+
+When the LLM or Cursor needs to create or modify code that scrapes links or pages using Apify:
+
+1. **Reuse a helper**
+   Prefer creating or using a single helper module (for example `apify_client_utils.py`) with:
+
+   * `getApifyClient()` for sync
+   * `getApifyClientAsync()` or `runApifyActor()` for async
+
+2. **Never create hardcoded tokens**
+   Do not introduce literals like `"MY-APIFY-TOKEN"` in any file.
+
+3. **Follow project code style**
+
+   * comments: short, objective, starting with lowercase.
+   * names: English, starting with lowercase (functions, variables, files).
+   * no extra `.md` files to document changes unless explicitly requested by the user.
+
+4. **Error handling**
+
+   * if an actor run fails, return `None` or raise a clear exception depending on the layer.
+   * do not swallow errors silently; at least log or propagate them.
+
+This file is the single source of truth for how Apify should be used and configured in this repo.
+
+````md
+---
+alwaysApply: true
+---
+
+# Apify integration
+
+Este arquivo orienta o Cursor/LLM sobre **como usar o Apify** neste projeto para scrapping de links da web.
+
+---
+
+## 1) Introduction
+
+Copy for LLM
+
+The [Apify client for Python](https://github.com/apify/apify-client-python) is the official library to access the [Apify REST API](https://docs.apify.com/api/v2) from your Python applications. It provides useful features like automatic retries and convenience functions that improve the experience of using the Apify API. All requests and responses (including errors) are encoded in JSON format with UTF-8 encoding. The client provides both synchronous and asynchronous interfaces.
+
+- async client  
+- sync client  
+
+**Important for this repo:**
+
+- the Apify token **must never be hardcoded** in the code.
+- the token is stored in `.env` under the name **`APIFY_TOKEN`**.
+- always read it from the environment (e.g. using `os.getenv("APIFY_TOKEN")` or similar).
+- if `APIFY_TOKEN` is missing, fail fast with a clear error.
+
+---
+
+## 2) Authentication and configuration
+
+Rules for this project:
+
+- token:
+  - stored in `.env` as `APIFY_TOKEN`
+  - loaded from environment in the app, not from code constants
+- do **not** commit or log the token anywhere.
+- when generating new code, always:
+  - read `APIFY_TOKEN` from environment
+  - check if it is present
+  - raise a clear exception if it is not
+
+Example pattern to follow in all integration code:
+
+```python
+import os
+from apify_client import ApifyClient
+
+def getApifyClient() -> ApifyClient:
+    apifyToken = os.getenv("APIFY_TOKEN")
+    if not apifyToken:
+        raise RuntimeError("missing APIFY_TOKEN in environment")
+    
+    # create and return the apify client using project token
+    return ApifyClient(apifyToken)
+````
+
+* comments are short, start with lowercase, and are in English.
+* variable and function names start with lowercase and are written in English, following the project code style.
+
+---
+
+## 3) Async client example (recommended)
+
+Use the async client for new scraping flows when possível.
+
+```python
+import os
+from apify_client import ApifyClientAsync
+
+APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
+
+
+async def runApifyActor(actorId: str, inputConfig: dict | None = None) -> dict | None:
+    apifyToken = os.getenv(APIFY_TOKEN_ENV_KEY)
+    if not apifyToken:
+        raise RuntimeError("missing APIFY_TOKEN in environment")
+    
+    apifyClient = ApifyClientAsync(apifyToken)
+
+    # start actor run and wait for it to finish
+    actorClient = apifyClient.actor(actorId)
+    callResult = await actorClient.call(input=inputConfig or {})
+
+    if callResult is None:
+        # actor run failed or returned no data
+        return None
+
+    # fetch items from default dataset
+    datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
+    listItemsResult = await datasetClient.list_items()
+    return listItemsResult
+```
+
+Guidelines applied:
+
+* code in English with lowercase variable and function names (`runApifyActor`, `apifyToken`, `actorId`).
+* comments are short, objective, and start with lowercase.
+* token read from environment via `APIFY_TOKEN`.
+
+---
+
+## 4) Sync client example
+
+Use the sync client only when async is not required or would complicate the existing code base.
+
+```python
+import os
+from apify_client import ApifyClient
+
+APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
+
+
+def runApifyActorSync(actorId: str, inputConfig: dict | None = None) -> dict | None:
+    apifyToken = os.getenv(APIFY_TOKEN_ENV_KEY)
+    if not apifyToken:
+        raise RuntimeError("missing APIFY_TOKEN in environment")
+    
+    apifyClient = ApifyClient(apifyToken)
+
+    # start actor run and wait for it to finish
+    actorClient = apifyClient.actor(actorId)
+    callResult = actorClient.call(input=inputConfig or {})
+
+    if callResult is None:
+        # actor run failed or returned no data
+        return None
+
+    # fetch items from default dataset
+    datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
+    listItemsResult = datasetClient.list_items()
+    return listItemsResult
+```
+
+Again:
+
+* do not hardcode the token.
+* keep comments minimal and in English.
+* function and variable names start with lowercase.
+
+---
+
+## 5) How to use Apify in this project
+
+When the LLM or Cursor needs to create or modify code that scrapes links or pages using Apify:
+
+1. **Reuse a helper**
+   Prefer creating or using a single helper module (for example `apify_client_utils.py`) with:
+
+   * `getApifyClient()` for sync
+   * `getApifyClientAsync()` or `runApifyActor()` for async
+
+2. **Never create hardcoded tokens**
+   Do not introduce literals like `"MY-APIFY-TOKEN"` in any file.
+
+3. **Follow project code style**
+
+   * comments: short, objective, starting with lowercase.
+   * names: English, starting with lowercase (functions, variables, files).
+   * no extra `.md` files to document changes unless explicitly requested by the user.
+
+4. **Error handling**
+
+   * if an actor run fails, return `None` or raise a clear exception depending on the layer.
+   * do not swallow errors silently; at least log or propagate them.
+
+This file is the single source of truth for how Apify should be used and configured in this repo.
+
+```
+```
+# Getting started
+
+Copy for LLM
+
+This guide will walk you through how to use the [Apify Client for Python](https://github.com/apify/apify-client-python) to run [Actors](https://apify.com/actors) on the [Apify platform](https://docs.apify.com/platform), provide input to them, and retrieve results from their datasets. You'll learn the basics of running serverless programs (we're calling them Actors) and managing their output efficiently.
+
+## Running your first Actor[](#running-your-first-actor)
+
+To start an Actor, you need its ID (e.g., `john-doe/my-cool-actor`) and an API token. The Actor's ID is a combination of the username and the Actor owner's username. Use the [`ActorClient`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorClient.md) to run the Actor and wait for it to complete. You can run both your own Actors and [Actors from Apify store](https://docs.apify.com/platform/actors/running/actors-in-store).
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+# You can find your API token at https://console.apify.com/settings/integrations.
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    # Start an Actor and wait for it to finish.
+    actor_client = apify_client.actor('john-doe/my-cool-actor')
+    call_result = await actor_client.call()
+
+    if call_result is None:
+        print('Actor run failed.')
+        return
+
+    # Fetch results from the Actor run's default dataset.
+    dataset_client = apify_client.dataset(call_result['defaultDatasetId'])
+    list_items_result = await dataset_client.list_items()
+    print(f'Dataset: {list_items_result}')
+```
+
+```
+from apify_client import ApifyClient
+
+# You can find your API token at https://console.apify.com/settings/integrations.
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+
+    # Start an Actor and wait for it to finish.
+    actor_client = apify_client.actor('john-doe/my-cool-actor')
+    call_result = actor_client.call()
+
+    if call_result is None:
+        print('Actor run failed.')
+        return
+
+    # Fetch results from the Actor run's default dataset.
+    dataset_client = apify_client.dataset(call_result['defaultDatasetId'])
+    list_items_result = dataset_client.list_items()
+    print(f'Dataset: {list_items_result}')
+```
+
+## Providing input to Actor[](#providing-input-to-actor)
+
+Actors often require input, such as URLs to scrape, search terms, or other configuration data. You can pass input as a JSON object when starting the Actor using the [`ActorClient.call`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorClient.md#call) method. Actors respect the input schema defined in the Actor's [input schema](https://docs.apify.com/platform/actors/development/actor-definition/input-schema).
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Define the input for the Actor.
+    run_input = {
+        'some': 'input',
+    }
+
+    # Start an Actor and waits for it to finish.
+    call_result = await actor_client.call(run_input=run_input)
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Define the input for the Actor.
+    run_input = {
+        'some': 'input',
+    }
+
+    # Start an Actor and waits for it to finish.
+    call_result = actor_client.call(run_input=run_input)
+```
+
+## Getting results from the dataset[](#getting-results-from-the-dataset)
+
+To get the results from the dataset, you can use the [`DatasetClient`](https://docs.apify.com/api/client/python/api/client/python/reference/class/DatasetClient.md) ([`ApifyClient.dataset`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ApifyClient.md#dataset) ) and [`DatasetClient.list_items`](https://docs.apify.com/api/client/python/api/client/python/reference/class/DatasetClient.md#list_items) method. You need to pass the dataset ID to define which dataset you want to access. You can get the dataset ID from the Actor's run dictionary (represented by `defaultDatasetId`).
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Define the input for the Actor.
+    run_input = {
+        'some': 'input',
+    }
+
+    # Start an Actor and waits for it to finish.
+    call_result = await actor_client.call(run_input=run_input)
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Define the input for the Actor.
+    run_input = {
+        'some': 'input',
+    }
+
+    # Start an Actor and waits for it to finish.
+    call_result = actor_client.call(run_input=run_input)
+```
+
+Dataset access
+
+Running an Actor might take time, depending on the Actor's complexity and the amount of data it processes. If you want only to get data and have an immediate response you should access the existing dataset of the finished [Actor run](https://docs.apify.com/platform/actors/running/runs-and-builds#runs).
+
+# Passing input to Actor
+
+Copy for LLM
+
+The efficient way to run an Actor and retrieve results is by passing input data directly to the `call` method. This method allows you to configure the Actor's input, execute it, and either get a reference to the running Actor or wait for its completion.
+
+The following example demonstrates how to pass input to the `apify/instagram-hashtag-scraper` Actor and wait for it to finish.
+
+* Async client
+* Sync client
+
+```
+import asyncio
+
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    # Client initialization with the API token
+    apify_client = ApifyClientAsync(token=TOKEN)
+
+    # Get the Actor client
+    actor_client = apify_client.actor('apify/instagram-hashtag-scraper')
+
+    input_data = {'hashtags': ['rainbow'], 'resultsLimit': 20}
+
+    # Run the Actor and wait for it to finish up to 60 seconds.
+    # Input is not persisted for next runs.
+    run_result = await actor_client.call(run_input=input_data, timeout_secs=60)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    # Client initialization with the API token
+    apify_client = ApifyClient(token=TOKEN)
+
+    # Get the Actor client
+    actor_client = apify_client.actor('apify/instagram-hashtag-scraper')
+
+    input_data = {'hashtags': ['rainbow'], 'resultsLimit': 20}
+
+    # Run the Actor and wait for it to finish up to 60 seconds.
+    # Input is not persisted for next runs.
+    run_result = actor_client.call(run_input=input_data, timeout_secs=60)
+
+
+if __name__ == '__main__':
+    main()
+```
+
+# Manage tasks for reusable input
+
+Copy for LLM
+
+When you need to run multiple inputs with the same Actor, the most convenient approach is to create multiple [tasks](https://docs.apify.com/platform/actors/running/tasks), each with different input configurations. Task inputs are stored on the Apify platform when the task is created, allowing you to reuse them easily.
+
+The following example demonstrates how to create tasks for the `apify/instagram-hashtag-scraper` Actor with different inputs, manage task clients, and execute them asynchronously:
+
+* Async client
+* Sync client
+
+```
+import asyncio
+
+from apify_client import ApifyClientAsync
+from apify_client.clients.resource_clients import TaskClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+HASHTAGS = ['zebra', 'lion', 'hippo']
+
+
+async def run_apify_task(client: TaskClientAsync) -> dict:
+    result = await client.call()
+    return result or {}
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(token=TOKEN)
+
+    # Create Apify tasks
+    apify_tasks = list[dict]()
+    apify_tasks_client = apify_client.tasks()
+
+    for hashtag in HASHTAGS:
+        apify_task = await apify_tasks_client.create(
+            name=f'hashtags-{hashtag}',
+            actor_id='apify/instagram-hashtag-scraper',
+            task_input={'hashtags': [hashtag], 'resultsLimit': 20},
+            memory_mbytes=1024,
+        )
+        apify_tasks.append(apify_task)
+
+    print('Tasks created:', apify_tasks)
+
+    # Create Apify task clients
+    apify_task_clients = list[TaskClientAsync]()
+
+    for apify_task in apify_tasks:
+        task_id = apify_task['id']
+        apify_task_client = apify_client.task(task_id)
+        apify_task_clients.append(apify_task_client)
+
+    print('Task clients created:', apify_task_clients)
+
+    # Execute Apify tasks
+    run_apify_tasks = [run_apify_task(client) for client in apify_task_clients]
+    task_run_results = await asyncio.gather(*run_apify_tasks)
+
+    print('Task results:', task_run_results)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+```
+from apify_client import ApifyClient
+from apify_client.clients.resource_clients import TaskClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+HASHTAGS = ['zebra', 'lion', 'hippo']
+
+
+def run_apify_task(client: TaskClient) -> dict:
+    result = client.call()
+    return result or {}
+
+
+def main() -> None:
+    apify_client = ApifyClient(token=TOKEN)
+
+    # Create Apify tasks
+    apify_tasks = list[dict]()
+    apify_tasks_client = apify_client.tasks()
+
+    for hashtag in HASHTAGS:
+        apify_task = apify_tasks_client.create(
+            name=f'hashtags-{hashtag}',
+            actor_id='apify/instagram-hashtag-scraper',
+            task_input={'hashtags': [hashtag], 'resultsLimit': 20},
+            memory_mbytes=1024,
+        )
+        apify_tasks.append(apify_task)
+
+    print('Tasks created:', apify_tasks)
+
+    # Create Apify task clients
+    apify_task_clients = list[TaskClient]()
+
+    for apify_task in apify_tasks:
+        task_id = apify_task['id']
+        apify_task_client = apify_client.task(task_id)
+        apify_task_clients.append(apify_task_client)
+
+    print('Task clients created:', apify_task_clients)
+
+    # Execute Apify tasks
+    task_run_results = list[dict]()
+
+    for client in apify_task_clients:
+        result = run_apify_task(client)
+        task_run_results.append(result)
+
+    print('Task results:', task_run_results)
+
+
+if __name__ == '__main__':
+    main()
+```
+
+
+# Retrieve Actor data
+
+Copy for LLM
+
+Actor output data is stored in [datasets](https://docs.apify.com/platform/storage/dataset), which can be retrieved from individual Actor runs. Dataset items support pagination for efficient retrieval, and multiple datasets can be merged into a single dataset for further analysis. This merged dataset can then be exported into various formats such as CSV, JSON, XLSX, or XML. Additionally, [integrations](https://docs.apify.com/platform/integrations) provide powerful tools to automate data workflows.
+
+The following example demonstrates how to fetch datasets from an Actor's runs, paginate through their items, and merge them into a single dataset for unified analysis:
+
+* Async client
+* Sync client
+
+```
+import asyncio
+
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    # Client initialization with the API token
+    apify_client = ApifyClientAsync(token=TOKEN)
+    actor_client = apify_client.actor('apify/instagram-hashtag-scraper')
+    runs_client = actor_client.runs()
+
+    # See pagination to understand how to get more datasets
+    actor_datasets = await runs_client.list(limit=20)
+
+    datasets_client = apify_client.datasets()
+    merging_dataset = await datasets_client.get_or_create(name='merge-dataset')
+
+    for dataset_item in actor_datasets.items:
+        # Dataset items can be handled here. Dataset items can be paginated
+        dataset_client = apify_client.dataset(dataset_item['id'])
+        dataset_items = await dataset_client.list_items(limit=1000)
+
+        # Items can be pushed to single dataset
+        merging_dataset_client = apify_client.dataset(merging_dataset['id'])
+        await merging_dataset_client.push_items(dataset_items.items)
+
+        # ...
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    # Client initialization with the API token
+    apify_client = ApifyClient(token=TOKEN)
+    actor_client = apify_client.actor('apify/instagram-hashtag-scraper')
+    runs_client = actor_client.runs()
+
+    # See pagination to understand how to get more datasets
+    actor_datasets = runs_client.list(limit=20)
+
+    datasets_client = apify_client.datasets()
+    merging_dataset = datasets_client.get_or_create(name='merge-dataset')
+
+    for dataset_item in actor_datasets.items:
+        # Dataset items can be handled here. Dataset items can be paginated
+        dataset_client = apify_client.dataset(dataset_item['id'])
+        dataset_items = dataset_client.list_items(limit=1000)
+
+        # Items can be pushed to single dataset
+        merging_dataset_client = apify_client.dataset(merging_dataset['id'])
+        merging_dataset_client.push_items(dataset_items.items)
+
+        # ...
+
+
+if __name__ == '__main__':
+    main()
+```
+
+# Integration with data libraries
+
+Copy for LLM
+
+The Apify client for Python seamlessly integrates with data analysis libraries like [Pandas](https://pandas.pydata.org/). This allows you to load dataset items directly into a Pandas [DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html) for efficient manipulation and analysis. Pandas provides robust data structures and tools for handling large datasets, making it a powerful addition to your Apify workflows.
+
+The following example demonstrates how to retrieve items from the most recent dataset of an Actor run and load them into a Pandas DataFrame for further analysis:
+
+* Async client
+* Sync client
+
+```
+import asyncio
+
+import pandas as pd
+
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    # Initialize the Apify client
+    apify_client = ApifyClientAsync(token=TOKEN)
+    actor_client = apify_client.actor('apify/web-scraper')
+    run_client = actor_client.last_run()
+    dataset_client = run_client.dataset()
+
+    # Load items from last dataset run
+    dataset_data = await dataset_client.list_items()
+
+    # Pass dataset items to Pandas DataFrame
+    data_frame = pd.DataFrame(dataset_data.items)
+
+    print(data_frame.info)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+```
+import pandas as pd
+
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    # Initialize the Apify client
+    apify_client = ApifyClient(token=TOKEN)
+    actor_client = apify_client.actor('apify/web-scraper')
+    run_client = actor_client.last_run()
+    dataset_client = run_client.dataset()
+
+    # Load items from last dataset run
+    dataset_data = dataset_client.list_items()
+
+    # Pass dataset items to Pandas DataFrame
+    data_frame = pd.DataFrame(dataset_data.items)
+
+    print(data_frame.info)
+
+
+if __name__ == '__main__':
+    main()
+```
+# Asyncio support
+
+Copy for LLM
+
+The package provides an asynchronous version of the client, [`ApifyClientAsync`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ApifyClientAsync.md), which allows you to interact with the Apify API using Python's standard async/await syntax. This enables you to perform non-blocking operations, see the Python [asyncio documentation](https://docs.python.org/3/library/asyncio-task.html) for more information.
+
+The following example demonstrates how to run an Actor asynchronously and stream its logs while it is running:
+
+```
+import asyncio
+
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+    actor_client = apify_client.actor('my-actor-id')
+
+    # Start the Actor and get the run ID
+    run_result = await actor_client.start()
+    run_client = apify_client.run(run_result['id'])
+    log_client = run_client.log()
+
+    # Stream the logs
+    async with log_client.stream() as async_log_stream:
+        if async_log_stream:
+            async for bytes_chunk in async_log_stream.aiter_bytes():
+                print(bytes_chunk)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+```
+
+# Single and collection clients
+
+Copy for LLM
+
+The Apify client interface is designed to be consistent and intuitive across all of its components. When you call specific methods on the main client, you create specialized clients to manage individual API resources. There are two main types of clients:
+
+* [`ActorClient`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorClient.md) - Manages a single resource.
+* [`ActorCollectionClient`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorCollectionClient.md) - Manages a collection of resources.
+
+- Async client
+- Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    # Collection clients do not require a parameter
+    actor_collection_client = apify_client.actors()
+
+    # Create an Actor with the name: my-actor
+    my_actor = await actor_collection_client.create(name='my-actor')
+
+    # List all of your Actors
+    actor_list = (await actor_collection_client.list()).items
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+
+    # Collection clients do not require a parameter
+    actor_collection_client = apify_client.actors()
+
+    # Create an Actor with the name: my-actor
+    my_actor = actor_collection_client.create(name='my-actor')
+
+    # List all of your Actors
+    actor_list = actor_collection_client.list().items
+```
+
+The resource ID can be the resource's `id` or a combination of `username/resource-name`.
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    # Resource clients accept an ID of the resource
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Fetch the 'username/actor-name' object from the API
+    my_actor = await actor_client.get()
+
+    # Start the run of 'username/actor-name' and return the Run object
+    my_actor_run = await actor_client.start()
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+
+    # Resource clients accept an ID of the resource
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Fetch the 'username/actor-name' object from the API
+    my_actor = actor_client.get()
+
+    # Start the run of 'username/actor-name' and return the Run object
+    my_actor_run = actor_client.start()
+```
+
+By utilizing the appropriate collection or resource client, you can simplify how you interact with the Apify API.
+
+# Nested clients
+
+Copy for LLM
+
+In some cases, the Apify client provides nested clients to simplify working with related collections. For example, you can easily manage the runs of a specific Actor without having to construct multiple endpoints or client instances manually.
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    actor_client = apify_client.actor('username/actor-name')
+    runs_client = actor_client.runs()
+
+    # List the last 10 runs of the Actor
+    actor_runs = (await runs_client.list(limit=10, desc=True)).items
+
+    # Select the last run of the Actor that finished with a SUCCEEDED status
+    last_succeeded_run_client = actor_client.last_run(status='SUCCEEDED')  # type: ignore[arg-type]
+
+    # Get dataset
+    actor_run_dataset_client = last_succeeded_run_client.dataset()
+
+    # Fetch items from the run's dataset
+    dataset_items = (await actor_run_dataset_client.list_items()).items
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+
+    actor_client = apify_client.actor('username/actor-name')
+    runs_client = actor_client.runs()
+
+    # List the last 10 runs of the Actor
+    actor_runs = runs_client.list(limit=10, desc=True).items
+
+    # Select the last run of the Actor that finished with a SUCCEEDED status
+    last_succeeded_run_client = actor_client.last_run(status='SUCCEEDED')  # type: ignore[arg-type]
+
+    # Get dataset
+    actor_run_dataset_client = last_succeeded_run_client.dataset()
+
+    # Fetch items from the run's dataset
+    dataset_items = actor_run_dataset_client.list_items().items
+```
+
+This direct access to [Dataset](https://docs.apify.com/platform/storage/dataset) (and other storage resources) from the [`RunClient`](https://docs.apify.com/api/client/python/api/client/python/reference/class/RunClient.md) is especially convenient when used alongside the [`ActorClient.last_run`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorClient.md#last_run) method.
+
+# Error handling
+
+Copy for LLM
+
+When you use the Apify client, it automatically extracts all relevant data from the endpoint and returns it in the expected format. Date strings, for instance, are seamlessly converted to Python `datetime.datetime` objects. If an error occurs, the client raises an [`ApifyApiError`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ApifyApiError.md). This exception wraps the raw JSON errors returned by the API and provides additional context, making it easier to debug any issues that arise.
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    try:
+        # Try to list items from non-existing dataset
+        dataset_client = apify_client.dataset('not-existing-dataset-id')
+        dataset_items = (await dataset_client.list_items()).items
+    except Exception as ApifyApiError:
+        # The exception is an instance of ApifyApiError
+        print(ApifyApiError)
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+
+    try:
+        # Try to list items from non-existing dataset
+        dataset_client = apify_client.dataset('not-existing-dataset-id')
+        dataset_items = dataset_client.list_items().items
+    except Exception as ApifyApiError:
+        # The exception is an instance of ApifyApiError
+        print(ApifyApiError)
+```
+
+# Retries
+
+Copy for LLM
+
+When dealing with network communication, failures can occasionally occur. The Apify client automatically retries requests that fail due to:
+
+* Network errors
+* Internal errors in the Apify API (HTTP status codes 500 and above)
+* Rate limit errors (HTTP status code 429)
+
+By default, the client will retry a failed request up to 8 times. The retry intervals use an exponential backoff strategy:
+
+* The first retry occurs after approximately 500 milliseconds.
+* The second retry occurs after approximately 1,000 milliseconds, and so on.
+
+You can customize this behavior using the following options in the [`ApifyClient`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ApifyClient.md) constructor:
+
+* `max_retries`: Defines the maximum number of retry attempts.
+* `min_delay_between_retries_millis`: Sets the minimum delay between retries (in milliseconds).
+
+Retries with exponential backoff are a common strategy for handling network errors. They help to reduce the load on the server and increase the chances of a successful request.
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(
+        token=TOKEN,
+        max_retries=8,
+        min_delay_between_retries_millis=500,  # 0.5s
+        timeout_secs=360,  # 6 mins
+    )
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClient(
+        token=TOKEN,
+        max_retries=8,
+        min_delay_between_retries_millis=500,  # 0.5s
+        timeout_secs=360,  # 6 mins
+    )
+```
+
+# Logging
+
+Copy for LLM
+
+The library logs useful debug information to the `apify_client` logger whenever it sends requests to the Apify API. You can configure this logger to print debug information to the standard output by adding a handler:
+
+```
+import logging
+
+# Configure the Apify client logger
+apify_client_logger = logging.getLogger('apify_client')
+apify_client_logger.setLevel(logging.DEBUG)
+apify_client_logger.addHandler(logging.StreamHandler())
+```
+
+The log records include additional properties, provided via the extra argument, which can be helpful for debugging. Some of these properties are:
+
+* `attempt` - Number of retry attempts for the request.
+* `status_code` - HTTP status code of the response.
+* `url` - URL of the API endpoint being called.
+* `client_method` - Method name of the client that initiated the request.
+* `resource_id` - Identifier of the resource being accessed.
+
+To display these additional properties in the log output, you need to use a custom log formatter. Here's a basic example:
+
+```
+import logging
+
+# Configure the Apify client logger
+apify_client_logger = logging.getLogger('apify_client')
+apify_client_logger.setLevel(logging.DEBUG)
+apify_client_logger.addHandler(logging.StreamHandler())
+
+# Create a custom logging formatter
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s - '
+    '%(attempt)s - %(status_code)s - %(url)s'
+)
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+apify_client_logger.addHandler(handler)
+```
+
+For more information on creating and using custom log formatters, refer to the official Python [logging documentation](https://docs.python.org/3/howto/logging.html#formatters).
+
+# Convenience methods
+
+Copy for LLM
+
+The Apify client provides several convenience methods to handle actions that the API alone cannot perform efficiently, such as waiting for an Actor run to finish without running into network timeouts. These methods simplify common tasks and enhance the usability of the client.
+
+* [`ActorClient.call`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorClient.md#call) - Starts an Actor and waits for it to finish, handling network timeouts internally.
+* [`ActorClient.start`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ActorClient.md#start) - Explicitly waits for an Actor run to finish with customizable timeouts.
+
+Additionally, storage-related resources offer flexible options for data retrieval:
+
+* [Key-value store](https://docs.apify.com/platform/storage/key-value-store) records can be retrieved as objects, buffers, or streams.
+* [Dataset](https://docs.apify.com/platform/storage/dataset) items can be fetched as individual objects, serialized data, or iterated asynchronously.
+
+- Async client
+- Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Start an Actor and waits for it to finish
+    finished_actor_run = await actor_client.call()
+
+    # Starts an Actor and waits maximum 60s (1 minute) for the finish
+    actor_run = await actor_client.start(wait_for_finish=60)
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+    actor_client = apify_client.actor('username/actor-name')
+
+    # Start an Actor and waits for it to finish
+    finished_actor_run = actor_client.call()
+
+    # Starts an Actor and waits maximum 60s (1 minute) for the finish
+    actor_run = actor_client.start(wait_for_finish=60)
+```
+
+# Pagination
+
+Copy for LLM
+
+Most methods named `list` or `list_something` in the Apify client return a [`ListPage`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ListPage.md) object. This object provides a consistent interface for working with paginated data and includes the following properties:
+
+* `items` - The main results you're looking for.
+* `total` - The total number of items available.
+* `offset` - The starting point of the current page.
+* `count` - The number of items in the current page.
+* `limit` - The maximum number of items per page.
+
+Some methods, such as `list_keys` or `list_head`, paginate differently. Regardless, the primary results are always stored under the items property, and the limit property can be used to control the number of results returned.
+
+The following example demonstrates how to fetch all items from a dataset using pagination:
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    # Initialize the dataset client
+    dataset_client = apify_client.dataset('dataset-id')
+
+    # Define the pagination parameters
+    limit = 1000  # Number of items per page
+    offset = 0  # Starting offset
+    all_items = []  # List to store all fetched items
+
+    while True:
+        # Fetch a page of items
+        response = await dataset_client.list_items(limit=limit, offset=offset)
+        items = response.items
+        total = response.total
+
+        print(f'Fetched {len(items)} items')
+
+        # Add the fetched items to the complete list
+        all_items.extend(items)
+
+        # Exit the loop if there are no more items to fetch
+        if offset + limit >= total:
+            break
+
+        # Increment the offset for the next page
+        offset += limit
+
+    print(f'Overall fetched {len(all_items)} items')
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+
+    # Initialize the dataset client
+    dataset_client = apify_client.dataset('dataset-id')
+
+    # Define the pagination parameters
+    limit = 1000  # Number of items per page
+    offset = 0  # Starting offset
+    all_items = []  # List to store all fetched items
+
+    while True:
+        # Fetch a page of items
+        response = dataset_client.list_items(limit=limit, offset=offset)
+        items = response.items
+        total = response.total
+
+        print(f'Fetched {len(items)} items')
+
+        # Add the fetched items to the complete list
+        all_items.extend(items)
+
+        # Exit the loop if there are no more items to fetch
+        if offset + limit >= total:
+            break
+
+        # Increment the offset for the next page
+        offset += limit
+
+    print(f'Overall fetched {len(all_items)} items')
+```
+
+The [`ListPage`](https://docs.apify.com/api/client/python/api/client/python/reference/class/ListPage.md) interface offers several key benefits. Its consistent structure ensures predictable results for most `list` methods, providing a uniform way to work with paginated data. It also offers flexibility, allowing you to customize the `limit` and `offset` parameters to control data fetching according to your needs. Additionally, it provides scalability, enabling you to efficiently handle large datasets through pagination. This approach ensures efficient data retrieval while keeping memory usage under control, making it ideal for managing and processing large collections.
+
+# Streaming resources
+
+Copy for LLM
+
+Certain resources, such as dataset items, key-value store records, and logs, support streaming directly from the Apify API. This allows you to process large resources incrementally without downloading them entirely into memory, making it ideal for handling large or continuously updated data.
+
+Supported streaming methods:
+
+* [`DatasetClient.stream_items`](https://docs.apify.com/api/client/python/api/client/python/reference/class/DatasetClient.md#stream_items) - Stream dataset items incrementally.
+* [`KeyValueStoreClient.stream_record`](https://docs.apify.com/api/client/python/api/client/python/reference/class/KeyValueStoreClient.md#stream_record) - Stream key-value store records as raw data.
+* [`LogClient.stream`](https://docs.apify.com/api/client/python/api/client/python/reference/class/LogClient.md#stream) - Stream logs in real time.
+
+These methods return a raw, context-managed `impit.Response` object. The response must be consumed within a with block to ensure that the connection is closed automatically, preventing memory leaks or unclosed connections.
+
+The following example demonstrates how to stream the logs of an Actor run incrementally:
+
+* Async client
+* Sync client
+
+```
+from apify_client import ApifyClientAsync
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+    run_client = apify_client.run('MY-RUN-ID')
+    log_client = run_client.log()
+
+    async with log_client.stream() as log_stream:
+        if log_stream:
+            async for bytes_chunk in log_stream.aiter_bytes():
+                print(bytes_chunk)
+```
+
+```
+from apify_client import ApifyClient
+
+TOKEN = 'MY-APIFY-TOKEN'
+
+
+def main() -> None:
+    apify_client = ApifyClient(TOKEN)
+    run_client = apify_client.run('MY-RUN-ID')
+    log_client = run_client.log()
+
+    with log_client.stream() as log_stream:
+        if log_stream:
+            for bytes_chunk in log_stream.iter_bytes():
+                print(bytes_chunk)
+```
+
+Streaming offers several key benefits. It ensures memory efficiency by loading only a small portion of the resource into memory at any given time, making it ideal for handling large data. It enables real-time processing, allowing you to start working with data immediately as it is received. With automatic resource management, using the `with` statement ensures that connections are properly closed, preventing memory leaks or unclosed connections. This approach is valuable for processing large logs, datasets, or files on the fly without the need to download them entirely.
