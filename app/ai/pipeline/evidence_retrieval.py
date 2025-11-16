@@ -170,7 +170,7 @@ async def gather_evidence_async(
     if gatherers is None:
         gatherers = [WebSearchGatherer(max_results=5)]
 
-    # initialize result map
+    # initialize result map (maps claim id to its enriched claim)
     claim_evidence_map: Dict[str, EnrichedClaim] = {}
 
     # process each claim

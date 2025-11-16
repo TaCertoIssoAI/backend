@@ -16,6 +16,7 @@ from .factchecking import (
     DataSourceWithClaims,
     ClaimVerdict,
     DataSourceResult,
+    EvidenceRetrievalInput
 )
 from .llm import LLMConfig
 
@@ -45,5 +46,6 @@ __all__ = [
     "DataSourceWithClaims",
     "ClaimVerdict",
     "DataSourceResult",
+    "EvidenceRetrievalInput",
 ]
 

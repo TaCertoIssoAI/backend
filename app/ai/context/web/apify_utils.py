@@ -5,6 +5,7 @@ apify integration utilities for web scraping
 import os
 import re
 import logging
+import time
 from typing import Optional
 from enum import Enum
 
@@ -45,6 +46,74 @@ ACTOR_MAP = {
     PlatformType.TIKTOK: "clockworks/tiktok-scraper",
     PlatformType.GENERIC: "apify/website-content-crawler"
 }
+
+# compiled regex for fast non-printable character removal
+# matches any character that is NOT: printable, newline, carriage return, tab, or space
+NON_PRINTABLE_PATTERN = re.compile(r'[^\x20-\x7E\x0A\x0D\x09\u0080-\uFFFF]')
+
+
+def has_corruption(text: str, sample_size: int = 1000, threshold: float = 0.1) -> bool:
+    """
+    quickly check if text contains corrupted/binary content.
+    samples first N characters and checks for non-printable ratio.
+
+    args:
+        text: text to check
+        sample_size: number of characters to sample
+        threshold: ratio of non-printable chars that indicates corruption (0.0-1.0)
+
+    returns:
+        True if text appears corrupted
+    """
+    if not text:
+        return False
+
+    start_time = time.perf_counter()
+
+    sample = text[:sample_size]
+    # count non-printable chars (excluding whitespace)
+    non_printable = sum(1 for c in sample if not (c.isprintable() or c in '\n\r\t '))
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+    is_corrupt = (non_printable / len(sample)) > threshold
+
+    logger.info(
+        f"[BENCHMARK] corruption check: {elapsed_ms:.2f}ms | "
+        f"sample={len(sample)} chars | "
+        f"non_printable={non_printable} ({non_printable/len(sample)*100:.1f}%) | "
+        f"corrupt={is_corrupt}"
+    )
+
+    return is_corrupt
+
+
+def clean_non_printable(text: str) -> str:
+    """
+    remove non-printable characters from text using fast regex.
+    much faster than character-by-character iteration.
+    preserves: printable ASCII, whitespace, and unicode characters.
+
+    args:
+        text: text to clean
+
+    returns:
+        cleaned text
+    """
+    start_time = time.perf_counter()
+    original_length = len(text)
+
+    cleaned = NON_PRINTABLE_PATTERN.sub('', text)
+
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+    removed = original_length - len(cleaned)
+
+    logger.info(
+        f"[BENCHMARK] cleaned non-printable chars: {elapsed_ms:.2f}ms | "
+        f"original={original_length} chars | "
+        f"removed={removed} chars ({removed/original_length*100:.2f}%)"
+    )
+
+    return cleaned
 
 
 def detectPlatform(url: str) -> PlatformType:
@@ -318,13 +387,8 @@ async def scrapeGenericSimple(url: str, maxChars: Optional[int] = None) -> dict:
             html_content = response.text
 
             # detect if we got corrupted/binary content (decompression failure)
-            # count non-printable characters in first 1000 chars
-            sample = html_content[:1000]
-            non_printable_count = sum(1 for c in sample if not (c.isprintable() or c in '\n\r\t '))
-
-            # if more than 20% of sample is non-printable, likely decompression failed
-            if sample and (non_printable_count / len(sample)) > 0.2:
-                logger.warning(f"detected binary/corrupted content (decompression failure?) - {non_printable_count}/{len(sample)} non-printable chars")
+            if has_corruption(html_content, sample_size=1000, threshold=0.2):
+                logger.warning("detected binary/corrupted content (decompression failure?)")
                 return {
                     "success": False,
                     "content": "",
@@ -365,12 +429,13 @@ async def scrapeGenericSimple(url: str, maxChars: Optional[int] = None) -> dict:
             # clean up excessive whitespace
             text_content = re.sub(r'\n\s*\n\s*\n+', '\n\n', text_content)
             text_content = text_content.strip()
-            
-            # remove non-printable characters to ensure clean text
-            text_content = ''.join(
-                c for c in text_content
-                if c.isprintable() or c in '\n\r\t '
-            )
+
+            # only clean non-printable chars if we detect issues (faster)
+            if has_corruption(text_content, sample_size=500, threshold=0.05):
+                logger.info("[BENCHMARK] corruption detected - cleaning non-printable characters")
+                text_content = clean_non_printable(text_content)
+            else:
+                logger.info("[BENCHMARK] content is clean - skipping character cleaning (performance optimization)")
             
             if not text_content or len(text_content) < 50:
                 logger.warning(f"extracted content too short: {len(text_content)} chars")
@@ -456,12 +521,14 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
         
         item = listItemsResult.items[0]
         raw_content = item.get("text", "") or item.get("markdown", "") or item.get("html", "")
-        
-        # clean non-printable characters from apify content
-        content = ''.join(
-            c for c in raw_content
-            if c.isprintable() or c in '\n\r\t '
-        )
+
+        # only clean non-printable chars if we detect issues (faster)
+        if has_corruption(raw_content, sample_size=500, threshold=0.05):
+            logger.info("[BENCHMARK] corruption detected in apify content - cleaning non-printable characters")
+            content = clean_non_printable(raw_content)
+        else:
+            logger.info("[BENCHMARK] apify content is clean - skipping character cleaning (performance optimization)")
+            content = raw_content
         
         if maxChars and len(content) > maxChars:
             content = content[:maxChars]
