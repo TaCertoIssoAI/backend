@@ -12,6 +12,17 @@ if [ ! -f .env ]; then
     cp env.example .env
     echo "✅ Arquivo .env criado. Configure suas variáveis de ambiente!"
     echo ""
+    echo "⚠️  IMPORTANTE: Configure o APIFY_TOKEN no arquivo .env"
+    echo ""
+fi
+
+# Verificar se APIFY_TOKEN está configurado
+if [ -f .env ]; then
+    if grep -q "APIFY_TOKEN=your_apify_token_here" .env || ! grep -q "APIFY_TOKEN=" .env; then
+        echo "⚠️  ATENÇÃO: APIFY_TOKEN não está configurado no .env"
+        echo "Por favor, adicione seu token do Apify em .env"
+        echo ""
+    fi
 fi
 
 # Build das imagens
@@ -48,14 +59,15 @@ echo "✅ Backend iniciado com sucesso!"
 echo ""
 echo "📍 URLs disponíveis:"
 echo "   - API Backend: http://localhost:8000"
-echo "   - API Docs: http://localhost:8000/docs"
+echo "   - API Docs (Swagger): http://localhost:8000/docs"
 echo "   - Health Check: http://localhost:8000/health"
-echo "   - Selenium Grid: http://localhost:4444"
-echo "   - Selenium VNC: vnc://localhost:7900 (para debug)"
+echo "   - Scraping Status: http://localhost:8000/api/scraping-status"
 echo ""
 echo "📝 Comandos úteis:"
-echo "   - Ver logs: docker-compose logs -f backend"
-echo "   - Parar: docker-compose down"
+echo "   - Ver logs: ./docker-logs.sh"
+echo "   - Parar: ./docker-stop.sh"
 echo "   - Restart: docker-compose restart backend"
 echo ""
-
+echo "🧪 Testar scraping:"
+echo "   curl http://localhost:8000/api/scraping-status"
+echo ""

@@ -1,0 +1,32 @@
+---
+alwaysApply: true
+---
+
+## Facebook Posts Actor
+
+Get run
+View API reference
+Returns an object containing all details of this run.
+
+"https://api.apify.com/v2/actor-runs/82fpg2IAXTUqRg0XC?token="
+
+Get Input
+Returns the input of this run from its key-value store.
+
+"https://api.apify.com/v2/key-value-stores/B3dNPklulOJ8ThzS7/records/INPUT?token="
+
+Get dataset items
+View API reference
+Returns items stored in default dataset of this run.
+
+"https://api.apify.com/v2/datasets/Zq6MKEqg8lblgnTQm/items?token="
+
+Get log
+View API reference
+
+"https://api.apify.com/v2/logs/82fpg2IAXTUqRg0XC?token="
+
+Resurrect run
+View API reference
+
+"https://api.apify.com/v2/actor-runs/82fpg2IAXTUqRg0XC/resurrect?token="

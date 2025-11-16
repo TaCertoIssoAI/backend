@@ -18,6 +18,9 @@ services:
       # AI Services (será sobrescrito por .env se existir)
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       
+      # Web Scraping (Apify)
+      - APIFY_TOKEN=${APIFY_TOKEN:-}
+      
       # Processing Limits
       - MAX_TEXT_LENGTH=10000
       - MAX_IMAGE_SIZE_MB=10
