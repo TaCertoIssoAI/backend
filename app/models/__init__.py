@@ -13,6 +13,10 @@ from .factchecking import (
     FactCheckResult,
     ClaimSource,
     ClaimSourceType,
+    VerdictType,
+    DataSourceWithClaims,
+    ClaimVerdict,
+    DataSourceResult,
 )
 from .llm import LLMConfig
 
@@ -20,6 +24,7 @@ from .commondata import DataSource
 
 # Rebuild models that have forward references now that DataSource is imported
 ClaimExtractionInput.model_rebuild()
+DataSourceWithClaims.model_rebuild()
 
 __all__ = [
     "UserInput",
@@ -37,6 +42,10 @@ __all__ = [
     "ClaimSource",
     "LLMConfig",
     "ClaimSourceType",
-    "DataSource"
+    "DataSource",
+    "VerdictType",
+    "DataSourceWithClaims",
+    "ClaimVerdict",
+    "DataSourceResult",
 ]
 

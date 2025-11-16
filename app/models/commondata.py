@@ -60,10 +60,14 @@ class DataSource(BaseModel):
         """
         parts: List[str] = []
         
-        # Add metadata as key-value pairs
+        # Always add source header with type and ID
+        parts.append(f"Tipo da fonte: {self.source_type}")
+        parts.append(f"ID da fonte: {self.id}")
+
+
+        # Add additional metadata if present
         if self.metadata:
-            parts.append(f"=== Source: {self.source_type} (ID: {self.id}) ===")
-            parts.append(f"=== Source Metadata ===")
+            parts.append("=== Metadados Adicionais ===")
             # Type narrowing for linter
             meta: dict[str, str] = dict[str, str](self.metadata)
             for key in meta:
@@ -73,8 +77,11 @@ class DataSource(BaseModel):
                 parts.append(f"{formatted_key}: {value}")
             parts.append("")  # Empty line separator
         
+        # Add separator before original text
+        parts.append("\nTexto Original da fonte: ")
+        
         # Add the original text
-        parts.append(self.original_text)
+        parts.append('"' + self.original_text + '"')
         
         return "\n".join(parts)
 

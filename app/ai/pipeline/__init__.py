@@ -21,30 +21,50 @@ from .claim_extractor import (
     build_claim_extraction_chain,
 )
 
+from .judgement import (
+    adjudicate_claims,
+    adjudicate_claims_async,
+    build_adjudication_chain,
+    format_adjudication_input,
+)
+
 from .prompts import (
     get_claim_extraction_prompt,
     CLAIM_EXTRACTION_SYSTEM_PROMPT,
     CLAIM_EXTRACTION_USER_PROMPT,
+    get_adjudication_prompt,
+    ADJUDICATION_SYSTEM_PROMPT,
+    ADJUDICATION_USER_PROMPT,
 )
 
-# Re-export the data model from app.models for convenience
-from app.models import ClaimExtractionOutput
+# Re-export data models from app.models for convenience
+from app.models import ClaimExtractionOutput, FactCheckResult
 
 __all__ = [
-    # Main extraction functions
+    # Claim extraction functions
     "extract_claims",
     "extract_claims_async",
     "extract_and_validate_claims",
-
-    # Helper functions
     "validate_claims",
     "build_claim_extraction_chain",
+    
+    # Adjudication functions
+    "adjudicate_claims",
+    "adjudicate_claims_async",
+    "build_adjudication_chain",
+    "format_adjudication_input",
 
     # Data models
     "ClaimExtractionOutput",
+    "FactCheckResult",
 
-    # Prompts
+    # Claim extraction prompts
     "get_claim_extraction_prompt",
     "CLAIM_EXTRACTION_SYSTEM_PROMPT",
     "CLAIM_EXTRACTION_USER_PROMPT",
+    
+    # Adjudication prompts
+    "get_adjudication_prompt",
+    "ADJUDICATION_SYSTEM_PROMPT",
+    "ADJUDICATION_USER_PROMPT",
 ]
