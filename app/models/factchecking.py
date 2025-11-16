@@ -1,8 +1,13 @@
-from typing import List, Optional, Dict, Literal
+from __future__ import annotations
+
+from typing import List, Optional, Dict, Literal, TYPE_CHECKING
 from pydantic import BaseModel, Field, ConfigDict
 
+if TYPE_CHECKING:
+    from .commondata import DataSource
+
 # This file defines models from each step of the fact-checking pipeline, with a focus on NEW data from one step to another. Common and repeated data from other steps are saved in
-# the commondata.py file classes, whereas this file focuses on the new aggregated data between each step
+# the DataSource.py file classes, whereas this file focuses on the new aggregated data between each step
 
 
 # Common data models for several pipeline steps
@@ -73,27 +78,24 @@ class EnrichedLink(BaseModel):
 # ===== STEP 3: CLAIM EXTRACTION =====
 
 class ClaimExtractionInput(BaseModel):
-    """Input chunk from which claims will be extracted."""
+    """Input for claim extraction step - wraps a DataSource."""
 
-    source_id: str = Field(
+    data_source: "DataSource" = Field(
         ...,
-        description="UUID for the source; can be an image, link, video or text object",
-    )
-    type: ClaimSourceType = Field(
-        ...,
-        description="Type of the source that produced this text",
-    )
-    text: str = Field(
-        ...,
-        description="Full text used for claim extraction (caption, transcript, article body, etc)",
+        description="The data source from which claims will be extracted",
     )
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "source_id": "img-uuid-123",
-                "type": "image",
-                "text": "The image caption says that vaccine X causes infertility in women.",
+                "data_source": {
+                    "id": "img-uuid-123",
+                    "source_type": "image",
+                    "original_text": "The image caption says that vaccine X causes infertility in women.",
+                    "metadata": {},
+                    "locale": "pt-BR",
+                    "timestamp": "2024-11-05T14:30:00Z"
+                }
             }
         }
     )
@@ -293,7 +295,7 @@ class AdjudicationInput(BaseModel):
         }
     })
 
-    evidence_map: Dict[str, EnrichedClaim] = Field(..., description="Evidence for each claim id")
+    evidence_map: Dict[DataSource, EnrichedClaim] = Field(..., description="Evidence for each claim id")
     additional_context: Optional[str] = Field(None, description="Any additional context")
 
 

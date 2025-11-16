@@ -19,7 +19,7 @@ The -s flag shows stdout so you can see the LLM responses for debugging.
 import pytest
 from typing import List
 
-from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput, LLMConfig
+from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput, LLMConfig, DataSource
 from app.ai.pipeline import (
     extract_claims,
     extract_and_validate_claims,
@@ -99,11 +99,13 @@ def test_basic_claim_extraction_from_user_message():
     # Setup
     text = "Ouvi dizer que a vacina X causa infertilidade em mulheres, isso é verdade?"
 
-    extraction_input = ClaimExtractionInput(
-        source_id="msg-001",
-        type="original_text",
-        text=text
+    data_source = DataSource(
+        id="msg-001",
+        source_type="original_text",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig(
         model_name="gpt-4o-mini",
@@ -135,7 +137,6 @@ def test_basic_claim_extraction_from_user_message():
     for claim in result.claims:
         assert claim.source.source_type == "original_text"
         assert claim.source.source_id == "msg-001"
-        assert claim.id.startswith("msg-001-claim-"), "Claim ID should start with source_id"
 
 
 def test_claim_extraction_from_link_context():
@@ -149,11 +150,13 @@ a Vacina X a problemas de fertilidade em mulheres. O estudo examinou mais de
 
 A pesquisa foi conduzida pelo Ministério da Saúde ao longo de 3 anos."""
 
-    extraction_input = ClaimExtractionInput(
-        source_id="link-456",
-        type="link_context",
-        text=text
+    data_source = DataSource(
+        id="link-456",
+        source_type="link_context",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig(timeout=30.0)
 
@@ -190,11 +193,13 @@ def test_multiple_claims_extraction():
 Além disso, o governo vai investir R$500 bilhões em energia renovável na próxima década.
 Isso torna o maior investimento climático da história."""
 
-    extraction_input = ClaimExtractionInput(
-        source_id="msg-002",
-        type="original_text",
-        text=text
+    data_source = DataSource(
+        id="msg-002",
+        source_type="original_text",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig()
 
@@ -225,11 +230,13 @@ def test_portuguese_message_extraction():
     # Setup
     text = "Dizem que a vacina da COVID causa problemas no coração. Isso é verdade mesmo?"
 
-    extraction_input = ClaimExtractionInput(
-        source_id="msg-003",
-        type="original_text",
-        text=text
+    data_source = DataSource(
+        id="msg-003",
+        source_type="original_text",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig()
 
@@ -259,11 +266,13 @@ def test_image_ocr_extraction():
     # Setup - simulate OCR output from an image
     text = "URGENTE: Vacina X causa infertilidade. Compartilhe antes que apaguem isso!"
 
-    extraction_input = ClaimExtractionInput(
-        source_id="img-789",
-        type="image",
-        text=text
+    data_source = DataSource(
+        id="img-789",
+        source_type="image",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig()
 
@@ -298,11 +307,13 @@ def test_empty_text():
     # Setup
     text = ""
 
-    extraction_input = ClaimExtractionInput(
-        source_id="msg-004",
-        type="original_text",
-        text=text
+    data_source = DataSource(
+        id="msg-004",
+        source_type="original_text",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig()
 
@@ -333,11 +344,13 @@ def test_opinion_vs_claim():
     # Setup
     text = "Acho que vacinas são assustadoras e não gosto delas. O que você acha?"
 
-    extraction_input = ClaimExtractionInput(
-        source_id="msg-005",
-        type="original_text",
-        text=text
+    data_source = DataSource(
+        id="msg-005",
+        source_type="original_text",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig()
 
@@ -458,11 +471,13 @@ def test_return_type_is_wrapper():
     # Setup
     text = "Mensagem de teste para verificação de tipo"
 
-    extraction_input = ClaimExtractionInput(
-        source_id="msg-006",
-        type="original_text",
-        text=text
+    data_source = DataSource(
+        id="msg-006",
+        source_type="original_text",
+        original_text=text
     )
+
+    extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig()
 

@@ -78,6 +78,13 @@ class DataSource(BaseModel):
         
         return "\n".join(parts)
 
+    def __hash__(self) -> int:
+        return hash(self.id)
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DataSource):
+            return False
+        return self.id == other.id
 
 class StepTiming(BaseModel):
     model_config = ConfigDict(json_schema_extra={
