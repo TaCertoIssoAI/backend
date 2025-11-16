@@ -21,6 +21,12 @@ from .claim_extractor import (
     build_claim_extraction_chain,
 )
 
+from .link_context_expander import (
+    expand_link_contexts,
+    expand_link_context,
+    extract_links,
+)
+
 from .judgement import (
     adjudicate_claims,
     adjudicate_claims_async,
@@ -47,7 +53,12 @@ __all__ = [
     "extract_and_validate_claims",
     "validate_claims",
     "build_claim_extraction_chain",
-    
+
+    # Link context expansion functions
+    "expand_link_contexts",
+    "expand_link_context",
+    "extract_links",
+
     # Adjudication functions
     "adjudicate_claims",
     "adjudicate_claims_async",
@@ -62,7 +73,7 @@ __all__ = [
     "get_claim_extraction_prompt",
     "CLAIM_EXTRACTION_SYSTEM_PROMPT",
     "CLAIM_EXTRACTION_USER_PROMPT",
-    
+
     # Adjudication prompts
     "get_adjudication_prompt",
     "ADJUDICATION_SYSTEM_PROMPT",
