@@ -146,7 +146,7 @@ def extract_claims(
     claims: List[ExtractedClaim] = []
     for llm_claim in result.claims:
         # Generate unique ID with source prefix
-        claim_id = f"{extraction_input.data_source.id}-claim-{uuid.uuid4()}"
+        claim_id = f"{uuid.uuid4()}"
 
         # Build the ClaimSource object
         source = ClaimSource(
@@ -197,8 +197,8 @@ async def extract_claims_async(
     # Convert LLM output to full ExtractedClaim objects with ID and source
     claims: List[ExtractedClaim] = []
     for llm_claim in result.claims:
-        # Generate unique ID with source prefix
-        claim_id = f"{extraction_input.data_source.id}-claim-{uuid.uuid4()}"
+        # Generate unique ID
+        claim_id = f"{uuid.uuid4()}"
 
         # Build the ClaimSource object
         source = ClaimSource(

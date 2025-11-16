@@ -137,7 +137,6 @@ def test_basic_claim_extraction_from_user_message():
     for claim in result.claims:
         assert claim.source.source_type == "original_text"
         assert claim.source.source_id == "msg-001"
-        assert claim.id.startswith("msg-001-claim-"), "Claim ID should start with source_id"
 
 
 def test_claim_extraction_from_link_context():
