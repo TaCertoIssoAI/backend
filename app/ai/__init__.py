@@ -10,4 +10,9 @@ Submodules:
 - adjudicator: Adjudicate claims with LLM
 """
 
-__all__ = []
+from .main_pipeline import run_fact_check_pipeline
+
+
+__all__ = [
+    "run_fact_check_pipeline"
+]
