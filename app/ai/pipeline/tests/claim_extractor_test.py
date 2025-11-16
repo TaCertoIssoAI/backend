@@ -19,7 +19,7 @@ The -s flag shows stdout so you can see the LLM responses for debugging.
 import pytest
 from typing import List
 
-from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput
+from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput, LLMConfig
 from app.ai.pipeline import (
     extract_claims,
     extract_and_validate_claims,
@@ -97,7 +97,7 @@ def validate_claims_list(claims: List[ExtractedClaim]):
 def test_basic_claim_extraction_from_user_message():
     """Test basic claim extraction from a user message."""
     # Setup
-    text = "I heard that vaccine X causes infertility in women, is this true?"
+    text = "Ouvi dizer que a vacina X causa infertilidade em mulheres, isso é verdade?"
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-001",
@@ -105,25 +105,34 @@ def test_basic_claim_extraction_from_user_message():
         text=text
     )
 
-    # Execute
-    claims = extract_and_validate_claims(
-        extraction_input=extraction_input,
+    llm_config = LLMConfig(
+        model_name="gpt-4o-mini",
+        temperature=0.0,
         timeout=30.0
     )
 
+    # Execute
+    result = extract_and_validate_claims(
+        extraction_input=extraction_input,
+        llm_config=llm_config
+    )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Basic Claim Extraction from User Message",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract at least one claim"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract at least one claim"
 
     # Check source tracking
-    for claim in claims:
+    for claim in result.claims:
         assert claim.source.source_type == "original_text"
         assert claim.source.source_id == "msg-001"
         assert claim.id.startswith("msg-001-claim-"), "Claim ID should start with source_id"
@@ -132,13 +141,13 @@ def test_basic_claim_extraction_from_user_message():
 def test_claim_extraction_from_link_context():
     """Test claim extraction from link/article content."""
     # Setup - simulate content extracted from a link
-    text = """=== Article: New Study on Vaccine Safety ===
+    text = """=== Artigo: Novo Estudo sobre Segurança de Vacinas ===
 
-A comprehensive study published today found no evidence linking
-Vaccine X to fertility issues in women. The study examined over
-50,000 participants and concluded that the vaccine is safe.
+Um estudo abrangente publicado hoje não encontrou evidências ligando
+a Vacina X a problemas de fertilidade em mulheres. O estudo examinou mais de
+50.000 participantes e concluiu que a vacina é segura.
 
-The research was conducted by the Ministry of Health over 3 years."""
+A pesquisa foi conduzida pelo Ministério da Saúde ao longo de 3 anos."""
 
     extraction_input = ClaimExtractionInput(
         source_id="link-456",
@@ -146,25 +155,30 @@ The research was conducted by the Ministry of Health over 3 years."""
         text=text
     )
 
+    llm_config = LLMConfig(timeout=30.0)
+
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input,
-        timeout=30.0
+        llm_config=llm_config
     )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
 
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Claim Extraction from Link Context",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract claims from article"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract claims from article"
 
     # Check source tracking
-    for claim in claims:
+    for claim in result.claims:
         assert claim.source.source_type == "link_context"
         assert claim.source.source_id == "link-456"
 
@@ -172,9 +186,9 @@ The research was conducted by the Ministry of Health over 3 years."""
 def test_multiple_claims_extraction():
     """Test extraction of multiple claims from one text."""
     # Setup
-    text = """The president announced a new carbon tax of $50 per ton.
-Additionally, the government will invest $100 billion in renewable energy over the next decade.
-This makes it the largest climate investment in history."""
+    text = """O presidente anunciou um novo imposto sobre carbono de R$250 por tonelada.
+Além disso, o governo vai investir R$500 bilhões em energia renovável na próxima década.
+Isso torna o maior investimento climático da história."""
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-002",
@@ -182,20 +196,26 @@ This makes it the largest climate investment in history."""
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
-    claims = extract_and_validate_claims(
-        extraction_input=extraction_input
+    result = extract_and_validate_claims(
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
 
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Multiple Claims Extraction",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
+    validate_claims_list(result.claims)
     # We expect multiple claims but don't assert specific number
     # as LLM behavior may vary
 
@@ -211,27 +231,33 @@ def test_portuguese_message_extraction():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
-    claims = extract_and_validate_claims(
-        extraction_input=extraction_input
+    result = extract_and_validate_claims(
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
 
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Portuguese Message Extraction",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract at least one claim from Portuguese text"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract at least one claim from Portuguese text"
 
 
 def test_image_ocr_extraction():
     """Test claim extraction from simulated image OCR text."""
     # Setup - simulate OCR output from an image
-    text = "BREAKING NEWS: Vaccine X causes infertility. Share before they delete this!"
+    text = "URGENTE: Vacina X causa infertilidade. Compartilhe antes que apaguem isso!"
 
     extraction_input = ClaimExtractionInput(
         source_id="img-789",
@@ -239,24 +265,30 @@ def test_image_ocr_extraction():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
-    claims = extract_and_validate_claims(
-        extraction_input=extraction_input
+    result = extract_and_validate_claims(
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
 
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Image OCR Extraction",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract claim from OCR text"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract claim from OCR text"
 
     # Check source tracking
-    for claim in claims:
+    for claim in result.claims:
         assert claim.source.source_type == "image"
         assert claim.source.source_id == "img-789"
 
@@ -272,28 +304,34 @@ def test_empty_text():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
-    claims = extract_and_validate_claims(
-        extraction_input=extraction_input
+    result = extract_and_validate_claims(
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
 
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Empty Text",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
+    validate_claims_list(result.claims)
     # With empty text, should return empty list or handle gracefully
-    assert len(claims) == 0, "Empty text should result in no claims"
+    assert len(result.claims) == 0, "Empty text should result in no claims"
 
 
 def test_opinion_vs_claim():
     """Test that LLM can distinguish opinions from fact-checkable claims."""
     # Setup
-    text = "I think vaccines are scary and I don't like them. What do you think?"
+    text = "Acho que vacinas são assustadoras e não gosto delas. O que você acha?"
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-005",
@@ -301,20 +339,26 @@ def test_opinion_vs_claim():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
-    claims = extract_and_validate_claims(
-        extraction_input=extraction_input
+    result = extract_and_validate_claims(
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
+
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
 
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Opinion vs Claim",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
+    validate_claims_list(result.claims)
     # This is pure opinion, not a fact-checkable claim
     # LLM should ideally return empty or very few claims
 
@@ -327,13 +371,13 @@ def test_validate_claims_function():
     claims = [
         ExtractedClaim(
             id="claim-1",
-            text="Valid claim about vaccines",
+            text="Afirmação válida sobre vacinas",
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="This is valid",
-            entities=["vaccines"]
+            llm_comment="Esta é válida",
+            entities=["vacinas"]
         ),
         ExtractedClaim(
             id="claim-2",
@@ -342,28 +386,28 @@ def test_validate_claims_function():
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="Empty",
+            llm_comment="Vazia",
             entities=[]
         ),
         ExtractedClaim(
             id="claim-3",
-            text="Valid claim about vaccines",  # Duplicate - should be filtered
+            text="Afirmação válida sobre vacinas",  # Duplicate - should be filtered
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="This is duplicate",
-            entities=["vaccines"]
+            llm_comment="Esta é duplicada",
+            entities=["vacinas"]
         ),
         ExtractedClaim(
             id="claim-4",
-            text="Another valid claim",
+            text="Outra afirmação válida",
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="Also valid",
-            entities=["claim"]
+            llm_comment="Também válida",
+            entities=["afirmação"]
         ),
     ]
 
@@ -383,20 +427,22 @@ def test_validate_claims_function():
 
     # Validate
     assert len(validated) == 2, "Should filter out empty and duplicate claims"
-    assert validated[0].text == "Valid claim about vaccines"
-    assert validated[1].text == "Another valid claim"
+    assert validated[0].text == "Afirmação válida sobre vacinas"
+    assert validated[1].text == "Outra afirmação válida"
 
 
 def test_chain_building():
     """Test that the chain can be built without errors."""
     from app.ai.pipeline import build_claim_extraction_chain
 
-    # Build chain
-    chain = build_claim_extraction_chain(
+    llm_config = LLMConfig(
         model_name="gpt-4o-mini",
         temperature=0.0,
         timeout=30.0
     )
+
+    # Build chain
+    chain = build_claim_extraction_chain(llm_config=llm_config)
 
     # Validate
     assert chain is not None, "Chain should be built successfully"
@@ -407,10 +453,10 @@ def test_chain_building():
     print()
 
 
-def test_return_type_is_list():
-    """Test that extract_claims returns a List[ExtractedClaim], not a wrapper."""
+def test_return_type_is_wrapper():
+    """Test that extract_claims returns ClaimExtractionOutput wrapper for type safety."""
     # Setup
-    text = "Test message for type checking"
+    text = "Mensagem de teste para verificação de tipo"
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-006",
@@ -418,20 +464,25 @@ def test_return_type_is_list():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
-    # Validate type
-    assert isinstance(result, list), "Result should be a list, not a wrapper object"
-    assert not isinstance(result, ClaimExtractionOutput), "Result should be List[ExtractedClaim], not ClaimExtractionOutput"
+    # Validate type - should be wrapper, not raw list
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput wrapper"
+    assert hasattr(result, 'claims'), "Wrapper should have 'claims' attribute"
+    assert isinstance(result.claims, list), "The 'claims' attribute should be a list"
 
     print("\n" + "=" * 80)
     print("TEST: Return Type Check")
     print("=" * 80)
-    print(f"\n✓ Correct return type: {type(result)}")
-    print(f"✓ Returns list directly, not wrapped in ClaimExtractionOutput")
+    print(f"\n✓ Correct return type: {type(result).__name__}")
+    print(f"✓ Returns ClaimExtractionOutput wrapper for type safety")
+    print(f"✓ Wrapper contains {len(result.claims)} claim(s)")
     print()
 
 

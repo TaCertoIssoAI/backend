@@ -25,7 +25,9 @@ from langchain_core.runnables import Runnable
 from app.models import (
     ClaimExtractionInput,
     ExtractedClaim,
+    ClaimExtractionOutput,
     ClaimSource,
+    LLMConfig,
 )
 from .prompts import get_claim_extraction_prompt
 
@@ -51,9 +53,7 @@ class _LLMClaimOutput(BaseModel):
 # ===== CHAIN CONSTRUCTION =====
 
 def build_claim_extraction_chain(
-    model_name: str = "gpt-4o-mini",
-    temperature: float = 0.0,
-    timeout: Optional[float] = None
+    llm_config: LLMConfig
 ) -> Runnable:
     """
     Builds the LCEL chain for claim extraction.
@@ -62,9 +62,7 @@ def build_claim_extraction_chain(
         prompt | model.with_structured_output() -> ClaimExtractionOutput
 
     Args:
-        model_name: OpenAI model to use (default: gpt-4o-mini for cost efficiency)
-        temperature: Model temperature (default: 0.0 for deterministic extraction)
-        timeout: Optional timeout in seconds for the model call
+        llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
         A Runnable chain that takes dict input and returns ClaimExtractionOutput
@@ -79,9 +77,9 @@ def build_claim_extraction_chain(
 
     # Initialize the model with structured output
     model = ChatOpenAI(
-        model=model_name,
-        temperature=temperature,
-        timeout=timeout,
+        model=llm_config.model_name,
+        temperature=llm_config.temperature,
+        timeout=llm_config.timeout,
     )
 
     # Bind the structured output schema to enforce JSON format
@@ -101,10 +99,8 @@ def build_claim_extraction_chain(
 
 def extract_claims(
     extraction_input: ClaimExtractionInput,
-    model_name: str = "gpt-4o-mini",
-    temperature: float = 0.0,
-    timeout: Optional[float] = 30.0
-) -> List[ExtractedClaim]:
+    llm_config: LLMConfig
+) -> ClaimExtractionOutput:
     """
     Extracts fact-checkable claims from a text chunk.
 
@@ -113,34 +109,29 @@ def extract_claims(
 
     Args:
         extraction_input: Input containing source_id, type, and text to extract from
-        model_name: OpenAI model to use
-        temperature: Model temperature
-        timeout: Timeout in seconds for the model call
+        llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
-        List of ExtractedClaim objects with unique IDs and source tracking
+        ClaimExtractionOutput containing list of ExtractedClaim objects with unique IDs and source tracking
 
     Example:
-        >>> from app.models import ClaimExtractionInput
+        >>> from app.models import ClaimExtractionInput, LLMConfig
         >>> input_data = ClaimExtractionInput(
         ...     source_id="msg-123",
         ...     type="original_text",
         ...     text="I heard vaccine X causes infertility in women."
         ... )
-        >>> claims = extract_claims(input_data)
-        >>> print(len(claims))
+        >>> config = LLMConfig(model_name="gpt-4o-mini", temperature=0.0)
+        >>> result = extract_claims(input_data, llm_config=config)
+        >>> print(len(result.claims))
         1
-        >>> print(claims[0].text)
+        >>> print(result.claims[0].text)
         "Vaccine X causes infertility in women"
-        >>> print(claims[0].source.source_type)
+        >>> print(result.claims[0].source.source_type)
         "original_text"
     """
     # Build the chain
-    chain = build_claim_extraction_chain(
-        model_name=model_name,
-        temperature=temperature,
-        timeout=timeout
-    )
+    chain = build_claim_extraction_chain(llm_config=llm_config)
 
     # Prepare input for the prompt template
     chain_input = {
@@ -172,15 +163,13 @@ def extract_claims(
         )
         claims.append(claim)
 
-    return claims
+    return ClaimExtractionOutput(claims=claims)
 
 
 async def extract_claims_async(
     extraction_input: ClaimExtractionInput,
-    model_name: str = "gpt-4o-mini",
-    temperature: float = 0.0,
-    timeout: Optional[float] = 30.0
-) -> List[ExtractedClaim]:
+    llm_config: LLMConfig
+) -> ClaimExtractionOutput:
     """
     Async version of extract_claims.
 
@@ -188,19 +177,13 @@ async def extract_claims_async(
 
     Args:
         extraction_input: Input containing source_id, type, and text to extract from
-        model_name: OpenAI model to use
-        temperature: Model temperature
-        timeout: Timeout in seconds
+        llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
-        List of ExtractedClaim objects with unique IDs and source tracking
+        ClaimExtractionOutput containing list of ExtractedClaim objects with unique IDs and source tracking
     """
     # Build the chain
-    chain = build_claim_extraction_chain(
-        model_name=model_name,
-        temperature=temperature,
-        timeout=timeout
-    )
+    chain = build_claim_extraction_chain(llm_config=llm_config)
 
     # Prepare input for the prompt template
     chain_input = {
@@ -232,7 +215,7 @@ async def extract_claims_async(
         )
         claims.append(claim)
 
-    return claims
+    return ClaimExtractionOutput(claims=claims)
 
 
 # ===== HELPER FUNCTIONS =====
@@ -277,10 +260,8 @@ def validate_claims(claims: List[ExtractedClaim]) -> List[ExtractedClaim]:
 
 def extract_and_validate_claims(
     extraction_input: ClaimExtractionInput,
-    model_name: str = "gpt-4o-mini",
-    temperature: float = 0.0,
-    timeout: Optional[float] = 30.0
-) -> List[ExtractedClaim]:
+    llm_config: LLMConfig
+) -> ClaimExtractionOutput:
     """
     Extracts claims and validates them in one call.
 
@@ -288,18 +269,15 @@ def extract_and_validate_claims(
 
     Args:
         extraction_input: Input containing source_id, type, and text to extract from
-        model_name: OpenAI model to use
-        temperature: Model temperature
-        timeout: Timeout in seconds
+        llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
-        Validated list of ExtractedClaim objects with source tracking
+        ClaimExtractionOutput containing validated list of ExtractedClaim objects with source tracking
     """
-    claims = extract_claims(
+    result = extract_claims(
         extraction_input=extraction_input,
-        model_name=model_name,
-        temperature=temperature,
-        timeout=timeout
+        llm_config=llm_config
     )
 
-    return validate_claims(claims)
+    validated_claims = validate_claims(result.claims)
+    return ClaimExtractionOutput(claims=validated_claims)
