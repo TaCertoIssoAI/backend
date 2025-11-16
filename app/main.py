@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import scraping, research
+from app.api.endpoints import scraping, research, text
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -19,12 +19,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# rotas de scraping e research
+# rotas de scraping, research e fact-checking
 app.include_router(scraping.router, prefix="/api", tags=["scraping"])
 app.include_router(research.router, prefix="/api", tags=["research"])
-
-# Descomentar quando precisar do pipeline completo:
-# app.include_router(text.router, prefix="/api", tags=["text"])
+app.include_router(text.router, prefix="/api", tags=["fact-checking"])
 
 @app.get("/")
 async def root():
