@@ -35,7 +35,6 @@ class WebContentResult(BaseModel):
     url: str = Field(..., description="URL that was scraped")
     content: str = Field(default="", description="extracted text content from the page")
     content_length: int = Field(default=0, description="length of extracted content in characters")
-    processing_time_ms: int = Field(default=0, description="time taken to process in milliseconds")
     metadata: Optional[SocialMediaMetadata] = Field(None, description="platform-specific metadata if available")
     error: Optional[str] = Field(None, description="error message if scraping failed")
 
@@ -46,7 +45,6 @@ class WebContentResult(BaseModel):
                 "url": "https://www.facebook.com/share/p/16k5YVoKc1/",
                 "content": "Neymar está dando tudo de si para tentar tirar o Santos da zona de rebaixamento",
                 "content_length": 79,
-                "processing_time_ms": 46548,
                 "metadata": {
                     "platform": "facebook",
                     "postUrl": "https://www.facebook.com/share/p/16k5YVoKc1/",
@@ -78,7 +76,6 @@ class WebContentResult(BaseModel):
             ...     "success": True,
             ...     "content": "Article text...",
             ...     "metadata": {"platform": "facebook", "postUrl": "..."},
-            ...     "processing_time_ms": 1500,
             ...     "error": None
             ... }
             >>> result = WebContentResult.from_dict(result_dict, "https://example.com")
@@ -110,7 +107,6 @@ class WebContentResult(BaseModel):
             url=url,
             content=content,
             content_length=content_length,
-            processing_time_ms=data.get("processing_time_ms", 0),
             metadata=social_metadata,
             error=data.get("error"),
         )

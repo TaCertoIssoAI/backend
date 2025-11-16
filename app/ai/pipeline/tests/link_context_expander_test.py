@@ -151,7 +151,6 @@ async def test_expand_link_context_g1_article():
     assert result.url == url
     assert result.content != "", "Content should not be empty"
     assert result.content_length > 0
-    assert result.processing_time_ms > 0
     assert result.error is None
 
     # print for debugging
@@ -161,7 +160,6 @@ async def test_expand_link_context_g1_article():
     print(f"URL: {result.url}")
     print(f"Success: {result.success}")
     print(f"Content length: {result.content_length} chars")
-    print(f"Processing time: {result.processing_time_ms}ms")
     print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
     print(f"{'=' * 80}\n")
 
@@ -178,7 +176,6 @@ async def test_expand_link_context_cnn_brasil_article():
     assert result.url == url
     assert result.content != "", "Content should not be empty"
     assert result.content_length > 0
-    assert result.processing_time_ms > 0
     assert result.error is None
 
     # print for debugging
@@ -188,7 +185,6 @@ async def test_expand_link_context_cnn_brasil_article():
     print(f"URL: {result.url}")
     print(f"Success: {result.success}")
     print(f"Content length: {result.content_length} chars")
-    print(f"Processing time: {result.processing_time_ms}ms")
     print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
     print(f"{'=' * 80}\n")
 
@@ -205,7 +201,6 @@ async def test_expand_link_context_bbc_article():
     assert result.url == url
     assert result.content != "", "Content should not be empty"
     assert result.content_length > 0
-    assert result.processing_time_ms > 0
     assert result.error is None
 
     # print for debugging
@@ -215,7 +210,6 @@ async def test_expand_link_context_bbc_article():
     print(f"URL: {result.url}")
     print(f"Success: {result.success}")
     print(f"Content length: {result.content_length} chars")
-    print(f"Processing time: {result.processing_time_ms}ms")
     print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
     print(f"{'=' * 80}\n")
 
@@ -259,13 +253,11 @@ async def test_expand_link_contexts_with_multiple_real_urls():
         assert source.metadata["success"] is True, f"Source {i} scraping failed"
         assert source.original_text != "", f"Source {i} content is empty"
         assert source.metadata["content_length"] > 0
-        assert source.metadata["processing_time_ms"] > 0
 
         print(f"ID: {source.id}")
         print(f"URL: {source.metadata['url']}")
         print(f"Success: {source.metadata['success']}")
         print(f"Content length: {source.metadata['content_length']} chars")
-        print(f"Processing time: {source.metadata['processing_time_ms']}ms")
         print(f"Content preview (first 150 chars):\n{source.original_text[:150]}...")
         print(f"{'=' * 80}\n")
 

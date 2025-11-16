@@ -154,7 +154,6 @@ async def expand_link_contexts(data_source: DataSource) -> List[DataSource]:
             "success": web_result.success,
             "url": web_result.url,
             "content_length": web_result.content_length,
-            "processing_time_ms": web_result.processing_time_ms,
             "parent_source_id": data_source.id,
         }
 
