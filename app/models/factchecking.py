@@ -107,17 +107,11 @@ class ClaimSource(BaseModel):
         description="Id of the media or segment (message, image, audio, etc) that produced the claim",
     )
 
-    # Link IDs that were part of this source if any (defaults to empty list) - usually EnrichedLink ids
-    link_ids: List[str] = Field(
-        default_factory=list,
-        description="Ids of links that contributed to this claim (for example EnrichedLink ids)",
-    )
-
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "source_type": "link_context",
-                "link_ids": ["link-uuid-123"],
+                "source_id": "uuid-123",
             }
         }
     )

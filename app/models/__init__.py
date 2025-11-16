@@ -9,7 +9,9 @@ from .factchecking import (
     Citation,
     EvidenceRetrievalResult,
     AdjudicationInput,
+    ClaimExtractionInput,
     FactCheckResult,
+    ClaimSource,
 )
 
 __all__ = [
@@ -24,5 +26,7 @@ __all__ = [
     "EvidenceRetrievalResult",
     "AdjudicationInput",
     "FactCheckResult",
+    "ClaimExtractionInput",
+    "ClaimSource",
 ]
 
