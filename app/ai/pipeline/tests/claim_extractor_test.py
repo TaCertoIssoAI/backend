@@ -19,7 +19,7 @@ The -s flag shows stdout so you can see the LLM responses for debugging.
 import pytest
 from typing import List
 
-from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput
+from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput, LLMConfig
 from app.ai.pipeline import (
     extract_claims,
     extract_and_validate_claims,
@@ -105,10 +105,16 @@ def test_basic_claim_extraction_from_user_message():
         text=text
     )
 
+    llm_config = LLMConfig(
+        model_name="gpt-4o-mini",
+        temperature=0.0,
+        timeout=30.0
+    )
+
     # Execute
     result = extract_and_validate_claims(
         extraction_input=extraction_input,
-        timeout=30.0
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -149,10 +155,12 @@ A pesquisa foi conduzida pelo Ministério da Saúde ao longo de 3 anos."""
         text=text
     )
 
+    llm_config = LLMConfig(timeout=30.0)
+
     # Execute
     result = extract_and_validate_claims(
         extraction_input=extraction_input,
-        timeout=30.0
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -188,9 +196,12 @@ Isso torna o maior investimento climático da história."""
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_and_validate_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -220,9 +231,12 @@ def test_portuguese_message_extraction():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_and_validate_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -251,9 +265,12 @@ def test_image_ocr_extraction():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_and_validate_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -287,9 +304,12 @@ def test_empty_text():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_and_validate_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -319,9 +339,12 @@ def test_opinion_vs_claim():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_and_validate_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
     # Validate wrapper type
@@ -412,12 +435,14 @@ def test_chain_building():
     """Test that the chain can be built without errors."""
     from app.ai.pipeline import build_claim_extraction_chain
 
-    # Build chain
-    chain = build_claim_extraction_chain(
+    llm_config = LLMConfig(
         model_name="gpt-4o-mini",
         temperature=0.0,
         timeout=30.0
     )
+
+    # Build chain
+    chain = build_claim_extraction_chain(llm_config=llm_config)
 
     # Validate
     assert chain is not None, "Chain should be built successfully"
@@ -439,9 +464,12 @@ def test_return_type_is_wrapper():
         text=text
     )
 
+    llm_config = LLMConfig()
+
     # Execute
     result = extract_claims(
-        extraction_input=extraction_input
+        extraction_input=extraction_input,
+        llm_config=llm_config
     )
 
     # Validate type - should be wrapper, not raw list
