@@ -278,40 +278,152 @@ class EvidenceRetrievalResult(BaseModel):
 
 
 # ===== STEP 5: ADJUDICATION =====
-class AdjudicationInput(BaseModel):
-    """Input to the adjudication step"""
+
+VerdictType = Literal["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+
+
+class DataSourceWithClaims(BaseModel):
+    """A data source paired with its enriched claims for adjudication"""
     model_config = ConfigDict(json_schema_extra={
         "example": {
-            "evidence_map": {
-                "claim-uuid-1": {
-                    "id": "claim-uuid-1",
-                    "claim_text": "Vaccine X causes infertility in women",
-                    "citations": [],
-                    "search_queries": ["vaccine X infertility"],
-                    "retrieval_notes": "Found multiple contradicting sources"
-                }
+            "data_source": {
+                "id": "msg-001",
+                "source_type": "original_text",
+                "original_text": "Ouvi dizer que a vacina X causa infertilidade em mulheres",
+                "metadata": {},
+                "locale": "pt-BR",
+                "timestamp": "2024-11-16T10:00:00Z"
             },
-            "additional_context": "User seems concerned about vaccine safety"
+            "enriched_claims": [
+                {
+                    "id": "claim-uuid-1",
+                    "claim_text": "Vacina X causa infertilidade em mulheres",
+                    "citations": [
+                        {
+                            "url": "https://saude.gov.br/vacinas",
+                            "title": "Estudo de Segurança de Vacinas",
+                            "publisher": "Ministério da Saúde",
+                            "quoted": "Não foram observadas associações com infertilidade",
+                            "rating": "Falso",
+                            "review_date": "2024-11-05"
+                        }
+                    ],
+                    "search_queries": ["vacina X infertilidade"],
+                    "retrieval_notes": "Encontradas múltiplas fontes contraditórias"
+                }
+            ]
         }
     })
 
-    evidence_map: Dict[DataSource, EnrichedClaim] = Field(..., description="Evidence for each claim id")
-    additional_context: Optional[str] = Field(None, description="Any additional context")
+    data_source: "DataSource" = Field(..., description="The data source from which claims were extracted")
+    enriched_claims: List[EnrichedClaim] = Field(default_factory=list, description="Claims from this source with their evidence")
+
+
+class AdjudicationInput(BaseModel):
+    """Input to the adjudication step - groups enriched claims by their data source"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "sources_with_claims": [
+                {
+                    "data_source": {
+                        "id": "msg-001",
+                        "source_type": "original_text",
+                        "original_text": "Ouvi dizer que a vacina X causa infertilidade",
+                        "metadata": {},
+                        "locale": "pt-BR"
+                    },
+                    "enriched_claims": [
+                        {
+                            "id": "claim-uuid-1",
+                            "claim_text": "Vacina X causa infertilidade em mulheres",
+                            "citations": [],
+                            "search_queries": ["vacina X infertilidade"],
+                            "retrieval_notes": "Encontradas múltiplas fontes"
+                        }
+                    ]
+                }
+            ],
+            "additional_context": "Usuário demonstra preocupação com segurança de vacinas"
+        }
+    })
+
+    sources_with_claims: List[DataSourceWithClaims] = Field(
+        ...,
+        description="List of data sources paired with their enriched claims"
+    )
+    additional_context: Optional[str] = Field(None, description="Any additional context for the adjudication")
+
+
+class ClaimVerdict(BaseModel):
+    """Verdict for a single claim with justification"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "claim_id": "claim-uuid-1",
+            "claim_text": "Vacina X causa infertilidade em mulheres",
+            "verdict": "Falso",
+            "justification": "Estudos científicos conduzidos pelo Ministério da Saúde com mais de 50.000 participantes não encontraram evidências ligando a vacina X a problemas de fertilidade. Fonte: https://saude.gov.br/vacinas"
+        }
+    })
+
+    claim_id: str = Field(..., description="ID of the claim being judged")
+    claim_text: str = Field(..., description="The claim text")
+    verdict: VerdictType = Field(..., description="The verdict for this claim")
+    justification: str = Field(..., description="Detailed justification citing evidence sources")
+
+
+class DataSourceResult(BaseModel):
+    """Fact-check results for all claims from a single data source"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "data_source_id": "msg-001",
+            "source_type": "original_text",
+            "claim_verdicts": [
+                {
+                    "claim_id": "claim-uuid-1",
+                    "claim_text": "Vacina X causa infertilidade em mulheres",
+                    "verdict": "Falso",
+                    "justification": "Estudos científicos não encontraram evidências..."
+                }
+            ]
+        }
+    })
+
+    data_source_id: str = Field(..., description="ID of the data source")
+    source_type: ClaimSourceType = Field(..., description="Type of the data source")
+    claim_verdicts: List[ClaimVerdict] = Field(
+        default_factory=list,
+        description="Verdicts for all claims extracted from this source"
+    )
 
 
 class FactCheckResult(BaseModel):
-    """Final result of the fact-checking pipeline"""
+    """Final result of the fact-checking pipeline with structured verdicts per data source"""
     model_config = ConfigDict(json_schema_extra={
         "example": {
-            "analysis_text": """O usuário questionou sobre a relação entre vacina X e infertilidade feminina. Esta é uma preocupação comum que circula em redes sociais mas não tem base científica sólida.
-
-                Análise por alegação:
-                • Vacina X causa infertilidade em mulheres: FALSE
-
-                Fontes de apoio:
-                - Ministerio da Saúde: nenhuma ligação entre vacinas e autismo foi encontrada """
+            "results": [
+                {
+                    "data_source_id": "msg-001",
+                    "source_type": "original_text",
+                    "claim_verdicts": [
+                        {
+                            "claim_id": "claim-uuid-1",
+                            "claim_text": "Vacina X causa infertilidade em mulheres",
+                            "verdict": "Falso",
+                            "justification": "Estudos científicos conduzidos pelo Ministério da Saúde com mais de 50.000 participantes não encontraram evidências..."
+                        }
+                    ]
+                }
+            ],
+            "overall_summary": "A mensagem contém uma alegação falsa sobre vacinas. Não há evidências científicas que sustentem a afirmação de que a vacina X causa infertilidade."
         }
     })
 
-    analysis_text: str = Field(..., description="Complete analysis as formatted text") #this should probably be structured somehow
+    results: List[DataSourceResult] = Field(
+        default_factory=list,
+        description="Structured fact-check results grouped by data source"
+    )
+    overall_summary: Optional[str] = Field(
+        None,
+        description="Optional high-level summary of all fact-check results"
+    )
 
