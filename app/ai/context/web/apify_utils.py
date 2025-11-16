@@ -10,10 +10,21 @@ from enum import Enum
 
 import httpx
 from bs4 import BeautifulSoup
-import html2text
 from apify_client import ApifyClientAsync
 
 logger = logging.getLogger(__name__)
+
+# check if brotli decompression is available
+try:
+    import brotli
+    BROTLI_AVAILABLE = True
+except ImportError:
+    try:
+        import brotlicffi
+        BROTLI_AVAILABLE = True
+    except ImportError:
+        BROTLI_AVAILABLE = False
+        logger.warning("brotli decompression not available - install 'brotli' or 'brotlicffi' for better compression support")
 
 APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
 
@@ -272,13 +283,19 @@ async def scrapeGenericSimple(url: str, maxChars: Optional[int] = None) -> dict:
     """
     try:
         logger.info(f"attempting simple scraping (no browser) for: {url}")
-        
+
+        # configure accept-encoding based on brotli availability
+        # only request brotli if we can decompress it
+        accept_encoding = "gzip, deflate"
+        if BROTLI_AVAILABLE:
+            accept_encoding += ", br"
+
         # configure httpx client with realistic headers
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
             "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": accept_encoding,
             "Connection": "keep-alive",
             "Upgrade-Insecure-Requests": "1"
         }
@@ -299,7 +316,22 @@ async def scrapeGenericSimple(url: str, maxChars: Optional[int] = None) -> dict:
                 }
             
             html_content = response.text
-            
+
+            # detect if we got corrupted/binary content (decompression failure)
+            # count non-printable characters in first 1000 chars
+            sample = html_content[:1000]
+            non_printable_count = sum(1 for c in sample if not (c.isprintable() or c in '\n\r\t '))
+
+            # if more than 20% of sample is non-printable, likely decompression failed
+            if sample and (non_printable_count / len(sample)) > 0.2:
+                logger.warning(f"detected binary/corrupted content (decompression failure?) - {non_printable_count}/{len(sample)} non-printable chars")
+                return {
+                    "success": False,
+                    "content": "",
+                    "metadata": {},
+                    "error": "received corrupted content - possible decompression failure"
+                }
+
             # parse with beautifulsoup
             soup = BeautifulSoup(html_content, "html.parser")
             
@@ -318,23 +350,27 @@ async def scrapeGenericSimple(url: str, maxChars: Optional[int] = None) -> dict:
             if meta_desc:
                 description = meta_desc.get("content", "")
             
-            # convert html to clean text using html2text
-            h = html2text.HTML2Text()
-            h.ignore_links = False
-            h.ignore_images = True
-            h.ignore_emphasis = False
-            h.body_width = 0  # no line wrapping
-            
             # try to extract main content (prioritize article/main tags)
             main_content = soup.find("main") or soup.find("article") or soup.find("body")
+            
+            # use BeautifulSoup's get_text() instead of html2text
+            # this preserves encoding better and avoids corruption
             if main_content:
-                text_content = h.handle(str(main_content))
+                text_content = main_content.get_text(separator='\n', strip=True)
             else:
-                text_content = h.handle(html_content)
+                text_content = soup.get_text(separator='\n', strip=True)
+            
+            logger.info(f"extracted {len(text_content)} chars using BeautifulSoup get_text()")
             
             # clean up excessive whitespace
             text_content = re.sub(r'\n\s*\n\s*\n+', '\n\n', text_content)
             text_content = text_content.strip()
+            
+            # remove non-printable characters to ensure clean text
+            text_content = ''.join(
+                c for c in text_content
+                if c.isprintable() or c in '\n\r\t '
+            )
             
             if not text_content or len(text_content) < 50:
                 logger.warning(f"extracted content too short: {len(text_content)} chars")
@@ -419,7 +455,13 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
             return {"success": False, "content": "", "metadata": {}, "error": "no content extracted"}
         
         item = listItemsResult.items[0]
-        content = item.get("text", "") or item.get("markdown", "") or item.get("html", "")
+        raw_content = item.get("text", "") or item.get("markdown", "") or item.get("html", "")
+        
+        # clean non-printable characters from apify content
+        content = ''.join(
+            c for c in raw_content
+            if c.isprintable() or c in '\n\r\t '
+        )
         
         if maxChars and len(content) > maxChars:
             content = content[:maxChars]
