@@ -9,7 +9,7 @@ import os
 import logging
 from typing import Optional
 
-from apify_client import ApifyClient, ApifyClientAsync
+from apify_client import ApifyClientAsync
 
 logger = logging.getLogger(__name__)
 
@@ -17,18 +17,6 @@ APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
 
 # actor ids for common scraping tasks
 FACEBOOK_POSTS_ACTOR = "apify/facebook-posts-scraper"
-
-
-def getApifyClient() -> ApifyClient:
-    """
-    create sync apify client using token from environment.
-    raises RuntimeError if token is missing.
-    """
-    apifyToken = os.getenv(APIFY_TOKEN_ENV_KEY)
-    if not apifyToken:
-        raise RuntimeError("missing APIFY_TOKEN in environment")
-    
-    return ApifyClient(apifyToken)
 
 
 def getApifyClientAsync() -> ApifyClientAsync:
@@ -132,8 +120,7 @@ async def scrapeFacebookPost(postUrl: str, maxChars: Optional[int] = None) -> di
 
 async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
     """
-    placeholder for generic url scraping.
-    currently only supports facebook posts.
+    scrape url using apify. currently supports facebook posts.
     
     args:
         url: url to scrape
@@ -154,4 +141,3 @@ async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
         "metadata": {},
         "error": "only facebook posts are currently supported"
     }
-

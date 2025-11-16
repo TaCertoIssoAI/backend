@@ -3,7 +3,7 @@ aiohttp==3.13.2
 aiosignal==1.4.0
 annotated-types==0.7.0
 anyio==3.7.1
-apify-client==2.0.2
+apify-client==2.3.0
 attrs==25.4.0
 certifi==2025.11.12
 charset-normalizer==3.4.4
@@ -37,7 +37,7 @@ langgraph-sdk==0.2.9
 langsmith==0.4.43
 marshmallow==3.26.1
 multidict==6.7.0
-mypy_extensions==1.1.1
+mypy_extensions==1.0.0
 numpy==2.3.4
 openai==2.8.0
 orjson==3.11.4

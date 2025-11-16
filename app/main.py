@@ -10,7 +10,7 @@ settings = get_settings()
 
 app = FastAPI(
     title="Fake News Detector API - Web Scraping",
-    description="API de Web Scraping com Selenium integrado",
+    description="API de Web Scraping com Apify integrado",
     version="1.0.0"
 )
 
