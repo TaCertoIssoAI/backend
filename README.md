@@ -32,9 +32,6 @@ Edite o `.env` e configure as chaves de API obrigatórias:
 OPENAI_API_KEY=sk-...
 APIFY_TOKEN=apify_api_...
 
-# Opcional (para integração com WhatsApp)
-EVOLUTION_API_URL=your_evolution_api_url_here
-EVOLUTION_API_KEY=your_evolution_api_key_here
 ```
 
 ### 3. Dê permissão de execução aos scripts
@@ -65,42 +62,12 @@ Após inicialização, a API estará disponível em:
 - **API Docs (Swagger)**: http://localhost:8000/docs
 - **Health Check**: http://localhost:8000/health
 
-### Ver logs em tempo real
-
-```bash
-./scripts/docker-logs.sh
-```
-
-Para ver logs de um serviço específico:
-
-```bash
-./scripts/docker-logs.sh selenium  # logs do Selenium Grid
-```
-
-### Testar o backend
-
-```bash
-./scripts/docker-test.sh
-```
-
-Esse script:
-- Verifica se os containers estão rodando
-- Testa health check
-- Testa endpoints principais
-- Verifica status do Selenium Grid
 
 ### Parar o backend
 
 ```bash
 ./scripts/docker-stop.sh
 ```
-
-Para remover volumes também:
-
-```bash
-docker-compose down -v
-```
-
 ---
 
 ## Estrutura do projeto
