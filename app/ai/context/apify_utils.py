@@ -8,6 +8,9 @@ import logging
 from typing import Optional
 from enum import Enum
 
+import httpx
+from bs4 import BeautifulSoup
+import html2text
 from apify_client import ApifyClientAsync
 
 logger = logging.getLogger(__name__)
@@ -262,10 +265,138 @@ async def scrapeTikTokPost(url: str, maxChars: Optional[int] = None) -> dict:
         return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
-async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict:
-    """scrape any website using generic crawler - fallback for unknown platforms"""
+async def scrapeGenericSimple(url: str, maxChars: Optional[int] = None) -> dict:
+    """
+    scrape generic website using simple http request (no browser).
+    lightweight approach for static content - tries first before using apify.
+    """
     try:
-        logger.info(f"scraping generic website: {url}")
+        logger.info(f"attempting simple scraping (no browser) for: {url}")
+        
+        # configure httpx client with realistic headers
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Connection": "keep-alive",
+            "Upgrade-Insecure-Requests": "1"
+        }
+        
+        async with httpx.AsyncClient(follow_redirects=True, timeout=30.0) as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            
+            # check if content is html
+            content_type = response.headers.get("content-type", "").lower()
+            if "text/html" not in content_type:
+                logger.warning(f"non-html content type: {content_type}")
+                return {
+                    "success": False,
+                    "content": "",
+                    "metadata": {},
+                    "error": f"unsupported content type: {content_type}"
+                }
+            
+            html_content = response.text
+            
+            # parse with beautifulsoup
+            soup = BeautifulSoup(html_content, "html.parser")
+            
+            # remove script and style elements
+            for script in soup(["script", "style", "iframe", "noscript"]):
+                script.decompose()
+            
+            # extract metadata
+            title = ""
+            if soup.title:
+                title = soup.title.string or ""
+            
+            description = ""
+            meta_desc = soup.find("meta", attrs={"name": "description"}) or \
+                       soup.find("meta", attrs={"property": "og:description"})
+            if meta_desc:
+                description = meta_desc.get("content", "")
+            
+            # convert html to clean text using html2text
+            h = html2text.HTML2Text()
+            h.ignore_links = False
+            h.ignore_images = True
+            h.ignore_emphasis = False
+            h.body_width = 0  # no line wrapping
+            
+            # try to extract main content (prioritize article/main tags)
+            main_content = soup.find("main") or soup.find("article") or soup.find("body")
+            if main_content:
+                text_content = h.handle(str(main_content))
+            else:
+                text_content = h.handle(html_content)
+            
+            # clean up excessive whitespace
+            text_content = re.sub(r'\n\s*\n\s*\n+', '\n\n', text_content)
+            text_content = text_content.strip()
+            
+            if not text_content or len(text_content) < 50:
+                logger.warning(f"extracted content too short: {len(text_content)} chars")
+                return {
+                    "success": False,
+                    "content": "",
+                    "metadata": {},
+                    "error": "extracted content too short or empty"
+                }
+            
+            # apply max chars limit
+            if maxChars and len(text_content) > maxChars:
+                text_content = text_content[:maxChars]
+            
+            logger.info(f"simple scraping successful: {len(text_content)} chars extracted")
+            
+            return {
+                "success": True,
+                "content": text_content,
+                "metadata": {
+                    "platform": "generic_simple",
+                    "url": str(response.url),
+                    "title": title.strip(),
+                    "description": description.strip(),
+                    "scraping_method": "simple_http"
+                },
+                "error": None
+            }
+            
+    except httpx.HTTPStatusError as e:
+        logger.warning(f"http error during simple scraping: {e.response.status_code}")
+        return {
+            "success": False,
+            "content": "",
+            "metadata": {},
+            "error": f"http error {e.response.status_code}"
+        }
+    except httpx.TimeoutException:
+        logger.warning(f"timeout during simple scraping")
+        return {
+            "success": False,
+            "content": "",
+            "metadata": {},
+            "error": "request timeout"
+        }
+    except Exception as e:
+        logger.warning(f"simple scraping failed: {e}")
+        return {
+            "success": False,
+            "content": "",
+            "metadata": {},
+            "error": str(e)
+        }
+
+
+async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict:
+    """
+    scrape any website using apify actor (with browser).
+    used as fallback when simple scraping fails.
+    """
+    try:
+        logger.info(f"scraping generic website with apify: {url}")
         
         apifyClient = getApifyClientAsync()
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.GENERIC])
@@ -314,7 +445,7 @@ async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
     """
     main scraping function with automatic platform detection.
     detects platform via regex and routes to appropriate actor.
-    falls back to generic crawler for unknown urls.
+    for generic websites: tries simple http first, falls back to apify if needed.
     """
     platform = detectPlatform(url)
     logger.info(f"detected platform: {platform.value} for {url}")
@@ -328,4 +459,14 @@ async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
     elif platform == PlatformType.TIKTOK:
         return await scrapeTikTokPost(url, maxChars)
     else:
+        # for generic websites: try simple scraping first (no browser, no apify credits)
+        logger.info("trying simple scraping first for generic website")
+        result = await scrapeGenericSimple(url, maxChars)
+        
+        if result["success"]:
+            logger.info("simple scraping succeeded - no apify credits used")
+            return result
+        
+        # if simple scraping failed, fallback to apify actor with browser
+        logger.info(f"simple scraping failed ({result.get('error')}), falling back to apify actor")
         return await scrapeGenericWebsite(url, maxChars)

@@ -73,3 +73,5 @@ uvloop==0.22.1
 watchfiles==1.1.1
 websocket-client==1.9.0
 yarl==1.22.0
+beautifulsoup4==4.12.3
+html2text==2024.2.26
