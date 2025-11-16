@@ -97,7 +97,7 @@ def validate_claims_list(claims: List[ExtractedClaim]):
 def test_basic_claim_extraction_from_user_message():
     """Test basic claim extraction from a user message."""
     # Setup
-    text = "I heard that vaccine X causes infertility in women, is this true?"
+    text = "Ouvi dizer que a vacina X causa infertilidade em mulheres, isso é verdade?"
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-001",
@@ -132,13 +132,13 @@ def test_basic_claim_extraction_from_user_message():
 def test_claim_extraction_from_link_context():
     """Test claim extraction from link/article content."""
     # Setup - simulate content extracted from a link
-    text = """=== Article: New Study on Vaccine Safety ===
+    text = """=== Artigo: Novo Estudo sobre Segurança de Vacinas ===
 
-A comprehensive study published today found no evidence linking
-Vaccine X to fertility issues in women. The study examined over
-50,000 participants and concluded that the vaccine is safe.
+Um estudo abrangente publicado hoje não encontrou evidências ligando
+a Vacina X a problemas de fertilidade em mulheres. O estudo examinou mais de
+50.000 participantes e concluiu que a vacina é segura.
 
-The research was conducted by the Ministry of Health over 3 years."""
+A pesquisa foi conduzida pelo Ministério da Saúde ao longo de 3 anos."""
 
     extraction_input = ClaimExtractionInput(
         source_id="link-456",
@@ -172,9 +172,9 @@ The research was conducted by the Ministry of Health over 3 years."""
 def test_multiple_claims_extraction():
     """Test extraction of multiple claims from one text."""
     # Setup
-    text = """The president announced a new carbon tax of $50 per ton.
-Additionally, the government will invest $100 billion in renewable energy over the next decade.
-This makes it the largest climate investment in history."""
+    text = """O presidente anunciou um novo imposto sobre carbono de R$250 por tonelada.
+Além disso, o governo vai investir R$500 bilhões em energia renovável na próxima década.
+Isso torna o maior investimento climático da história."""
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-002",
@@ -231,7 +231,7 @@ def test_portuguese_message_extraction():
 def test_image_ocr_extraction():
     """Test claim extraction from simulated image OCR text."""
     # Setup - simulate OCR output from an image
-    text = "BREAKING NEWS: Vaccine X causes infertility. Share before they delete this!"
+    text = "URGENTE: Vacina X causa infertilidade. Compartilhe antes que apaguem isso!"
 
     extraction_input = ClaimExtractionInput(
         source_id="img-789",
@@ -293,7 +293,7 @@ def test_empty_text():
 def test_opinion_vs_claim():
     """Test that LLM can distinguish opinions from fact-checkable claims."""
     # Setup
-    text = "I think vaccines are scary and I don't like them. What do you think?"
+    text = "Acho que vacinas são assustadoras e não gosto delas. O que você acha?"
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-005",
@@ -327,13 +327,13 @@ def test_validate_claims_function():
     claims = [
         ExtractedClaim(
             id="claim-1",
-            text="Valid claim about vaccines",
+            text="Afirmação válida sobre vacinas",
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="This is valid",
-            entities=["vaccines"]
+            llm_comment="Esta é válida",
+            entities=["vacinas"]
         ),
         ExtractedClaim(
             id="claim-2",
@@ -342,28 +342,28 @@ def test_validate_claims_function():
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="Empty",
+            llm_comment="Vazia",
             entities=[]
         ),
         ExtractedClaim(
             id="claim-3",
-            text="Valid claim about vaccines",  # Duplicate - should be filtered
+            text="Afirmação válida sobre vacinas",  # Duplicate - should be filtered
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="This is duplicate",
-            entities=["vaccines"]
+            llm_comment="Esta é duplicada",
+            entities=["vacinas"]
         ),
         ExtractedClaim(
             id="claim-4",
-            text="Another valid claim",
+            text="Outra afirmação válida",
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-1"
             ),
-            llm_comment="Also valid",
-            entities=["claim"]
+            llm_comment="Também válida",
+            entities=["afirmação"]
         ),
     ]
 
@@ -383,8 +383,8 @@ def test_validate_claims_function():
 
     # Validate
     assert len(validated) == 2, "Should filter out empty and duplicate claims"
-    assert validated[0].text == "Valid claim about vaccines"
-    assert validated[1].text == "Another valid claim"
+    assert validated[0].text == "Afirmação válida sobre vacinas"
+    assert validated[1].text == "Outra afirmação válida"
 
 
 def test_chain_building():
@@ -410,7 +410,7 @@ def test_chain_building():
 def test_return_type_is_list():
     """Test that extract_claims returns a List[ExtractedClaim], not a wrapper."""
     # Setup
-    text = "Test message for type checking"
+    text = "Mensagem de teste para verificação de tipo"
 
     extraction_input = ClaimExtractionInput(
         source_id="msg-006",
