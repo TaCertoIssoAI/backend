@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 from pydantic import BaseModel, Field, ConfigDict
 
 # This file defines models from each step of the fact-checking pipeline, with a focus on NEW data from one step to another. Common and repeated data from other steps are saved in
@@ -58,24 +58,107 @@ class EnrichedLink(BaseModel):
 
 
 # ===== STEP 3: CLAIM EXTRACTION =====
-class ExtractedClaim(BaseModel):
-    """A single claim extracted from user input"""
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "id": "claim-uuid-456",
-            "text": "Vaccine X causes infertility in women",
-            "links": ["https://example.com/article"],
-            "llm_comment": "This is a specific medical claim that can be fact-checked against scientific literature",
-            "entities": ["vaccine X", "infertility", "women"]
+
+ClaimSourceType = Literal[
+    "original_text",
+    "link_context",
+    "image",
+    "audio_transcript",
+    "video_transcript",
+    "other",
+]
+
+class ClaimExtractionInput(BaseModel):
+    """Input chunk from which claims will be extracted."""
+
+    source_id: str = Field(
+        ...,
+        description="UUID for the source; can be an image, link, video or text object",
+    )
+    type: ClaimSourceType = Field(
+        ...,
+        description="Type of the source that produced this text",
+    )
+    text: str = Field(
+        ...,
+        description="Full text used for claim extraction (caption, transcript, article body, etc)",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "source_id": "img-uuid-123",
+                "type": "image",
+                "text": "The image caption says that vaccine X causes infertility in women.",
+            }
         }
-    })
+    )
+
+class ClaimSource(BaseModel):
+    """Where this claim was extracted from and which links contributed to it."""
+
+    source_type: ClaimSourceType = Field(
+        ...,
+        description="Origin modality or channel where the claim was extracted from",
+    )
+
+    source_id: str = Field(
+        ...,
+        description="Id of the media or segment (message, image, audio, etc) that produced the claim",
+    )
+
+    # Link IDs that were part of this source if any (defaults to empty list) - usually EnrichedLink ids
+    link_ids: List[str] = Field(
+        default_factory=list,
+        description="Ids of links that contributed to this claim (for example EnrichedLink ids)",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "source_type": "link_context",
+                "link_ids": ["link-uuid-123"],
+            }
+        }
+    )
+
+class ExtractedClaim(BaseModel):
+    """A single claim extracted from user input or media"""
 
     id: str = Field(..., description="UUID for the claim")
     text: str = Field(..., description="The normalized claim text")
-    links: List[str] = Field(default_factory=list, description="Any URLs found in the original text relating to this claim")
-    llm_comment: Optional[str] = Field(..., description="LLM's analysis/comment about this claim") #unsure about this field
-    entities: List[str] = Field(default_factory=list, description="Named entities in the claim")
 
+    source: ClaimSource = Field(
+        ...,
+        description="Provenance information about where this claim was extracted from",
+    )
+
+    llm_comment: Optional[str] = Field( #unsure about this field
+        None,
+        description="Optional LLM analysis/comment about this claim (for debugging or triage)",
+    )
+
+    entities: List[str] = Field(
+        default_factory=list,
+        description="Named entities in the claim",
+    )
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "claim-uuid-456",
+                "text": "Vaccine X causes infertility in women",
+                "source": {
+                    "source_type": "link_context",
+                    "source_id": "link-uuid-123",
+                    "link_ids": ["link-uuid-123"],
+                    "snippet": "The article claims that vaccine X causes infertility in women.",
+                },
+                "llm_comment": "This is a specific medical claim that can be fact checked against scientific literature",
+                "entities": ["vaccine X", "infertility", "women"],
+            }
+        }
+    )
 
 class ClaimExtractionOutput(BaseModel):
     """Output of the claim extraction step - a list of extracted claims"""
@@ -232,4 +315,3 @@ class FactCheckResult(BaseModel):
 
     analysis_text: str = Field(..., description="Complete analysis as formatted text") #this should probably be structured somehow
 
-# ===== PIPELINE FLOW SUMMARY =====
