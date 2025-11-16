@@ -21,6 +21,11 @@ ClaimSourceType = Literal[
     "other",
 ]
 
+CitationSource = Literal[
+    "google_fact_checking_api",
+    "apify_web_search",
+]
+
 
 # ===== STEP 1: USER INPUT =====
 class UserInput(BaseModel):
@@ -73,7 +78,6 @@ class EnrichedLink(BaseModel):
     content: str = Field(default="", description="Main text content extracted from the webpage")
     extraction_status: str = Field(default="pending", description="Status: 'success', 'failed', 'timeout', 'blocked'")
     extraction_tool: str = Field(default="", description="Status: 'selenium', 'cloudscraper'")
-
 
 # ===== STEP 3: CLAIM EXTRACTION =====
 
@@ -206,6 +210,34 @@ class LinkEnrichmentOutput(BaseModel):
 
 
 # ===== STEP 4: EVIDENCE RETRIEVAL =====
+
+class EvidenceRetrievalInput(BaseModel):
+    """Input for evidence retrieval step - contains claims to be fact-checked"""
+    
+    claims: List[ExtractedClaim] = Field(
+        ...,
+        description="List of extracted claims to retrieve evidence for"
+    )
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "claims": [
+                    {
+                        "id": "claim-uuid-456",
+                        "text": "Vaccine X causes infertility in women",
+                        "source": {
+                            "source_type": "original_text",
+                            "source_id": "msg-uuid-123"
+                        },
+                        "llm_comment": "This is a specific medical claim that can be fact-checked",
+                        "entities": ["vaccine X", "infertility", "women"]
+                    }
+                ]
+            }
+        }
+    )
+
 class Citation(BaseModel):
     """A single source citation extracted from external sources (ex: google fact checking API or web search)"""
     model_config = ConfigDict(json_schema_extra={
@@ -213,47 +245,54 @@ class Citation(BaseModel):
             "url": "https://health.gov/vaccine-safety",
             "title": "Vaccine Safety Study Results",
             "publisher": "Ministry of Health",
-            "quoted": "No associations with infertility were observed in clinical studies",
+            "citation_text": "No associations with infertility were observed in clinical studies",
+            "source": "google_fact_checking_api",
             "rating": "Falso",
-            "review_date": "2024-11-05"
+            "date": "2024-11-05"
         }
     })
 
     url: str
     title: str
     publisher: str
-    quoted: str
+    citation_text: str
+    source: CitationSource
     rating: Optional[str] = None  # Google fact-check rating: "Falso", "Enganoso", "Verdadeiro", etc.
-    review_date: Optional[str] = None  # When the fact-check was published
+    date: Optional[str] = None  # When the fact-check was published
 
-
-class EnrichedClaim(BaseModel):
-    """Claim enriched with evidence from external fact checking"""
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "id": "claim-uuid-789",
-            "claim_text": "Vaccine X causes infertility in women",
-            "citations": [
-                {
-                    "url": "https://health.gov/vaccine-safety",
-                    "title": "Vaccine Safety Study",
-                    "publisher": "Ministry of Health",
-                    "quoted": "No associations with infertility were observed",
-                    "rating": "Falso",
-                    "review_date": "2024-11-05"
-                }
-            ],
-            "search_queries": ["vaccine X infertility", "vaccine safety women fertility"],
-            "retrieval_notes": "Found 5 sources, selected top 3 most relevant"
+class EnrichedClaim(ExtractedClaim):
+    """Claim enriched with evidence from external fact checking - extends ExtractedClaim with citations"""
+    
+    citations: List[Citation] = Field(
+        default_factory=list, 
+        description="Sources supporting or refuting the claim"
+    )
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "claim-uuid-789",
+                "text": "Vaccine X causes infertility in women",
+                "source": {
+                    "source_type": "original_text",
+                    "source_id": "msg-uuid-123"
+                },
+                "llm_comment": "This is a specific medical claim that can be fact-checked",
+                "entities": ["vaccine X", "infertility", "women"],
+                "citations": [
+                    {
+                        "url": "https://health.gov/vaccine-safety",
+                        "title": "Vaccine Safety Study",
+                        "publisher": "Ministry of Health",
+                        "citation_text": "No associations with infertility were observed",
+                        "source": "google_fact_checking_api",
+                        "rating": "Falso",
+                        "date": "2024-11-05"
+                    }
+                ]
+            }
         }
-    })
-
-    id:str = Field(..., description="UUID for the claim")
-    claim_text: str = Field(..., description="The claim this evidence relates to")
-    citations: List[Citation] = Field(default_factory=list, description="Sources supporting or refuting the claim")
-    search_queries: List[str] = Field(default_factory=list, description="Queries used to find evidence")
-    retrieval_notes: Optional[str] = Field(None, description="Notes about the evidence retrieval process")
-
+    )
 
 class EvidenceRetrievalResult(BaseModel):
     """Output of the evidence retrieval step"""
@@ -262,10 +301,14 @@ class EvidenceRetrievalResult(BaseModel):
             "claim_evidence_map": {
                 "claim-uuid-1": {
                     "id": "claim-uuid-1",
-                    "claim_text": "Vaccine X causes infertility in women",
-                    "citations": [],
-                    "search_queries": ["vaccine X infertility"],
-                    "retrieval_notes": "Found multiple contradicting sources"
+                    "text": "Vaccine X causes infertility in women",
+                    "source": {
+                        "source_type": "original_text",
+                        "source_id": "msg-uuid-123"
+                    },
+                    "llm_comment": "Medical claim that can be fact-checked",
+                    "entities": ["vaccine X", "infertility", "women"],
+                    "citations": []
                 }
             }
         }
@@ -275,7 +318,6 @@ class EvidenceRetrievalResult(BaseModel):
         ...,
         description="Maps each claim id to its evidence"
     )
-
 
 # ===== STEP 5: ADJUDICATION =====
 
@@ -297,19 +339,24 @@ class DataSourceWithClaims(BaseModel):
             "enriched_claims": [
                 {
                     "id": "claim-uuid-1",
-                    "claim_text": "Vacina X causa infertilidade em mulheres",
+                    "text": "Vacina X causa infertilidade em mulheres",
+                    "source": {
+                        "source_type": "original_text",
+                        "source_id": "msg-001"
+                    },
+                    "llm_comment": "Alegação médica específica que pode ser verificada",
+                    "entities": ["vacina X", "infertilidade", "mulheres"],
                     "citations": [
                         {
                             "url": "https://saude.gov.br/vacinas",
                             "title": "Estudo de Segurança de Vacinas",
                             "publisher": "Ministério da Saúde",
-                            "quoted": "Não foram observadas associações com infertilidade",
+                            "citation_text": "Não foram observadas associações com infertilidade",
+                            "source": "google_fact_checking_api",
                             "rating": "Falso",
-                            "review_date": "2024-11-05"
+                            "date": "2024-11-05"
                         }
-                    ],
-                    "search_queries": ["vacina X infertilidade"],
-                    "retrieval_notes": "Encontradas múltiplas fontes contraditórias"
+                    ]
                 }
             ]
         }
@@ -335,10 +382,14 @@ class AdjudicationInput(BaseModel):
                     "enriched_claims": [
                         {
                             "id": "claim-uuid-1",
-                            "claim_text": "Vacina X causa infertilidade em mulheres",
-                            "citations": [],
-                            "search_queries": ["vacina X infertilidade"],
-                            "retrieval_notes": "Encontradas múltiplas fontes"
+                            "text": "Vacina X causa infertilidade em mulheres",
+                            "source": {
+                                "source_type": "original_text",
+                                "source_id": "msg-001"
+                            },
+                            "llm_comment": "Alegação médica que pode ser verificada",
+                            "entities": ["vacina X", "infertilidade", "mulheres"],
+                            "citations": []
                         }
                     ]
                 }
