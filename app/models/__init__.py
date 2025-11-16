@@ -12,6 +12,7 @@ from .factchecking import (
     ClaimExtractionInput,
     FactCheckResult,
     ClaimSource,
+    ClaimSourceType,
 )
 from .llm import LLMConfig
 
@@ -30,5 +31,6 @@ __all__ = [
     "ClaimExtractionInput",
     "ClaimSource",
     "LLMConfig",
+    "ClaimSourceType"
 ]
 

@@ -4,6 +4,19 @@ from pydantic import BaseModel, Field, ConfigDict
 # This file defines models from each step of the fact-checking pipeline, with a focus on NEW data from one step to another. Common and repeated data from other steps are saved in
 # the commondata.py file classes, whereas this file focuses on the new aggregated data between each step
 
+
+# Common data models for several pipeline steps
+
+ClaimSourceType = Literal[
+    "original_text",
+    "link_context",
+    "image",
+    "audio_transcript",
+    "video_transcript",
+    "other",
+]
+
+
 # ===== STEP 1: USER INPUT =====
 class UserInput(BaseModel):
     """Raw, unstructured input from the user"""
@@ -58,15 +71,6 @@ class EnrichedLink(BaseModel):
 
 
 # ===== STEP 3: CLAIM EXTRACTION =====
-
-ClaimSourceType = Literal[
-    "original_text",
-    "link_context",
-    "image",
-    "audio_transcript",
-    "video_transcript",
-    "other",
-]
 
 class ClaimExtractionInput(BaseModel):
     """Input chunk from which claims will be extracted."""

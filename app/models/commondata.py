@@ -10,26 +10,73 @@ from . import (
      EvidenceRetrievalResult,
      AdjudicationInput,
      FactCheckResult,
+     ClaimSourceType,
  )
 
 #Common Data defines models that live through the entirety of the pipeline, used both for core fact checking logic and analytics
+class DataSource(BaseModel):
+    """
+    Data source represents a data source from the pipeline, wrapping different modalities of data such as user text, expanded context links (through web search)
+    transcribed audio, images or video. This model provides an unique ID, source type, raw text and metadata about the data source.
 
-class CommonPipelineData(BaseModel):
-    """Common data that is crucial for the fact-checking pipeline but is used at several different steps"""
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "message_id": "msg-2024-09-20-001",
-            "message_text": "I heard that vaccine X causes infertility in women, is this true?",
-            "locale": "pt-BR",
-            "timestamp": "2024-09-20T15:30:00Z",
-        }
-    })
-
-    message_id: str = Field(..., description="Internal id for the request")
-    message_text: str = Field(..., description="Original Message text")
-
+    Furthermore this class provides a function that concatenates the metadata in string form with the raw text for easier LLM inputs
+    """
+    
+    id: str = Field(..., description="UUID for the data source")
+    source_type: ClaimSourceType = Field(..., description="Type of data source (text, image, audio, video, link)")
+    original_text: str = Field(..., description="Raw text content from this source")
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Additional metadata about the source (e.g., title, author, date, url)"
+    )
+    
     locale: str = Field(default="pt-BR", description="Language locale")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "source-uuid-123",
+                "source_type": "link_context",
+                "original_text": "This article discusses the safety and efficacy of vaccines...",
+                "metadata": {
+                    "title": "Vaccine Safety Study",
+                    "url": "https://example.com/vaccine-study",
+                    "published_date": "2024-11-05",
+                    "author": "Ministry of Health"
+                },
+                "locale": "pt-BR",
+                "timestamp": "2024-11-05T14:30:00Z"
+            }
+        }
+    )
+    
+    def to_llm_string(self) -> str:
+        """
+        Concatenate metadata and original text into a formatted string for LLM consumption.
+        
+        Returns:
+            Formatted string with metadata headers followed by the original text.
+        """
+        parts: List[str] = []
+        
+        # Add metadata as key-value pairs
+        if self.metadata:
+            parts.append(f"=== Source: {self.source_type} (ID: {self.id}) ===")
+            parts.append(f"=== Source Metadata ===")
+            # Type narrowing for linter
+            meta: dict[str, str] = dict[str, str](self.metadata)
+            for key in meta:
+                value = meta[key]
+                # Capitalize the key and format nicely
+                formatted_key = key.replace("_", " ").title()
+                parts.append(f"{formatted_key}: {value}")
+            parts.append("")  # Empty line separator
+        
+        # Add the original text
+        parts.append(self.original_text)
+        
+        return "\n".join(parts)
 
 
 class StepTiming(BaseModel):
@@ -57,7 +104,6 @@ class StepTiming(BaseModel):
         None,
         description="Number of completion tokens produced in this step, if applicable"
     )
-
 
 class EngineeringAnalytics(BaseModel):
     model_config = ConfigDict(json_schema_extra={
