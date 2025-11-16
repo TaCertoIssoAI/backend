@@ -106,24 +106,27 @@ def test_basic_claim_extraction_from_user_message():
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input,
         timeout=30.0
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Basic Claim Extraction from User Message",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract at least one claim"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract at least one claim"
 
     # Check source tracking
-    for claim in claims:
+    for claim in result.claims:
         assert claim.source.source_type == "original_text"
         assert claim.source.source_id == "msg-001"
         assert claim.id.startswith("msg-001-claim-"), "Claim ID should start with source_id"
@@ -147,24 +150,27 @@ A pesquisa foi conduzida pelo Ministério da Saúde ao longo de 3 anos."""
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input,
         timeout=30.0
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Claim Extraction from Link Context",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract claims from article"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract claims from article"
 
     # Check source tracking
-    for claim in claims:
+    for claim in result.claims:
         assert claim.source.source_type == "link_context"
         assert claim.source.source_id == "link-456"
 
@@ -183,19 +189,22 @@ Isso torna o maior investimento climático da história."""
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Multiple Claims Extraction",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
+    validate_claims_list(result.claims)
     # We expect multiple claims but don't assert specific number
     # as LLM behavior may vary
 
@@ -212,20 +221,23 @@ def test_portuguese_message_extraction():
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Portuguese Message Extraction",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract at least one claim from Portuguese text"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract at least one claim from Portuguese text"
 
 
 def test_image_ocr_extraction():
@@ -240,23 +252,26 @@ def test_image_ocr_extraction():
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Image OCR Extraction",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
-    assert len(claims) > 0, "Should extract claim from OCR text"
+    validate_claims_list(result.claims)
+    assert len(result.claims) > 0, "Should extract claim from OCR text"
 
     # Check source tracking
-    for claim in claims:
+    for claim in result.claims:
         assert claim.source.source_type == "image"
         assert claim.source.source_id == "img-789"
 
@@ -273,21 +288,24 @@ def test_empty_text():
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Empty Text",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
+    validate_claims_list(result.claims)
     # With empty text, should return empty list or handle gracefully
-    assert len(claims) == 0, "Empty text should result in no claims"
+    assert len(result.claims) == 0, "Empty text should result in no claims"
 
 
 def test_opinion_vs_claim():
@@ -302,19 +320,22 @@ def test_opinion_vs_claim():
     )
 
     # Execute
-    claims = extract_and_validate_claims(
+    result = extract_and_validate_claims(
         extraction_input=extraction_input
     )
 
+    # Validate wrapper type
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput"
+
     # Print for debugging
     print_claim_results(
-        claims,
+        result.claims,
         "Opinion vs Claim",
         input_text=text
     )
 
     # Validate structure
-    validate_claims_list(claims)
+    validate_claims_list(result.claims)
     # This is pure opinion, not a fact-checkable claim
     # LLM should ideally return empty or very few claims
 
@@ -407,8 +428,8 @@ def test_chain_building():
     print()
 
 
-def test_return_type_is_list():
-    """Test that extract_claims returns a List[ExtractedClaim], not a wrapper."""
+def test_return_type_is_wrapper():
+    """Test that extract_claims returns ClaimExtractionOutput wrapper for type safety."""
     # Setup
     text = "Mensagem de teste para verificação de tipo"
 
@@ -423,15 +444,17 @@ def test_return_type_is_list():
         extraction_input=extraction_input
     )
 
-    # Validate type
-    assert isinstance(result, list), "Result should be a list, not a wrapper object"
-    assert not isinstance(result, ClaimExtractionOutput), "Result should be List[ExtractedClaim], not ClaimExtractionOutput"
+    # Validate type - should be wrapper, not raw list
+    assert isinstance(result, ClaimExtractionOutput), "Result should be ClaimExtractionOutput wrapper"
+    assert hasattr(result, 'claims'), "Wrapper should have 'claims' attribute"
+    assert isinstance(result.claims, list), "The 'claims' attribute should be a list"
 
     print("\n" + "=" * 80)
     print("TEST: Return Type Check")
     print("=" * 80)
-    print(f"\n✓ Correct return type: {type(result)}")
-    print(f"✓ Returns list directly, not wrapped in ClaimExtractionOutput")
+    print(f"\n✓ Correct return type: {type(result).__name__}")
+    print(f"✓ Returns ClaimExtractionOutput wrapper for type safety")
+    print(f"✓ Wrapper contains {len(result.claims)} claim(s)")
     print()
 
 

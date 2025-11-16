@@ -134,77 +134,106 @@ Streaming is enabled via model support and callback handlers. citeturn0sea
 
 ---
 
-
-# Pipeline structure 
+# Pipeline structure  
 
 # Fact Checking Pipeline - Architecture and Data Model
 
 This document explains the fact checking pipeline using:
 
-- The architecture diagram (multi modal intake, claim extraction, tools, final LLM)
-- The Pydantic schema that defines the data contracts between each step
+- The updated architecture diagrams (multi modal intake, claim extraction per modality, tools, final LLM).
+- The Pydantic schema that defines the data contracts between each step.
 
 It is meant as a deployment friendly, implementation ready description of how data flows from the user message to the final fact check answer and analytics.
 
 ---
 
-## 1. High Level Architecture
+## 1. High level architecture
 
-The architecture diagram shows the following flow:
+At a high level the system treats **claims** as the main entity.  
+All modalities (text, links, images, audio, video) are converted into text segments from which claims are extracted.
 
 1. **Channel intake and multi modal preprocessing**
 
    - Input from WhatsApp ("ZAP"), web, etc.
-   - User sends text, links, images, audio, video.
-   - A preprocessor outside the LLM pipeline turns all of that into:
-     - Canonical text (including link URLs)
-     - Metadata like timestamp, locale, ids
+   - User can send:
+     - text
+     - links (text-only or text + image)
+     - images
+     - audio
+     - video
+   - A preprocessor outside the LLM pipeline turns this into:
+     - a canonical "original message text" for the full message
+     - a list of typed text segments, each with its origin  
+       (original text, link article, image caption/OCR, audio transcript, video transcript)
 
-2. **LLM pipeline (text only)**
+2. **LLM pipeline (text only, claim centered)**
 
-   Once we have canonical text, the core pipeline runs:
+   Once we have textual representations, the core pipeline runs:
 
    1. **User input step**  
-      - Defines the raw message as seen by the pipeline.
+      - Registers the original message as seen by the pipeline.
+      - Builds `CommonPipelineData` (message id, text, locale, timestamp).
    2. **Context expansion**  
-      - Extracts and enriches links and other inline sources.
-      - Builds an "expanded context" that gives more info about the message content.
+      - Detects links in the message.
+      - Extracts and enriches content for each link (scraping, readers, APIs).
+      - Produces an expanded context block and `EnrichedLink` objects.
+      - Produces `ClaimExtractionInput` records for each text source that will be used in claim extraction (original text, link context, image captions, transcripts, etc).
    3. **Claim extraction (LLM)**  
-      - Identifies fact checkable claims in the message and normalizes them.
-   4. **Evidence gathering (multi step)**  
+      - For each `ClaimExtractionInput`, uses an LLM to extract fact checkable claims.
+      - Each claim is created as an `ExtractedClaim` with a `ClaimSource` that tells which modality and which source produced it.
+      - All claims from all modalities are merged into a single list.
+   4. **Evidence gathering (multi step, per claim)**  
       - For each claim:
-        - Hit fact checking APIs
-        - Do web searches
-        - Call internal tools (via MCP or other APIs)
-      - Aggregate all evidence per claim.
+        - Hit fact checking APIs.
+        - Do web searches.
+        - Call internal tools (for example via MCP).
+      - Aggregate all evidence into an `EnrichedClaim` per claim id.
+      - Collect all of them in an `EvidenceRetrievalResult`.
    5. **Final adjudication (LLM)**  
-      - A strong model looks at:
-        - Original message
-        - Structured claims
-        - Evidence per claim
-      - Produces a verdict and explanation in user friendly text.
+      - A stronger model receives:
+        - original message text (from `CommonPipelineData`)
+        - the full set of claims
+        - evidence per claim
+        - any additional context
+      - Produces a `FactCheckResult` with a user friendly explanation and per claim discussion (initially as rich text, can be structured later).
 
 3. **Output and analytics**
 
-   - The answer is sent back to the user (for example through WhatsApp).
-   - A rich analytics object is stored with:
-     - All step outputs
-     - All citations and links
-     - Engineering timings and token usage
+   - The final answer is sent back to the user (for example through WhatsApp).
+   - A rich analytics snapshot is stored with:
+     - All step outputs (claims, evidence, adjudication).
+     - All citations and enriched links.
+     - Engineering timings and token usage per step.
+   - Analytics entries are indexed **per claim**, but only written after the final adjudication, so each record has the full context of the decision.
 
 ---
 
-## 2. Cross Cutting Data and Engineering Analytics
+## 2. Cross cutting data and engineering analytics
 
 Two helper models travel across many steps and are not tied to a single stage.
 
 ### 2.1 CommonPipelineData
 
 ```python
+from typing import Optional
+from pydantic import BaseModel, Field, ConfigDict
+
 class CommonPipelineData(BaseModel):
     """Common data that is crucial for the fact-checking pipeline but is used at several different steps"""
     message_id: str = Field(..., description="Internal id for the request")
-    message_text: str = Field(..., description="Original Message text")
-    
+    message_text: str = Field(..., description="Original message text")
+
     locale: str = Field(default="pt-BR", description="Language locale")
     timestamp: Optional[str] = Field(None, description="When the message was sent")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "message_id": "msg-2024-09-20-001",
+                "message_text": "I heard that vaccine X causes infertility in women, is this true?",
+                "locale": "pt-BR",
+                "timestamp": "2024-09-20T15:30:00Z",
+            }
+        }
+    )
+```

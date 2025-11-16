@@ -25,6 +25,7 @@ from langchain_core.runnables import Runnable
 from app.models import (
     ClaimExtractionInput,
     ExtractedClaim,
+    ClaimExtractionOutput,
     ClaimSource,
 )
 from .prompts import get_claim_extraction_prompt
@@ -104,7 +105,7 @@ def extract_claims(
     model_name: str = "gpt-4o-mini",
     temperature: float = 0.0,
     timeout: Optional[float] = 30.0
-) -> List[ExtractedClaim]:
+) -> ClaimExtractionOutput:
     """
     Extracts fact-checkable claims from a text chunk.
 
@@ -118,7 +119,7 @@ def extract_claims(
         timeout: Timeout in seconds for the model call
 
     Returns:
-        List of ExtractedClaim objects with unique IDs and source tracking
+        ClaimExtractionOutput containing list of ExtractedClaim objects with unique IDs and source tracking
 
     Example:
         >>> from app.models import ClaimExtractionInput
@@ -127,12 +128,12 @@ def extract_claims(
         ...     type="original_text",
         ...     text="I heard vaccine X causes infertility in women."
         ... )
-        >>> claims = extract_claims(input_data)
-        >>> print(len(claims))
+        >>> result = extract_claims(input_data)
+        >>> print(len(result.claims))
         1
-        >>> print(claims[0].text)
+        >>> print(result.claims[0].text)
         "Vaccine X causes infertility in women"
-        >>> print(claims[0].source.source_type)
+        >>> print(result.claims[0].source.source_type)
         "original_text"
     """
     # Build the chain
@@ -172,7 +173,7 @@ def extract_claims(
         )
         claims.append(claim)
 
-    return claims
+    return ClaimExtractionOutput(claims=claims)
 
 
 async def extract_claims_async(
@@ -180,7 +181,7 @@ async def extract_claims_async(
     model_name: str = "gpt-4o-mini",
     temperature: float = 0.0,
     timeout: Optional[float] = 30.0
-) -> List[ExtractedClaim]:
+) -> ClaimExtractionOutput:
     """
     Async version of extract_claims.
 
@@ -193,7 +194,7 @@ async def extract_claims_async(
         timeout: Timeout in seconds
 
     Returns:
-        List of ExtractedClaim objects with unique IDs and source tracking
+        ClaimExtractionOutput containing list of ExtractedClaim objects with unique IDs and source tracking
     """
     # Build the chain
     chain = build_claim_extraction_chain(
@@ -232,7 +233,7 @@ async def extract_claims_async(
         )
         claims.append(claim)
 
-    return claims
+    return ClaimExtractionOutput(claims=claims)
 
 
 # ===== HELPER FUNCTIONS =====
@@ -280,7 +281,7 @@ def extract_and_validate_claims(
     model_name: str = "gpt-4o-mini",
     temperature: float = 0.0,
     timeout: Optional[float] = 30.0
-) -> List[ExtractedClaim]:
+) -> ClaimExtractionOutput:
     """
     Extracts claims and validates them in one call.
 
@@ -293,13 +294,14 @@ def extract_and_validate_claims(
         timeout: Timeout in seconds
 
     Returns:
-        Validated list of ExtractedClaim objects with source tracking
+        ClaimExtractionOutput containing validated list of ExtractedClaim objects with source tracking
     """
-    claims = extract_claims(
+    result = extract_claims(
         extraction_input=extraction_input,
         model_name=model_name,
         temperature=temperature,
         timeout=timeout
     )
 
-    return validate_claims(claims)
+    validated_claims = validate_claims(result.claims)
+    return ClaimExtractionOutput(claims=validated_claims)
