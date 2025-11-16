@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# APENAS SCRAPING - Comentar text para evitar erros de dependências
-from app.api.endpoints import scraping
-# from app.api.endpoints import text  # Descomente quando precisar do pipeline completo
+from app.api.endpoints import scraping, research
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -22,8 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Apenas rota de scraping por enquanto
+# rotas de scraping e research
 app.include_router(scraping.router, prefix="/api", tags=["scraping"])
+app.include_router(research.router, prefix="/api", tags=["research"])
 
 # Descomentar quando precisar do pipeline completo:
 # app.include_router(text.router, prefix="/api", tags=["text"])

@@ -533,4 +533,65 @@ GET https://api.apify.com/v2/acts/apify~website-content-crawler/runs/last/datase
 GET https://api.apify.com/v2/acts/apify~website-content-crawler/builds/default/openapi.json?token=${APIFY_TOKEN}
 ```
 
+## Google Scraper Actor
+
+Esses endpoints acessam uma execução específica do Google Scraper Actor com o `runId` `5pTpROddEqvLosh73`.
+
+> Em todos os URLs abaixo, substitua `${APIFY_TOKEN}` pelo valor da sua variável de ambiente `APIFY_TOKEN`.
+
+### Get run
+
+Retorna um objeto com todos os detalhes desta execução.
+
+```http
+GET https://api.apify.com/v2/actor-runs/5pTpROddEqvLosh73?token=${APIFY_TOKEN}
 ```
+
+### Get input
+
+Retorna o input desta execução a partir do key-value store.
+
+```http
+GET https://api.apify.com/v2/key-value-stores/PmPL3LDRFypH20ZrQ/records/INPUT?token=${APIFY_TOKEN}
+```
+
+### Get dataset items
+
+Retorna os itens armazenados no dataset padrão desta execução.
+
+```http
+GET https://api.apify.com/v2/datasets/lxFxICsb9fGczFKHn/items?token=${APIFY_TOKEN}
+```
+
+### Get request queue head
+
+Retorna as 100 primeiras requisições da request queue padrão desta execução.
+
+```http
+GET https://api.apify.com/v2/request-queues/0f2FzmUpiLJoiRyix/head?token=${APIFY_TOKEN}
+```
+
+### Get log
+
+Retorna os logs desta execução.
+
+```http
+GET https://api.apify.com/v2/logs/5pTpROddEqvLosh73?token=${APIFY_TOKEN}
+```
+
+### Abort run
+
+Interrompe a execução atual.
+
+```http
+POST https://api.apify.com/v2/actor-runs/5pTpROddEqvLosh73/abort?token=${APIFY_TOKEN}
+```
+
+### Resurrect run
+
+Reexecuta o actor com o mesmo input anterior.
+
+```http
+POST https://api.apify.com/v2/actor-runs/5pTpROddEqvLosh73/resurrect?token=${APIFY_TOKEN}
+```
+

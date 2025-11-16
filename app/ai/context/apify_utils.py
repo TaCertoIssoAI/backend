@@ -441,6 +441,90 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
         return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
+async def searchGoogleClaim(claim: str, maxResults: int = 10) -> dict:
+    """
+    search google for information about a claim using apify actor.
+    returns structured search results to help with fact-checking.
+    """
+    try:
+        logger.info(f"searching google for claim: {claim[:100]}...")
+        
+        apifyClient = getApifyClientAsync()
+        # using google search results scraper
+        actorClient = apifyClient.actor("apify/google-search-scraper")
+        
+        runInput = {
+            "queries": claim,
+            "maxPagesPerQuery": 1,
+            "resultsPerPage": maxResults,
+            "languageCode": "pt-BR",  # portuguese brazil results preferred
+            "mobileResults": False,
+            "includeUnfilteredResults": False
+        }
+        
+        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+        
+        if callResult is None:
+            return {
+                "success": False,
+                "claim": claim,
+                "results": [],
+                "total_results": 0,
+                "error": "actor run failed"
+            }
+        
+        datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
+        listItemsResult = await datasetClient.list_items()
+        
+        if not listItemsResult or not listItemsResult.items:
+            return {
+                "success": False,
+                "claim": claim,
+                "results": [],
+                "total_results": 0,
+                "error": "no search results found"
+            }
+        
+        # extract and structure search results
+        searchResults = []
+        for item in listItemsResult.items:
+            organicResults = item.get("organicResults", [])
+            
+            for result in organicResults[:maxResults]:
+                searchResults.append({
+                    "title": result.get("title", ""),
+                    "url": result.get("url", ""),
+                    "description": result.get("description", ""),
+                    "position": result.get("rank", 0),
+                    "domain": result.get("displayedUrl", "")
+                })
+        
+        logger.info(f"google search completed: {len(searchResults)} results found")
+        
+        return {
+            "success": True,
+            "claim": claim,
+            "results": searchResults,
+            "total_results": len(searchResults),
+            "metadata": {
+                "search_engine": "google",
+                "language": "pt",
+                "actor": "apify/google-search-scraper"
+            },
+            "error": None
+        }
+        
+    except Exception as e:
+        logger.error(f"google search error: {e}")
+        return {
+            "success": False,
+            "claim": claim,
+            "results": [],
+            "total_results": 0,
+            "error": str(e)
+        }
+
+
 async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
     """
     main scraping function with automatic platform detection.
