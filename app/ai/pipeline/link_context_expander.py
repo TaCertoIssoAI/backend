@@ -7,7 +7,7 @@ and transforming each one into a 'link_context' DataSource with expanded content
 Architecture:
 - Receives a DataSource of type 'original_text'
 - Extracts all URLs from the text
-- Expands each link to get its content (currently mocked, will be implemented later)
+- Expands each link to get its content using web scraping
 - Returns a list of new DataSources of type 'link_context'
 """
 import re
@@ -15,6 +15,8 @@ import uuid
 from typing import List
 
 from app.models import DataSource
+from app.ai.context.web.apify_utils import scrapeGenericUrl
+from app.ai.context.web.models import WebContentResult
 
 
 def extract_links(text: str) -> List[str]:
@@ -39,11 +41,22 @@ def extract_links(text: str) -> List[str]:
 
     # find all matches
     urls = re.findall(url_pattern, text)
+    
+    # strip common trailing punctuation that's not part of URLs
+    # common punctuation: . , ; : ! ? ) ] } that often follow URLs in text
+    trailing_punctuation = '.,:;!?)]}'
+    cleaned_urls = []
+    for url in urls:
+        # strip trailing punctuation
+        while url and url[-1] in trailing_punctuation:
+            url = url[:-1]
+        if url:  # only add non-empty URLs
+            cleaned_urls.append(url)
 
     # remove duplicates while preserving order
     seen = set()
     unique_urls = []
-    for url in urls:
+    for url in cleaned_urls:
         if url not in seen:
             seen.add(url)
             unique_urls.append(url)
@@ -51,37 +64,44 @@ def extract_links(text: str) -> List[str]:
     return unique_urls
 
 
-def expand_link_context(url: str) -> str:
+async def expand_link_context(url: str) -> WebContentResult:
     """
-    Mock function to expand a link and extract its content.
+    Expand a link and extract its content using web scraping.
 
-    This is a placeholder that will be replaced with actual implementation
-    (web scraping, API calls, etc.) in the future.
+    Uses the scrapeGenericUrl function to fetch and parse content from the URL.
+    Handles different platforms (social media, generic websites) automatically.
 
     Args:
         url: The URL to expand and extract content from
 
     Returns:
-        Expanded context/content from the URL as a string
+        WebContentResult with the scraped content and metadata
 
     Note:
-        Currently returns a mock response. Future implementation will:
-        - Fetch the URL content
-        - Extract main text content (removing ads, navigation, etc.)
-        - Handle errors (404, timeouts, etc.)
-        - Support different content types (articles, PDFs, etc.)
+        This function:
+        - Detects platform automatically (Facebook, Instagram, Twitter, TikTok, generic)
+        - Tries simple HTTP scraping first for generic sites (no browser, faster)
+        - Falls back to Apify actor with browser if simple scraping fails
+        - Handles errors (404, timeouts, etc.) gracefully
+        - Supports different content types (articles, social media posts, etc.)
+        - Processing time is measured by the scraping functions and included in result
     """
-    # Mock implementation - will be replaced with actual web scraping
-    return f"[MOCK] Expanded content from {url}. This would contain the actual article text, title, and relevant information extracted from the webpage."
+    # call the scraping function (processing time is measured internally)
+    result_dict = await scrapeGenericUrl(url)
+
+    # parse the result dict into WebContentResult schema
+    result = WebContentResult.from_dict(data=result_dict, url=url)
+
+    return result
 
 
-def expand_link_contexts(data_source: DataSource) -> List[DataSource]:
+async def expand_link_contexts(data_source: DataSource) -> List[DataSource]:
     """
-    Main function to expand link contexts from an original_text DataSource.
+    Main async function to expand link contexts from an original_text DataSource.
 
     Takes a DataSource of type 'original_text', extracts all links from it,
-    expands each link to get its content, and returns a list of new DataSources
-    of type 'link_context'.
+    expands each link to get its content using web scraping, and returns a list
+    of new DataSources of type 'link_context'.
 
     Args:
         data_source: Input DataSource that must be of type 'original_text'
@@ -94,12 +114,13 @@ def expand_link_contexts(data_source: DataSource) -> List[DataSource]:
 
     Example:
         >>> from app.models import DataSource
+        >>> import asyncio
         >>> original = DataSource(
         ...     id="msg-001",
         ...     source_type="original_text",
         ...     original_text="Check out https://example.com for more info"
         ... )
-        >>> expanded = expand_link_contexts(original)
+        >>> expanded = asyncio.run(expand_link_contexts(original))
         >>> len(expanded)
         1
         >>> expanded[0].source_type
@@ -107,36 +128,55 @@ def expand_link_contexts(data_source: DataSource) -> List[DataSource]:
         >>> expanded[0].metadata['url']
         'https://example.com'
     """
-    # Validate input DataSource type
+    # validate input DataSource type
     if data_source.source_type != "original_text":
         raise ValueError(
             f"expand_link_contexts expects a DataSource of type 'original_text', "
             f"but received type '{data_source.source_type}'"
         )
 
-    # Extract links from the text
+    # extract links from the text
     links = extract_links(data_source.original_text)
 
-    # If no links found, return empty list
+    # if no links found, return empty list
     if not links:
         return []
 
-    # Expand each link and create new DataSources
+    # expand each link and create new DataSources
     expanded_sources: List[DataSource] = []
 
     for url in links:
-        # Call the mock function to get expanded content
-        expanded_content = expand_link_context(url)
+        # call the scraping function to get expanded content
+        web_result = await expand_link_context(url)
 
-        # Create a new DataSource for this link
+        # create metadata dict from web result
+        metadata = {
+            "success": web_result.success,
+            "url": web_result.url,
+            "content_length": web_result.content_length,
+            "processing_time_ms": web_result.processing_time_ms,
+            "parent_source_id": data_source.id,
+        }
+
+        # add social media metadata if available
+        if web_result.metadata:
+            metadata["platform"] = web_result.metadata.platform
+            metadata["author"] = web_result.metadata.author
+            metadata["timestamp"] = web_result.metadata.timestamp
+            metadata["likes"] = web_result.metadata.likes
+            metadata["shares"] = web_result.metadata.shares
+            metadata["comments"] = web_result.metadata.comments
+
+        # add error to metadata if scraping failed
+        if web_result.error:
+            metadata["error"] = web_result.error
+
+        # create a new DataSource for this link
         link_source = DataSource(
             id=f"link-{uuid.uuid4()}",
             source_type="link_context",
-            original_text=expanded_content,
-            metadata={
-                "url": url,
-                "parent_source_id": data_source.id,
-            },
+            original_text=web_result.content if web_result.success else "",
+            metadata=metadata,
             locale=data_source.locale,
             timestamp=data_source.timestamp,
         )

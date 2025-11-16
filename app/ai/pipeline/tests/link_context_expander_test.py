@@ -1,5 +1,17 @@
-from app.ai.pipeline.link_context_expander import extract_links
+import pytest
 
+# Configure pytest to automatically handle async tests
+pytest_plugins = ('pytest_asyncio',)
+
+from app.ai.pipeline.link_context_expander import (
+    extract_links,
+    expand_link_context,
+    expand_link_contexts,
+)
+from app.models import DataSource
+
+
+# ===== UNIT TESTS FOR extract_links =====
 
 def test_extract_single_https_url():
     """should extract a single https URL from text"""
@@ -121,4 +133,210 @@ def test_real_world_whatsapp_message():
     text = "Olha essa notícia importante: https://g1.globo.com/economia/noticia.html compartilha aí!"
     result = extract_links(text)
     assert result == ["https://g1.globo.com/economia/noticia.html"]
+
+
+# ===== INTEGRATION TESTS FOR WEB SCRAPING =====
+# These tests make REAL network calls to scrape actual websites.
+# They do NOT mock the web scraping functionality.
+
+@pytest.mark.asyncio
+async def test_expand_link_context_g1_article():
+    """should scrape real G1 article and return structured content"""
+    url = "https://g1.globo.com/sp/sao-paulo/noticia/2025/11/16/policia-encontra-arsenal-de-guerra-na-zona-sul-de-sp.ghtml"
+
+    result = await expand_link_context(url)
+
+    # validate structure
+    assert result.success is True, f"Scraping failed with error: {result.error}"
+    assert result.url == url
+    assert result.content != "", "Content should not be empty"
+    assert result.content_length > 0
+    assert result.processing_time_ms > 0
+    assert result.error is None
+
+    # print for debugging
+    print(f"\n{'=' * 80}")
+    print(f"TEST: G1 Article Scraping")
+    print(f"{'=' * 80}")
+    print(f"URL: {result.url}")
+    print(f"Success: {result.success}")
+    print(f"Content length: {result.content_length} chars")
+    print(f"Processing time: {result.processing_time_ms}ms")
+    print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
+    print(f"{'=' * 80}\n")
+
+
+@pytest.mark.asyncio
+async def test_expand_link_context_cnn_brasil_article():
+    """should scrape real CNN Brasil article and return structured content"""
+    url = "https://www.cnnbrasil.com.br/nacional/em-belem-cupula-dos-povos-cobra-participacao-popular-nas-acoes-climaticas/"
+
+    result = await expand_link_context(url)
+
+    # validate structure
+    assert result.success is True, f"Scraping failed with error: {result.error}"
+    assert result.url == url
+    assert result.content != "", "Content should not be empty"
+    assert result.content_length > 0
+    assert result.processing_time_ms > 0
+    assert result.error is None
+
+    # print for debugging
+    print(f"\n{'=' * 80}")
+    print(f"TEST: CNN Brasil Article Scraping")
+    print(f"{'=' * 80}")
+    print(f"URL: {result.url}")
+    print(f"Success: {result.success}")
+    print(f"Content length: {result.content_length} chars")
+    print(f"Processing time: {result.processing_time_ms}ms")
+    print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
+    print(f"{'=' * 80}\n")
+
+
+@pytest.mark.asyncio
+async def test_expand_link_context_bbc_article():
+    """should scrape real BBC article and return structured content"""
+    url = "https://www.bbc.com/culture/article/20251112-why-this-1768-painting-could-be-the-real-birth-of-modern-art"
+
+    result = await expand_link_context(url)
+
+    # validate structure
+    assert result.success is True, f"Scraping failed with error: {result.error}"
+    assert result.url == url
+    assert result.content != "", "Content should not be empty"
+    assert result.content_length > 0
+    assert result.processing_time_ms > 0
+    assert result.error is None
+
+    # print for debugging
+    print(f"\n{'=' * 80}")
+    print(f"TEST: BBC Article Scraping")
+    print(f"{'=' * 80}")
+    print(f"URL: {result.url}")
+    print(f"Success: {result.success}")
+    print(f"Content length: {result.content_length} chars")
+    print(f"Processing time: {result.processing_time_ms}ms")
+    print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
+    print(f"{'=' * 80}\n")
+
+
+@pytest.mark.asyncio
+async def test_expand_link_contexts_with_multiple_real_urls():
+    """should extract and expand multiple real URLs from DataSource"""
+    # create a DataSource with text containing multiple URLs
+    text = """
+    Veja essas notícias importantes:
+
+    1. Arsenal encontrado em SP: https://g1.globo.com/sp/sao-paulo/noticia/2025/11/16/policia-encontra-arsenal-de-guerra-na-zona-sul-de-sp.ghtml
+
+    2. Cúpula dos Povos em Belém: https://www.cnnbrasil.com.br/nacional/em-belem-cupula-dos-povos-cobra-participacao-popular-nas-acoes-climaticas/
+
+    3. Arte moderna na BBC: https://www.bbc.com/culture/article/20251112-why-this-1768-painting-could-be-the-real-birth-of-modern-art
+    """
+
+    data_source = DataSource(
+        id="msg-test-001",
+        source_type="original_text",
+        original_text=text,
+        locale="pt-BR"
+    )
+
+    # expand all links
+    expanded_sources = await expand_link_contexts(data_source)
+
+    # validate results
+    assert len(expanded_sources) == 3, f"Expected 3 expanded sources, got {len(expanded_sources)}"
+
+    # validate each expanded source
+    for i, source in enumerate(expanded_sources, 1):
+        print(f"\n{'=' * 80}")
+        print(f"EXPANDED SOURCE {i}")
+        print(f"{'=' * 80}")
+
+        assert source.source_type == "link_context"
+        assert source.metadata["parent_source_id"] == "msg-test-001"
+        assert "url" in source.metadata
+        assert source.metadata["success"] is True, f"Source {i} scraping failed"
+        assert source.original_text != "", f"Source {i} content is empty"
+        assert source.metadata["content_length"] > 0
+        assert source.metadata["processing_time_ms"] > 0
+
+        print(f"ID: {source.id}")
+        print(f"URL: {source.metadata['url']}")
+        print(f"Success: {source.metadata['success']}")
+        print(f"Content length: {source.metadata['content_length']} chars")
+        print(f"Processing time: {source.metadata['processing_time_ms']}ms")
+        print(f"Content preview (first 150 chars):\n{source.original_text[:150]}...")
+        print(f"{'=' * 80}\n")
+
+
+@pytest.mark.asyncio
+async def test_expand_link_contexts_no_links():
+    """should return empty list when DataSource has no links"""
+    data_source = DataSource(
+        id="msg-no-links",
+        source_type="original_text",
+        original_text="This is just plain text with no URLs at all."
+    )
+
+    expanded_sources = await expand_link_contexts(data_source)
+
+    assert expanded_sources == []
+    assert len(expanded_sources) == 0
+
+
+@pytest.mark.asyncio
+async def test_expand_link_contexts_validates_source_type():
+    """should raise ValueError if DataSource is not original_text type"""
+    data_source = DataSource(
+        id="link-001",
+        source_type="link_context",  # wrong type!
+        original_text="Some text with https://example.com"
+    )
+
+    with pytest.raises(ValueError) as exc_info:
+        await expand_link_contexts(data_source)
+
+    assert "original_text" in str(exc_info.value)
+    assert "link_context" in str(exc_info.value)
+
+
+@pytest.mark.asyncio
+async def test_expand_link_context_preserves_locale_and_timestamp():
+    """should preserve locale and timestamp from original DataSource"""
+    text = "Check this: https://g1.globo.com/sp/sao-paulo/noticia/2025/11/16/policia-encontra-arsenal-de-guerra-na-zona-sul-de-sp.ghtml"
+
+    data_source = DataSource(
+        id="msg-locale-test",
+        source_type="original_text",
+        original_text=text,
+        locale="en-US",
+        timestamp="2025-11-16T10:30:00Z"
+    )
+
+    expanded_sources = await expand_link_contexts(data_source)
+
+    assert len(expanded_sources) == 1
+    expanded = expanded_sources[0]
+
+    assert expanded.locale == "en-US"
+    assert expanded.timestamp == "2025-11-16T10:30:00Z"
+
+
+@pytest.mark.asyncio
+async def test_expand_link_contexts_single_url():
+    """should handle DataSource with single URL"""
+    text = "Veja esta notícia: https://g1.globo.com/sp/sao-paulo/noticia/2025/11/16/policia-encontra-arsenal-de-guerra-na-zona-sul-de-sp.ghtml"
+
+    data_source = DataSource(
+        id="msg-single",
+        source_type="original_text",
+        original_text=text
+    )
+
+    expanded_sources = await expand_link_contexts(data_source)
+
+    assert len(expanded_sources) == 1
+    assert expanded_sources[0].metadata["success"] is True
+    assert expanded_sources[0].original_text != ""
 

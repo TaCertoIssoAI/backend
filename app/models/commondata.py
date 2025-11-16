@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Any, Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
 from . import (
@@ -25,7 +25,7 @@ class DataSource(BaseModel):
     id: str = Field(..., description="UUID for the data source")
     source_type: ClaimSourceType = Field(..., description="Type of data source (text, image, audio, video, link)")
     original_text: str = Field(..., description="Raw text content from this source")
-    metadata: dict[str, str] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata about the source (e.g., title, author, date, url)"
     )

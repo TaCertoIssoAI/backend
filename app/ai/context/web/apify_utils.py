@@ -5,6 +5,7 @@ apify integration utilities for web scraping
 import os
 import re
 import logging
+import time
 from typing import Optional
 from enum import Enum
 
