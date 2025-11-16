@@ -9,7 +9,7 @@ Follows LangChain best practices:
 - Support for both sync and async operations
 
 Architecture:
-- Receives a ClaimExtractionInput (source_id, type, text)
+- Receives a ClaimExtractionInput wrapping a DataSource
 - Extracts all fact-checkable claims from the text
 - Returns claims with proper source tracking
 - Source-agnostic: works for any text (user message, link, image OCR, etc.)
@@ -108,19 +108,20 @@ def extract_claims(
     Source-agnostic: works for user messages, link content, OCR text, transcripts, etc.
 
     Args:
-        extraction_input: Input containing source_id, type, and text to extract from
+        extraction_input: Input wrapping a DataSource with id, source_type, original_text, and metadata
         llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
         ClaimExtractionOutput containing list of ExtractedClaim objects with unique IDs and source tracking
 
     Example:
-        >>> from app.models import ClaimExtractionInput, LLMConfig
-        >>> input_data = ClaimExtractionInput(
-        ...     source_id="msg-123",
-        ...     type="original_text",
-        ...     text="I heard vaccine X causes infertility in women."
+        >>> from app.models import ClaimExtractionInput, DataSource, LLMConfig
+        >>> data_source = DataSource(
+        ...     id="msg-123",
+        ...     source_type="original_text",
+        ...     original_text="I heard vaccine X causes infertility in women."
         ... )
+        >>> input_data = ClaimExtractionInput(data_source=data_source)
         >>> config = LLMConfig(model_name="gpt-4o-mini", temperature=0.0)
         >>> result = extract_claims(input_data, llm_config=config)
         >>> print(len(result.claims))
@@ -135,7 +136,7 @@ def extract_claims(
 
     # Prepare input for the prompt template
     chain_input = {
-        "text": extraction_input.text
+        "text": extraction_input.data_source.original_text
     }
 
     # Invoke the chain - gets LLM output (just claim content)
@@ -145,12 +146,12 @@ def extract_claims(
     claims: List[ExtractedClaim] = []
     for llm_claim in result.claims:
         # Generate unique ID with source prefix
-        claim_id = f"{extraction_input.source_id}-claim-{uuid.uuid4()}"
+        claim_id = f"{extraction_input.data_source.id}-claim-{uuid.uuid4()}"
 
         # Build the ClaimSource object
         source = ClaimSource(
-            source_type=extraction_input.type,
-            source_id=extraction_input.source_id
+            source_type=extraction_input.data_source.source_type,
+            source_id=extraction_input.data_source.id
         )
 
         # Create the full ExtractedClaim with all fields
@@ -176,7 +177,7 @@ async def extract_claims_async(
     Follows LangChain best practice: provide async methods for IO-bound operations.
 
     Args:
-        extraction_input: Input containing source_id, type, and text to extract from
+        extraction_input: Input wrapping a DataSource with id, source_type, original_text, and metadata
         llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
@@ -187,7 +188,7 @@ async def extract_claims_async(
 
     # Prepare input for the prompt template
     chain_input = {
-        "text": extraction_input.text
+        "text": extraction_input.data_source.original_text
     }
 
     # Invoke the chain asynchronously - gets LLM output (just claim content)
@@ -197,12 +198,12 @@ async def extract_claims_async(
     claims: List[ExtractedClaim] = []
     for llm_claim in result.claims:
         # Generate unique ID with source prefix
-        claim_id = f"{extraction_input.source_id}-claim-{uuid.uuid4()}"
+        claim_id = f"{extraction_input.data_source.id}-claim-{uuid.uuid4()}"
 
         # Build the ClaimSource object
         source = ClaimSource(
-            source_type=extraction_input.type,
-            source_id=extraction_input.source_id
+            source_type=extraction_input.data_source.source_type,
+            source_id=extraction_input.data_source.id
         )
 
         # Create the full ExtractedClaim with all fields
@@ -268,7 +269,7 @@ def extract_and_validate_claims(
     This is the recommended entry point for most use cases.
 
     Args:
-        extraction_input: Input containing source_id, type, and text to extract from
+        extraction_input: Input wrapping a DataSource with id, source_type, original_text, and metadata
         llm_config: LLM configuration (model name, temperature, timeout).
 
     Returns:
