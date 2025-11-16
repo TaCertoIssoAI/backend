@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import Optional
 import time
@@ -62,18 +62,22 @@ async def scrape_url(request: ScrapingRequest) -> ScrapingResponse:
     """
     Extract content from a web page using Apify scraping service.
     
-    **Currently Supported:**
-    - Facebook posts (public posts only)
+    **Supported Platforms:**
+    - ✅ Facebook posts (public posts only)
+    - ✅ Instagram posts (public posts)
+    - ✅ Twitter/X posts (tweets)
+    - ✅ TikTok videos (public videos)
+    - ✅ Generic websites (any public URL)
     
-    **Future Support:**
-    - Twitter/X posts
-    - Instagram posts
-    - Generic web pages
+    **Smart Detection:**
+    - Automatically detects platform from URL using regex patterns
+    - Selects the best Apify actor for each platform
+    - Falls back to generic web crawler for unknown URLs
     
     **Strategy:**
     - Uses Apify actors for robust, cloud-based scraping
     - Handles JavaScript-rendered content automatically
-    - Returns structured data with metadata
+    - Returns structured data with platform-specific metadata
     
     **Requirements:**
     - APIFY_TOKEN must be set in environment variables
@@ -182,10 +186,12 @@ async def scraping_status():
         "apify_configured": token_configured,
         "apify_token_status": "configured" if token_configured else "missing",
         "supported_platforms": {
-            "facebook": "✅ available",
-            "twitter": "⏳ coming soon",
-            "instagram": "⏳ coming soon",
-            "generic": "⏳ coming soon"
+            "facebook": "✅ available (apify/facebook-posts-scraper)",
+            "instagram": "✅ available (apify/instagram-scraper)",
+            "twitter": "✅ available (apidojo/tweet-scraper)",
+            "tiktok": "✅ available (clockworks/tiktok-scraper)",
+            "generic": "✅ available (apify/website-content-crawler)"
         },
-        "note": "set APIFY_TOKEN in environment to enable scraping"
+        "smart_detection": "✅ automatic platform detection via regex",
+        "note": "set APIFY_TOKEN in environment to enable scraping" if not token_configured else "all actors ready"
     }

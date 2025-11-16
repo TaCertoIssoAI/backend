@@ -2,31 +2,535 @@
 alwaysApply: true
 ---
 
+# Apify
+
+## Token configuration
+
+Copy for LLM
+
+- the Apify API token is stored in the `.env` file as `APIFY_TOKEN`
+- for raw HTTP calls, always append `?token=${APIFY_TOKEN}` (or `&token=${APIFY_TOKEN}` when there are already query params)
+- for SDK usage, read the token from the environment
+
+Example with the async Python client:
+
+```python
+from apify_client import ApifyClientAsync
+import os
+
+# apify token is stored in .env as APIFY_TOKEN
+TOKEN = os.environ["APIFY_TOKEN"]
+
+
+async def main() -> None:
+    apify_client = ApifyClientAsync(TOKEN)
+
+    # start an actor, task, or use other apify resources
+    # example: await apify_client.actor("apify~instagram-scraper").call()
+````
+
+The [Apify client for Python](https://github.com/apify/apify-client-python) is the official library to access the [Apify REST API](https://docs.apify.com/api/v2) from Python applications. It provides automatic retries, convenience helpers, and works fully over JSON with UTF-8, supporting both synchronous and asynchronous interfaces.
+
+---
+
 ## Facebook Posts Actor
 
-Get run
-View API reference
+These endpoints work with a specific Facebook Posts Actor run whose run ID is `82fpg2IAXTUqRg0XC`.
+
+> In all URLs below, replace `${APIFY_TOKEN}` with the value of your `APIFY_TOKEN` environment variable.
+
+### Get run
+
 Returns an object containing all details of this run.
 
-"https://api.apify.com/v2/actor-runs/82fpg2IAXTUqRg0XC?token="
+```http
+GET https://api.apify.com/v2/actor-runs/82fpg2IAXTUqRg0XC?token=${APIFY_TOKEN}
+```
 
-Get Input
+### Get input
+
 Returns the input of this run from its key-value store.
 
-"https://api.apify.com/v2/key-value-stores/B3dNPklulOJ8ThzS7/records/INPUT?token="
+```http
+GET https://api.apify.com/v2/key-value-stores/B3dNPklulOJ8ThzS7/records/INPUT?token=${APIFY_TOKEN}
+```
 
-Get dataset items
-View API reference
-Returns items stored in default dataset of this run.
+### Get dataset items
 
-"https://api.apify.com/v2/datasets/Zq6MKEqg8lblgnTQm/items?token="
+Returns items stored in the default dataset of this run.
 
-Get log
-View API reference
+```http
+GET https://api.apify.com/v2/datasets/Zq6MKEqg8lblgnTQm/items?token=${APIFY_TOKEN}
+```
 
-"https://api.apify.com/v2/logs/82fpg2IAXTUqRg0XC?token="
+### Get log
 
-Resurrect run
-View API reference
+Returns the log for this run.
 
-"https://api.apify.com/v2/actor-runs/82fpg2IAXTUqRg0XC/resurrect?token="
+```http
+GET https://api.apify.com/v2/logs/82fpg2IAXTUqRg0XC?token=${APIFY_TOKEN}
+```
+
+### Resurrect run
+
+Resurrects this run (run it again with the same input).
+
+```http
+POST https://api.apify.com/v2/actor-runs/82fpg2IAXTUqRg0XC/resurrect?token=${APIFY_TOKEN}
+```
+
+---
+
+## Instagram Scraper Actor
+
+Actor: `apify~instagram-scraper`
+
+> Use `${APIFY_TOKEN}` from the environment in all `token` query parameters.
+
+### Run Actor
+
+Runs this Actor. The POST body is passed as `INPUT` to the Actor.
+
+```http
+POST https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY_TOKEN}
+```
+
+* body: actor input (typically `application/json`)
+* you can override default run options using query parameters
+
+Hint: by adding `method=POST` as a query parameter, this endpoint can be called via GET and used in webhooks.
+
+### Run Actor synchronously and get key-value store record
+
+Runs the Actor and waits for it to finish. Returns the `OUTPUT` record (or another record specified by `outputRecordKey`) from the default key-value store.
+
+```http
+POST https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync?token=${APIFY_TOKEN}
+```
+
+* body: actor input
+* note: long HTTP connections might break for very long runs
+
+This endpoint supports both GET and POST, but only POST accepts an input body.
+
+### Run Actor synchronously and get dataset items
+
+Runs the Actor, waits for it to finish, and returns dataset items.
+
+```http
+POST https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}
+```
+
+* body: actor input
+* response: dataset items in the requested format (see dataset params for filtering/pagination)
+
+### Get Actor
+
+Returns settings of this Actor.
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor versions
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/versions?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor webhooks
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/webhooks?token=${APIFY_TOKEN}
+```
+
+### Update Actor
+
+Updates settings of this Actor.
+
+```http
+PUT https://api.apify.com/v2/acts/apify~instagram-scraper?token=${APIFY_TOKEN}
+```
+
+* body: JSON object with fields to update
+
+### Update Actor version
+
+```http
+PUT https://api.apify.com/v2/acts/apify~instagram-scraper/versions/0.0?token=${APIFY_TOKEN}
+```
+
+* replace `0.0` with the version to update
+* body: JSON fields to update
+
+### Delete Actor
+
+```http
+DELETE https://api.apify.com/v2/acts/apify~instagram-scraper?token=${APIFY_TOKEN}
+```
+
+### Get list of builds
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/builds?token=${APIFY_TOKEN}
+```
+
+### Build Actor
+
+Builds a specific version of this Actor.
+
+```http
+POST https://api.apify.com/v2/acts/apify~instagram-scraper/builds?token=${APIFY_TOKEN}&version=0.0
+```
+
+* replace `0.0` with the desired version
+
+Hint: add `method=POST` to call via GET for webhooks.
+
+### Get list of runs
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${APIFY_TOKEN}
+```
+
+### Get last run
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/runs/last?token=${APIFY_TOKEN}
+```
+
+* add `status=SUCCEEDED` to get only the last successful run
+
+### Get last run dataset items
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/runs/last/dataset/items?token=${APIFY_TOKEN}
+```
+
+* supports all parameters from the Dataset Get Items endpoint
+* you can also add `status=SUCCEEDED`
+
+### Get OpenAPI definition
+
+```http
+GET https://api.apify.com/v2/acts/apify~instagram-scraper/builds/default/openapi.json?token=${APIFY_TOKEN}
+```
+
+---
+
+## Twitter (X) Scraper Actor
+
+Actor: `apidojo~tweet-scraper`
+
+### Run Actor
+
+```http
+POST https://api.apify.com/v2/acts/apidojo~tweet-scraper/runs?token=${APIFY_TOKEN}
+```
+
+* body: input payload (`application/json`)
+
+Hint: add `method=POST` to call via GET for webhooks.
+
+### Run Actor synchronously and get key-value store record
+
+```http
+POST https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync?token=${APIFY_TOKEN}
+```
+
+* body: actor input
+* response: `OUTPUT` record (or `outputRecordKey`)
+
+### Run Actor synchronously and get dataset items
+
+```http
+POST https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}
+```
+
+### Get Actor
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor versions
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/versions?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor webhooks
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/webhooks?token=${APIFY_TOKEN}
+```
+
+### Update Actor
+
+```http
+PUT https://api.apify.com/v2/acts/apidojo~tweet-scraper?token=${APIFY_TOKEN}
+```
+
+### Update Actor version
+
+```http
+PUT https://api.apify.com/v2/acts/apidojo~tweet-scraper/versions/0.0?token=${APIFY_TOKEN}
+```
+
+* replace `0.0` with the version number you want to update
+
+### Delete Actor
+
+```http
+DELETE https://api.apify.com/v2/acts/apidojo~tweet-scraper?token=${APIFY_TOKEN}
+```
+
+### Get list of builds
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/builds?token=${APIFY_TOKEN}
+```
+
+### Build Actor
+
+```http
+POST https://api.apify.com/v2/acts/apidojo~tweet-scraper/builds?token=${APIFY_TOKEN}&version=0.0
+```
+
+* replace `0.0` with the desired version
+
+Hint: can also use `method=POST` via GET.
+
+### Get list of runs
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/runs?token=${APIFY_TOKEN}
+```
+
+### Get last run
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/runs/last?token=${APIFY_TOKEN}
+```
+
+* add `status=SUCCEEDED` to get last successful run only
+
+### Get last run dataset items
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/runs/last/dataset/items?token=${APIFY_TOKEN}
+```
+
+* supports all Dataset Get Items params
+
+### Get OpenAPI definition
+
+```http
+GET https://api.apify.com/v2/acts/apidojo~tweet-scraper/builds/default/openapi.json?token=${APIFY_TOKEN}
+```
+
+---
+
+## TikTok Scraper Actor
+
+Actor: `clockworks~tiktok-scraper`
+
+### Run Actor
+
+```http
+POST https://api.apify.com/v2/acts/clockworks~tiktok-scraper/runs?token=${APIFY_TOKEN}
+```
+
+### Run Actor synchronously and get key-value store record
+
+```http
+POST https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync?token=${APIFY_TOKEN}
+```
+
+### Run Actor synchronously and get dataset items
+
+```http
+POST https://api.apify.com/v2/acts/clockworks~tiktok-scraper/run-sync-get-dataset-items?token=${APIFY_TOKEN}
+```
+
+### Get Actor
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor versions
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/versions?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor webhooks
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/webhooks?token=${APIFY_TOKEN}
+```
+
+### Update Actor
+
+```http
+PUT https://api.apify.com/v2/acts/clockworks~tiktok-scraper?token=${APIFY_TOKEN}
+```
+
+### Update Actor version
+
+```http
+PUT https://api.apify.com/v2/acts/clockworks~tiktok-scraper/versions/0.0?token=${APIFY_TOKEN}
+```
+
+### Delete Actor
+
+```http
+DELETE https://api.apify.com/v2/acts/clockworks~tiktok-scraper?token=${APIFY_TOKEN}
+```
+
+### Get list of builds
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/builds?token=${APIFY_TOKEN}
+```
+
+### Build Actor
+
+```http
+POST https://api.apify.com/v2/acts/clockworks~tiktok-scraper/builds?token=${APIFY_TOKEN}&version=0.0
+```
+
+* replace `0.0` with desired version
+
+### Get list of runs
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/runs?token=${APIFY_TOKEN}
+```
+
+### Get last run
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/runs/last?token=${APIFY_TOKEN}
+```
+
+* add `status=SUCCEEDED` if you only want successful runs
+
+### Get last run dataset items
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/runs/last/dataset/items?token=${APIFY_TOKEN}
+```
+
+* supports dataset items query params
+
+### Get OpenAPI definition
+
+```http
+GET https://api.apify.com/v2/acts/clockworks~tiktok-scraper/builds/default/openapi.json?token=${APIFY_TOKEN}
+```
+
+---
+
+## Website Content Crawler Actor
+
+Actor: `apify~website-content-crawler`
+
+### Run Actor
+
+```http
+POST https://api.apify.com/v2/acts/apify~website-content-crawler/runs?token=${APIFY_TOKEN}
+```
+
+### Run Actor synchronously and get key-value store record
+
+```http
+POST https://api.apify.com/v2/acts/apify~website-content-crawler/run-sync?token=${APIFY_TOKEN}
+```
+
+* response: `OUTPUT` record (or `outputRecordKey`)
+
+### Run Actor synchronously and get dataset items
+
+```http
+POST https://api.apify.com/v2/acts/apify~website-content-crawler/run-sync-get-dataset-items?token=${APIFY_TOKEN}
+```
+
+### Get Actor
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor versions
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/versions?token=${APIFY_TOKEN}
+```
+
+### Get list of Actor webhooks
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/webhooks?token=${APIFY_TOKEN}
+```
+
+### Update Actor
+
+```http
+PUT https://api.apify.com/v2/acts/apify~website-content-crawler?token=${APIFY_TOKEN}
+```
+
+### Update Actor version
+
+```http
+PUT https://api.apify.com/v2/acts/apify~website-content-crawler/versions/0.0?token=${APIFY_TOKEN}
+```
+
+### Delete Actor
+
+```http
+DELETE https://api.apify.com/v2/acts/apify~website-content-crawler?token=${APIFY_TOKEN}
+```
+
+### Get list of builds
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/builds?token=${APIFY_TOKEN}
+```
+
+### Build Actor
+
+```http
+POST https://api.apify.com/v2/acts/apify~website-content-crawler/builds?token=${APIFY_TOKEN}&version=0.0
+```
+
+### Get list of runs
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/runs?token=${APIFY_TOKEN}
+```
+
+### Get last run
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/runs/last?token=${APIFY_TOKEN}
+```
+
+* add `status=SUCCEEDED` to filter by successful runs
+
+### Get last run dataset items
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/runs/last/dataset/items?token=${APIFY_TOKEN}
+```
+
+* supports Dataset Get Items parameters
+
+### Get OpenAPI definition
+
+```http
+GET https://api.apify.com/v2/acts/apify~website-content-crawler/builds/default/openapi.json?token=${APIFY_TOKEN}
+```
+
+```
