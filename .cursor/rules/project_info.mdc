@@ -4,312 +4,161 @@ alwaysApply: true
 
 # Fake-News Detector - Project Overview (WhatsApp Chatbot)
 
-## 1) Summary
+## 1) What this project is about
 
-A WhatsApp chatbot connected via Evolution API to our backend. It receives user messages with text and or images, extracts the central claim, runs a retrieval plus LLM adjudication pipeline, and replies with a verdict and citations. Supports text only, image plus caption, and link messages.
+This repository is part of the broader initiative **Tá Certo Isso AI**.
 
----
+The central idea:
 
-## 2) Purpose & Motivation
+- A **WhatsApp chatbot** that receives content from users.
+- It extracts the **central claim** from text, images and links.
+- It checks this claim against external information sources.
+- It replies inside WhatsApp with a **verdict, short explanation and citations**.
 
-* Problem: Misleading and false claims spread quickly in chats and groups. Verifying them manually is slow and requires expertise.
-* Our aim: Deliver source grounded fact checks directly inside WhatsApp with minimal friction.
-* Principles:
-  * Evidence over opinions with transparent citations.
-  * Privacy by design with explicit user consent.
-  * Clear, brief, and actionable replies.
+The code in this repo supports this flow at a high level, from receiving a message to sending back an evidence based answer.
 
 ---
 
-## 3) What We Want to Achieve (Goals)
+## 2) Problem and target users
 
-* G1 - One message to verify: users forward or paste content, the bot replies with a concise verdict.
-* G2 - Hybrid context: combine message text, image OCR, and optional URL metadata for robust claim extraction.
-* G3 - Grounded verdicts: return True or False or Misleading or Unverifiable with 3 to 5 citations and a short rationale.
-* G4 - Trust and transparency: show what was analyzed, how we searched, and why we decided.
-* G5 - Low latency: target P50 under 5 seconds for text and under 12 seconds when OCR is needed.
-* G6 - Learn and improve: feedback loop with thumbs up or down and continuous evaluation.
+### Problem
 
----
+- Misleading and false information spreads very fast in private chats.
+- Fact checking usually requires time, expertise and leaving the app.
+- Many people do not have the habit or the tools to verify what they receive.
 
-## 4) Core User Scenarios (Happy Paths)
+### Who we want to help
 
-1. Quick Check - text first  
-User sends a sentence or claim. Bot replies with verdict, rationale, and citations.
+- People who rely on **WhatsApp as their main information channel**.
+- Users with **limited time** or **limited media literacy**.
+- Family and community group participants who want to check before forwarding.
 
-2. Image Post - image first  
-User sends a screenshot or photo with a claim. Backend runs OCR and merges caption plus OCR text. Bot replies with verdict and citations.
-
-3. Link Check - URL first  
-User sends a link. Backend fetches metadata, extracts the central statement, and replies with verdict and citations.
+The goal is to make **verification as simple as forwarding a message**.
 
 ---
 
-## 5) Non Goals (V1)
+## 3) Vision and scope
 
-* Production grade deepfake detection for video or audio.
-* Group moderation or automated takedowns.
-* Integrations outside WhatsApp.
+### Vision
 
----
+- Turn everyday WhatsApp conversations into an **entry point for trustworthy information**.
+- Use each individual fact check to build **aggregated, anonymized insights** that help society understand how misinformation circulates.
 
-## 6) Success Metrics (KPIs)
+### Scope for this project
 
-* Adoption: DAU and WAU, requests per user, retention.
-* Quality: helpfulness rating at least 4 of 5, disagreement rate under 10 percent.
-* Latency: P50 decision time for text and for OCR paths.
-* Coverage: percent of requests that return at least 3 independent sources.
+- Focus on **verifiable factual claims**, not opinions.
+- Support:
+  - Text only messages.
+  - Images that contain text or claims.
+  - Links to external content.
+- Deliver a response that is:
+  - Short enough for chat.
+  - Clear about what was checked.
+  - Transparent about the sources used.
 
----
-
-## 7) Privacy, Consent, and Compliance
-
-* Consent in chat: first time onboarding message explains processing and asks for OK before any analysis.
-* Redaction guidance: instruct users to avoid sending sensitive personal data. Prefer text when possible.
-* Data minimization: store only what is required for quality and audit. Avoid keeping full images if text suffices.
-* Retention policy: default 7 to 30 days with user initiated deletion at any time.
-* Controls: delete my data, stop analyzing my messages, block specific domains for link fetch.
-* Documentation: Privacy Policy and Data Use docs aligned with WhatsApp Business and Evolution API terms.
+Longer term, this project is one building block in a **broader data and analytics platform** for misinformation patterns.
 
 ---
 
-## 8) Tech Stack (Proposed)
+## 4) Core experience from the user perspective
 
-### WhatsApp Connector
+1) **Onboarding**
 
-* Evolution API for receiving webhooks and sending replies.
-* Webhook signature or secret validation and retry handling.
+- The bot explains in simple language:
+  - What it does.
+  - What data it needs.
+  - How to give consent and how to opt out.
 
-### Backend
+2) **Sending content**
 
-* **Framework**: FastAPI with Python 3.11+, deployable to Heroku/Render
-* **API Layer**: Three main endpoints for content analysis:
-  * `/api/text` - Text-only fact-checking
-  * `/api/images` - Image analysis with OCR
-  * `/api/multimodal` - Combined text and image processing
-* **Processing**:
-  * Claim extraction: heuristics and NLP to isolate the central statement
-  * Retrieval: web and news search with quality filters, deduplication, and date normalization
-  * Adjudication: LLM reasoning grounded strictly in retrieved evidence
-* **Datastores**:
-  * SQLAlchemy for database ORM (PostgreSQL/SQLite)
-  * Redis for caching repeated claims and recent evidence
-  * Optional object storage for media files
-* **Configuration**: Environment-based settings without Pydantic dependencies
-* **Validation**: Python dataclasses for request/response schemas
-* **Observability**: Basic logging with configurable levels
+- The user forwards a message, image or link to the bot.
+- No special technical knowledge is required.
 
-### ML and AI
+3) **Analysis**
 
-* OCR: on demand for images.
-* NER and semantic parsing: entity and date normalization, language detection.
-* LLM: provider agnostic adapter that enforces citation grounding and structured outputs.
+- The system:
+  - Identifies the main claim.
+  - Looks for relevant evidence.
+  - Weighs the available information.
 
----
+4) **Response**
 
-## 9) High Level Architecture (Overview)
+- The bot returns:
+  - A **verdict label** (for example: true, false, misleading, unverifiable).
+  - A **short rationale**.
+  - A **small list of sources** that can be opened by the user.
+- The response is adapted to the chat format: concise, direct and easy to read on a phone.
 
-User on WhatsApp  
--> Evolution API (webhook event)  
--> Backend Ingest API  
--> Preprocess and Claim Builder (merge text, OCR when needed, normalize entities and dates)  
--> Retrieval Service (search, filter, dedupe, timestamp checks)  
--> LLM Adjudicator (verdict and citations)  
--> Response Builder (JSON payload)  
--> Evolution API send message  
--> User receives verdict with citations
+5) **Follow ups**
 
-Supporting services: admin auth, metrics and alerts, storage and retention jobs.
+- The user can:
+  - Ask to check something else.
+  - Say they disagree.
+  - Ask to delete their data.
+  - Ask to stop receiving analysis.
 
 ---
 
-## 10) WhatsApp Capabilities (V1)
+## 5) Principles guiding design and implementation
 
-* Receive message events from Evolution API webhooks.
-* Send text replies with links to sources.
-* Receive media and fetch media with short lived links for OCR.
-* Only user initiated messages are processed.
+- **Evidence first**  
+  Every verdict must be grounded in accessible sources, not in vague model opinions.
 
----
+- **Clarity over complexity**  
+  Users see simple labels and short texts. Any complexity stays in the internal reasoning.
 
-## 11) Data We Receive and Process (Typical Payload)
+- **Privacy by design**  
+  Collect only what is necessary, keep it for as short as possible and make deletion easy.
 
-* Required: message id, sender id, timestamp, message type.
-* Optional structured: text body, caption, URL, quoted message text, language.
-* Optional media: image bytes or media URL token for OCR, optional thumbnail.
-* Client hints: bot version, feature flags.
-* Privacy flags: user consent status, data retention preference.
+- **Transparency**  
+  Make it clear:
+  - What was analyzed.
+  - What sources were consulted.
+  - Why the verdict was chosen.
 
----
+- **Accessibility and inclusion**  
+  Keep language simple, avoid jargon and support multilingual usage starting with Portuguese and English.
 
-## 12) API Endpoints - FastAPI Backend
-
-### POST /api/text
-Analyze text-only messages for fact-checking.
-
-Body (JSON):
-```json
-{
-  "text": "string (required, max 10000 chars)",
-  "chatId": "string (optional)"
-}
-```
-
-Response:
-```json
-{
-  "message_id": "string",
-  "verdict": "true|false|misleading|unverifiable",
-  "confidence": 0.85,
-  "rationale": "Brief explanation",
-  "citations": [
-    {
-      "title": "Article title",
-      "source": "Source name",
-      "url": "https://...",
-      "snippet": "Relevant excerpt",
-      "published_at": "2024-01-01T00:00:00Z"
-    }
-  ],
-  "processing_time_ms": 4500
-}
-```
-
-### POST /api/images
-Analyze image-only messages using OCR for fact-checking.
-
-Body (multipart/form-data):
-* `file`: Image file (required)
-* `chatId`: String (optional)
-
-Response: Same as `/api/text`
-
-### POST /api/multimodal
-Analyze messages containing both text and images.
-
-Body (multipart/form-data):
-* `text`: String (optional, max 10000 chars)
-* `file`: Image file (optional)
-* `chatId`: String (optional)
-
-Response: Same as `/api/text`
-
-### GET /
-Root endpoint returning API info.
-
-### GET /health
-Health check endpoint.
+- **Graceful failure**  
+  When evidence is insufficient or the system is under constraints, respond with an honest **unverifiable** result instead of guessing.
 
 ---
 
-## 13) WhatsApp UX Overview
+## 6) What “good” looks like for this repo
 
-1. Onboarding  
-Bot welcomes the user and asks for consent. Explains privacy and how to use the service.
+When working in this project, prefer:
 
-2. Send content  
-User forwards a message, an image, or a link. Optional commands: check, help, delete my data.
+- User centered thinking:
+  - Design flows and messages starting from real WhatsApp usage.
+- Simplicity:
+  - Favor designs that are easy to understand, debug and maintain.
+- Abstraction:
+  - Separate concerns such as message handling, claim understanding, evidence search and verdict generation.
+- Explicitness:
+  - Make rationales, assumptions and limitations visible where it matters.
 
-3. Processing  
-Bot acknowledges receipt and explains that citations will follow.
+From a collaboration angle:
 
-4. Result  
-Bot sends verdict badge, short rationale, and 3 to 5 citations. Optionally a short explainer on how the decision was made.
+- Keep documentation updated enough so that a new contributor can understand:
+  - What the system does end to end.
+  - Where to plug new components.
+- Align variable names, comments and docs with the concepts above:
+  - claim, evidence, verdict, rationale, citation, consent, retention.
 
-5. Follow ups  
-Buttons or quick replies: check another, disagree, learn more, delete my data.
-
----
-
-## 14) Performance and Reliability
-
-* Fast path: skip OCR when text is available.
-* Caching: normalize claim and domain, reuse recent adjudications.
-* Timeouts: hard limits for retrieval and LLM. On timeout, reply with Unverifiable and a brief explanation.
-* Resilience: circuit breaker for external search and graceful degradation to cached sources.
+This file should help any AI assistant or contributor understand **intent and constraints** without needing low level details.
 
 ---
 
-## 15) Security Considerations
+## 7) Non goals and boundaries
 
-* Transport: HTTPS only with HSTS.
-* Webhook verification: signature or secret validation for Evolution API events.
-* Input limits: maximum image size and page fetch limits, antivirus scanning for stored media.
-* Abuse prevention: rate limits per sender and anomaly detection for scripted requests.
-* Data segregation: separate buckets for temporary artifacts with lifecycle rules.
-* Logging: avoid logging raw media or full messages. Store hashed or truncated references only.
+The following are **out of scope** for the current project definition:
 
----
+- Full blown content moderation or takedown systems.
+- Comprehensive deepfake detection for complex media formats.
+- Cross platform bots outside WhatsApp.
+- Deciding on ideological or opinion based disputes that cannot be resolved with factual evidence.
 
-## 16) Accessibility and Internationalization
-
-* Language support: English and Portuguese at launch with automatic language detection.
-* Readability: short messages, clear verdict labels, and numbered citations.
-* Right to left support on the roadmap.
+The system should be comfortable saying **“we do not know”** or **“this is not a factual claim”** instead of stretching beyond its purpose.
 
 ---
 
-## 17) Testing Strategy
-
-* Unit tests: claim parsing, retrieval ranking, citation formatting, and date checks.
-* Integration tests: end to end for text only and image OCR flows.
-* Real site checks: news outlets, social posts, and blogs.
-* Compliance tests: consent, data deletion, retention timers, and opt out flow.
-* Load tests: spikes during breaking news events.
-
----
-
-## 18) Analytics and Telemetry - Privacy Aware
-
-* Event counts: requests received and completed, OCR rate, link rate.
-* Quality signals: helpfulness rating, disagreement rate, coverage of citations.
-* Error budgets: OCR failures, retrieval misses, LLM timeouts.
-* Opt in only: no per user tracking by default. Use sampled and hashed metrics.
-
----
-
-## 19) Roadmap - Milestones
-
-* M1 - Prototype: manual retrieval plus lightweight adjudication, English only, local sandbox, simple consent.
-* M2 - Media support: OCR for images, better claim extraction, basic citations with date normalization.
-* M3 - Quality pass: improved retrieval filters, caching, PT BR enabled, better rationale formatting.
-* M4 - Privacy and compliance: full consent flows, deletion requests, retention policies, documentation.
-* M5 - Feedback loop: disagreement capture, reviewer tools, continuous offline eval.
-* M6 - Scale and polish: performance tuning, reliability work, more locales.
-
----
-
-## 20) Acceptance Criteria - V1
-
-* First time consent message is shown and stored before analysis.
-* Text only path average P50 latency 5 seconds or less.
-* Image OCR path average P50 latency 12 seconds or less.
-* Verdict message includes badge, short rationale, and at least 3 citations.
-* Works for direct messages and small groups where the bot is added.
-* Clear commands for help and data deletion.
-
----
-
-## 21) Operations and Support
-
-* Runbooks: retrieval provider down, LLM quota exceeded, webhook retries, media fetch failures.
-* Monitoring: uptime, error rates, queue depth, latency SLOs.
-* Updates: semantic versioning, staged rollout, changelog in the repo.
-* Support: in chat Report an issue linking to a form or GitHub issue template.
-
----
-
-## 22) Open Questions
-
-* Trusted sources list vs open web search for the first versions.
-* Default retention window for media and whether to store only OCR text after extraction.
-* Offline behavior when search or LLM is rate limited.
-* Group dynamics: how to handle multiple senders and avoid noisy replies.
-
----
-
-### Appendix - Glossary
-
-* Claim extraction: turning noisy chat text and OCR content into a single central statement to verify.
-* Grounded reasoning: a verdict and rationale tied to citations users can open and read.
-* Unverifiable: insufficient or conflicting evidence within time and search constraints.

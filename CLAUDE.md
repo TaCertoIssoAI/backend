@@ -151,9 +151,10 @@ Body (JSON):
   "text": "string (required, max 10000 chars)",
   "chatId": "string (optional)"
 }
-```
+````
 
 Response:
+
 ```json
 {
   "message_id": "string",
@@ -174,18 +175,22 @@ Response:
 ```
 
 ### POST /api/images
+
 Analyze image-only messages using OCR for fact-checking.
 
 Body (multipart/form-data):
+
 * `file`: Image file (required)
 * `chatId`: String (optional)
 
 Response: Same as `/api/text`
 
 ### POST /api/multimodal
+
 Analyze messages containing both text and images.
 
 Body (multipart/form-data):
+
 * `text`: String (optional, max 10000 chars)
 * `file`: Image file (optional)
 * `chatId`: String (optional)
@@ -193,29 +198,31 @@ Body (multipart/form-data):
 Response: Same as `/api/text`
 
 ### GET /
+
 Root endpoint returning API info.
 
 ### GET /health
+
 Health check endpoint.
 
 ---
 
 ## 13) WhatsApp UX Overview
 
-1) Onboarding  
-Bot welcomes the user and asks for consent. Explains privacy and how to use the service.
+1. Onboarding
+   Bot welcomes the user and asks for consent. Explains privacy and how to use the service.
 
-2) Send content  
-User forwards a message, an image, or a link. Optional command: "check", "help", "delete my data".
+2. Send content
+   User forwards a message, an image, or a link. Optional command: "check", "help", "delete my data".
 
-3) Processing  
-Bot acknowledges receipt and explains that citations will follow.
+3. Processing
+   Bot acknowledges receipt and explains that citations will follow.
 
-4) Result  
-Bot sends verdict badge, short rationale, and 3 to 5 citations. Also sends "How we decided" link or short explainer.
+4. Result
+   Bot sends verdict badge, short rationale, and 3 to 5 citations. Also sends "How we decided" link or short explainer.
 
-5) Follow-ups  
-Buttons or quick replies: "check another", "disagree", "learn more", "delete my data".
+5. Follow-ups
+   Buttons or quick replies: "check another", "disagree", "learn more", "delete my data".
 
 ---
 
@@ -311,3 +318,18 @@ Buttons or quick replies: "check another", "disagree", "learn more", "delete my 
 * Claim extraction: turning noisy chat text and OCR content into a single central statement to verify.
 * Grounded reasoning: a verdict and rationale tied to citations users can open and read.
 * Unverifiable: insufficient or conflicting evidence within time and search constraints.
+
+---
+
+### Code Style Guidelines
+
+To ensure consistency across the codebase:
+
+* **Comments**: must be short and objective. Avoid overcommenting or restating the obvious.
+* **Language**: all code must be written in English.
+* **Naming**: variables, functions and files must start with **lowercase** letters and use clear, descriptive names.
+* **Comment style**: comments should also start with **lowercase** and only be used where they clarify real intent or edge cases.
+* **No auto-generated docs**: do not generate `.md` files to explain code changes unless explicitly requested.
+
+```
+

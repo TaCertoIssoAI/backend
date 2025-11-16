@@ -1,0 +1,65 @@
+---
+alwaysApply: true
+---
+
+---
+alwaysApply: true
+---
+
+# Code style and generation rules
+
+Use these rules whenever generating or editing code in this repository.
+
+---
+
+## 1) Comments
+
+- Prefer **short and objective comments**.
+- Only add comments when they add real value (context, intent, caveats).
+- Do not repeat what the code already makes obvious.
+- Start comments with **lowercase** and keep them concise.
+- Avoid filling files with commentary; prioritize clear code instead of explanations.
+
+---
+
+## 2) Naming and language
+
+- All identifiers and code elements should be in **English**.
+- Use names that are **descriptive but not verbose**.
+- Default conventions:
+  - Variables: `lowerCamelCase`
+  - Functions and methods: `lowerCamelCase`
+  - Files: `kebab-case` or `snake_case`, always starting with lowercase
+- In general, **names should start with a lowercase letter**, including functions, variables and files.
+- Avoid abbreviations that are not obvious; prefer clarity.
+
+---
+
+## 3) Code structure and style
+
+- Prefer **simple and direct solutions** over complex abstractions.
+- Remove unused code, dead branches and commented out blocks.
+- Keep functions focused:
+  - One main responsibility per function when possible.
+- Formatting:
+  - Keep indentation, spacing and line breaks consistent with the existing style of the file.
+- When refactoring, keep changes as **local and incremental** as possible, instead of rewriting everything.
+
+---
+
+## 4) Documentation and extra files
+
+- Do **not** automatically generate `.md` files to explain what was changed.
+- Changelogs, summaries or extra documentation in Markdown should only be created **if the user explicitly asks for it**.
+- When explaining changes, prefer:
+  - Inline comments (only when necessary).
+  - Short explanations in the assistant message itself, not as new files.
+
+---
+
+## 5) Interaction with the user
+
+- Before introducing new patterns or structures, try to **follow the existing style** in the repo.
+- When there is more than one reasonable approach:
+  - Choose the simplest one.
+  - If needed, briefly mention alternatives in the conversation, but do not generate extra code files for them.
