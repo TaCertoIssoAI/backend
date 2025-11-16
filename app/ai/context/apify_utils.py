@@ -1,8 +1,5 @@
 """
-apify integration utilities
-
-provides helper functions to interact with apify actors for web scraping.
-follows project rules: token from env, async-first, lowercase names, short comments.
+apify integration utilities for web scraping
 """
 
 import os
@@ -19,7 +16,7 @@ APIFY_TOKEN_ENV_KEY = "APIFY_TOKEN"
 
 
 class PlatformType(Enum):
-    """supported platforms for scraping"""
+    """supported scraping platforms"""
     FACEBOOK = "facebook"
     INSTAGRAM = "instagram"
     TWITTER = "twitter"
@@ -27,7 +24,6 @@ class PlatformType(Enum):
     GENERIC = "generic"
 
 
-# actor ids mapping
 ACTOR_MAP = {
     PlatformType.FACEBOOK: "apify/facebook-posts-scraper",
     PlatformType.INSTAGRAM: "apify/instagram-scraper",
@@ -38,47 +34,14 @@ ACTOR_MAP = {
 
 
 def detectPlatform(url: str) -> PlatformType:
-    """
-    detect platform type from url using regex patterns.
-    
-    args:
-        url: url to analyze
-        
-    returns:
-        PlatformType enum
-    """
+    """detect platform type from url using regex"""
     url_lower = url.lower()
     
-    # facebook patterns
-    facebook_patterns = [
-        r'facebook\.com',
-        r'fb\.com',
-        r'fb\.watch',
-        r'm\.facebook\.com'
-    ]
+    facebook_patterns = [r'facebook\.com', r'fb\.com', r'fb\.watch', r'm\.facebook\.com']
+    instagram_patterns = [r'instagram\.com', r'instagr\.am']
+    twitter_patterns = [r'twitter\.com', r'x\.com', r't\.co', r'mobile\.twitter\.com']
+    tiktok_patterns = [r'tiktok\.com', r'vm\.tiktok\.com', r'vt\.tiktok\.com']
     
-    # instagram patterns
-    instagram_patterns = [
-        r'instagram\.com',
-        r'instagr\.am'
-    ]
-    
-    # twitter/x patterns
-    twitter_patterns = [
-        r'twitter\.com',
-        r'x\.com',
-        r't\.co',
-        r'mobile\.twitter\.com'
-    ]
-    
-    # tiktok patterns
-    tiktok_patterns = [
-        r'tiktok\.com',
-        r'vm\.tiktok\.com',
-        r'vt\.tiktok\.com'
-    ]
-    
-    # check each platform
     for pattern in facebook_patterns:
         if re.search(pattern, url_lower):
             return PlatformType.FACEBOOK
@@ -95,15 +58,11 @@ def detectPlatform(url: str) -> PlatformType:
         if re.search(pattern, url_lower):
             return PlatformType.TIKTOK
     
-    # default to generic web crawler
     return PlatformType.GENERIC
 
 
 def getApifyClientAsync() -> ApifyClientAsync:
-    """
-    create async apify client using token from environment.
-    raises RuntimeError if token is missing.
-    """
+    """create async apify client from environment token"""
     apifyToken = os.getenv(APIFY_TOKEN_ENV_KEY)
     if not apifyToken:
         raise RuntimeError("missing APIFY_TOKEN in environment")
@@ -112,16 +71,7 @@ def getApifyClientAsync() -> ApifyClientAsync:
 
 
 async def scrapeFacebookPost(url: str, maxChars: Optional[int] = None) -> dict:
-    """
-    scrape facebook post using apify actor.
-    
-    args:
-        url: facebook post url
-        maxChars: optional limit for content length
-        
-    returns:
-        dict with scraping results
-    """
+    """scrape facebook post using apify actor"""
     try:
         logger.info(f"scraping facebook post: {url}")
         
@@ -137,33 +87,19 @@ async def scrapeFacebookPost(url: str, maxChars: Optional[int] = None) -> dict:
         callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
         
         if callResult is None:
-            logger.error(f"actor run failed for {url}")
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "actor run failed or returned no data"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
         
         datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
         listItemsResult = await datasetClient.list_items()
         
         if not listItemsResult or not listItemsResult.items:
-            logger.warning(f"no items extracted from {url}")
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "no content extracted from post"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "no content extracted"}
         
         item = listItemsResult.items[0]
         content = item.get("text", "") or item.get("content", "") or item.get("postText", "")
         
         if maxChars and len(content) > maxChars:
             content = content[:maxChars]
-        
-        logger.info(f"successfully scraped {len(content)} chars from {url}")
         
         return {
             "success": True,
@@ -181,50 +117,30 @@ async def scrapeFacebookPost(url: str, maxChars: Optional[int] = None) -> dict:
         }
         
     except Exception as e:
-        logger.error(f"error scraping facebook post {url}: {e}")
-        return {
-            "success": False,
-            "content": "",
-            "metadata": {},
-            "error": str(e)
-        }
+        logger.error(f"facebook scraping error: {e}")
+        return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
 async def scrapeInstagramPost(url: str, maxChars: Optional[int] = None) -> dict:
-    """
-    scrape instagram post using apify actor.
-    """
+    """scrape instagram post using apify actor"""
     try:
-        logger.info(f"scraping instagram post: {url}")
+        logger.info(f"scraping instagram: {url}")
         
         apifyClient = getApifyClientAsync()
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.INSTAGRAM])
         
-        runInput = {
-            "directUrls": [url],
-            "resultsLimit": 1
-        }
+        runInput = {"directUrls": [url], "resultsLimit": 1}
         
         callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
         
         if callResult is None:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "actor run failed or returned no data"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
         
         datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
         listItemsResult = await datasetClient.list_items()
         
         if not listItemsResult or not listItemsResult.items:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "no content extracted from post"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "no content extracted"}
         
         item = listItemsResult.items[0]
         content = item.get("caption", "") or item.get("text", "")
@@ -247,50 +163,30 @@ async def scrapeInstagramPost(url: str, maxChars: Optional[int] = None) -> dict:
         }
         
     except Exception as e:
-        logger.error(f"error scraping instagram post {url}: {e}")
-        return {
-            "success": False,
-            "content": "",
-            "metadata": {},
-            "error": str(e)
-        }
+        logger.error(f"instagram scraping error: {e}")
+        return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
 async def scrapeTwitterPost(url: str, maxChars: Optional[int] = None) -> dict:
-    """
-    scrape twitter/x post using apify actor.
-    """
+    """scrape twitter/x post using apify actor"""
     try:
-        logger.info(f"scraping twitter post: {url}")
+        logger.info(f"scraping twitter: {url}")
         
         apifyClient = getApifyClientAsync()
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.TWITTER])
         
-        runInput = {
-            "startUrls": [url],
-            "maxItems": 1
-        }
+        runInput = {"startUrls": [url], "maxItems": 1}
         
         callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
         
         if callResult is None:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "actor run failed or returned no data"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
         
         datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
         listItemsResult = await datasetClient.list_items()
         
         if not listItemsResult or not listItemsResult.items:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "no content extracted from post"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "no content extracted"}
         
         item = listItemsResult.items[0]
         content = item.get("text", "") or item.get("full_text", "")
@@ -314,50 +210,30 @@ async def scrapeTwitterPost(url: str, maxChars: Optional[int] = None) -> dict:
         }
         
     except Exception as e:
-        logger.error(f"error scraping twitter post {url}: {e}")
-        return {
-            "success": False,
-            "content": "",
-            "metadata": {},
-            "error": str(e)
-        }
+        logger.error(f"twitter scraping error: {e}")
+        return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
 async def scrapeTikTokPost(url: str, maxChars: Optional[int] = None) -> dict:
-    """
-    scrape tiktok post using apify actor.
-    """
+    """scrape tiktok video using apify actor"""
     try:
-        logger.info(f"scraping tiktok post: {url}")
+        logger.info(f"scraping tiktok: {url}")
         
         apifyClient = getApifyClientAsync()
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.TIKTOK])
         
-        runInput = {
-            "postURLs": [url],
-            "resultsPerPage": 1
-        }
+        runInput = {"postURLs": [url], "resultsPerPage": 1}
         
         callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
         
         if callResult is None:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "actor run failed or returned no data"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
         
         datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
         listItemsResult = await datasetClient.list_items()
         
         if not listItemsResult or not listItemsResult.items:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "no content extracted from post"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "no content extracted"}
         
         item = listItemsResult.items[0]
         content = item.get("text", "") or item.get("description", "")
@@ -382,19 +258,12 @@ async def scrapeTikTokPost(url: str, maxChars: Optional[int] = None) -> dict:
         }
         
     except Exception as e:
-        logger.error(f"error scraping tiktok post {url}: {e}")
-        return {
-            "success": False,
-            "content": "",
-            "metadata": {},
-            "error": str(e)
-        }
+        logger.error(f"tiktok scraping error: {e}")
+        return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
 async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict:
-    """
-    scrape generic website using apify website content crawler.
-    """
+    """scrape any website using generic crawler - fallback for unknown platforms"""
     try:
         logger.info(f"scraping generic website: {url}")
         
@@ -410,23 +279,13 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
         callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
         
         if callResult is None:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "actor run failed or returned no data"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
         
         datasetClient = apifyClient.dataset(callResult["defaultDatasetId"])
         listItemsResult = await datasetClient.list_items()
         
         if not listItemsResult or not listItemsResult.items:
-            return {
-                "success": False,
-                "content": "",
-                "metadata": {},
-                "error": "no content extracted from website"
-            }
+            return {"success": False, "content": "", "metadata": {}, "error": "no content extracted"}
         
         item = listItemsResult.items[0]
         content = item.get("text", "") or item.get("markdown", "") or item.get("html", "")
@@ -447,32 +306,19 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
         }
         
     except Exception as e:
-        logger.error(f"error scraping generic website {url}: {e}")
-        return {
-            "success": False,
-            "content": "",
-            "metadata": {},
-            "error": str(e)
-        }
+        logger.error(f"generic scraping error: {e}")
+        return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
 async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
     """
-    smart scraping function that detects platform and uses appropriate actor.
-    
-    args:
-        url: url to scrape
-        maxChars: optional limit for content length
-        
-    returns:
-        dict with scraping results
+    main scraping function with automatic platform detection.
+    detects platform via regex and routes to appropriate actor.
+    falls back to generic crawler for unknown urls.
     """
-    # detect platform type
     platform = detectPlatform(url)
+    logger.info(f"detected platform: {platform.value} for {url}")
     
-    logger.info(f"detected platform: {platform.value} for url: {url}")
-    
-    # route to appropriate scraper
     if platform == PlatformType.FACEBOOK:
         return await scrapeFacebookPost(url, maxChars)
     elif platform == PlatformType.INSTAGRAM:
@@ -482,5 +328,4 @@ async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
     elif platform == PlatformType.TIKTOK:
         return await scrapeTikTokPost(url, maxChars)
     else:
-        # fallback to generic website crawler
         return await scrapeGenericWebsite(url, maxChars)
