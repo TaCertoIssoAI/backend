@@ -185,30 +185,6 @@ class ClaimExtractionOutput(BaseModel):
         description="List of fact-checkable claims extracted from the user message"
     )
 
-
-# ===== STEP 2.5: LINK ENRICHMENT OUTPUT =====
-class LinkEnrichmentOutput(BaseModel):
-    """Output of the link enrichment step"""
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "enriched_claims": [],
-            "total_links_processed": 5,
-            "successful_extractions": 4,
-            "processing_time_ms": 3000,
-            "processing_notes": "Successfully enriched 4 out of 5 links"
-        }
-    })
-
-    enriched_claims: List[ExtractedClaim] = Field(
-        default_factory=list,
-        description="Claims with enriched link content"
-    )
-    total_links_processed: int = Field(default=0, description="Total number of links processed")
-    successful_extractions: int = Field(default=0, description="Number of successful extractions")
-    processing_time_ms: int = Field(default=0, description="Processing time in milliseconds")
-    processing_notes: str = Field(default="", description="Notes about the enrichment process")
-
-
 # ===== STEP 4: EVIDENCE RETRIEVAL =====
 
 class EvidenceRetrievalInput(BaseModel):
