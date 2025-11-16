@@ -1,5 +1,5 @@
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import List
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 
@@ -9,6 +9,14 @@ class VerdictLabel(str, Enum):
     FALSE = "falso"
     MISLEADING = "enganoso"
     UNVERIFIABLE = "não verificável"
+
+
+class ContentType(str, Enum):
+    """Type of content being analyzed"""
+    TEXT = "text"
+    IMAGE = "image"
+    AUDIO = "audio"
+
 
 
 class ProcessingStage(str, Enum):
@@ -29,45 +37,66 @@ class ErrorType(str, Enum):
 
 
 # ===== API REQUEST/RESPONSE MODELS =====
-class TextRequest(BaseModel):
-    """Request for text-only fact checking"""
-    text: str = Field(..., description="Text to be fact-checked")
+class ContentItem(BaseModel):
+    """Individual content item with text and type"""
+    textContent: str = Field(..., description="Text content or description")
+    type: ContentType = Field(..., description="Type of content")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
-                "text": "The government announced new policies yesterday"
+                "textContent": "Image shows a news headline about government policies",
+                "type": "image"
             }
         }
+    )
 
+class Request(BaseModel):
+    """Unified request model containing array of content items"""
+    content: List[ContentItem] = Field(..., description="Array of content items to be fact-checked")
 
-class ImageRequest(BaseModel):
-    """Request for image-based fact checking"""
-    chatId: Optional[str] = Field(None, description="Optional chat identifier")
-    # Note: image file will be handled as multipart/form-data in FastAPI
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "chatId": "5521999999999@g.us"
-            }
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "content": [
+                        {
+                            "textContent": "The government announced new policies yesterday",
+                            "type": "image"
+                        }
+                    ]
+                },
+                {
+                    "content": [
+                        {
+                            "textContent": "According to the speaker, inflation reached 10% last month",
+                            "type": "audio"
+                        }
+                    ]
+                },
+                {
+                    "content": [
+                        {
+                            "textContent": "Check this important announcement",
+                            "type": "text"
+                        }
+                    ]
+                },
+                {
+                    "content": [
+                        {
+                            "textContent": "Image shows economic data",
+                            "type": "image"
+                        },
+                        {
+                            "textContent": "Speaker discusses the same data",
+                            "type": "audio"
+                        }
+                    ]
+                }
+            ]
         }
-
-
-class MultimodalRequest(BaseModel):
-    """Request for multimodal (text + image) fact checking"""
-    text: Optional[str] = Field(None, description="Optional text content")
-    chatId: Optional[str] = Field(None, description="Optional chat identifier")
-    # Note: image file will be handled as multipart/form-data in FastAPI
-
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "text": "Look at this news article",
-                "chatId": "5521999999999@g.us"
-            }
-        }
-
+    )
 
 class AnalysisResponse(BaseModel):
     """Response from fact-checking analysis"""
@@ -77,8 +106,8 @@ class AnalysisResponse(BaseModel):
     responseWithoutLinks: str = Field(..., description="Analysis text before sources section (before 'Fontes de apoio:')")
     processing_time_ms: int = Field(default=0, description="Processing time in milliseconds")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "message_id": "analysis_123",
                 "verdict": "text_analysis",
@@ -87,3 +116,4 @@ class AnalysisResponse(BaseModel):
                 "processing_time_ms": 3500
             }
         }
+    )
