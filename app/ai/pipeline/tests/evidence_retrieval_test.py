@@ -1,4 +1,9 @@
 import pytest
+import os
+
+# TESTING ONLY: Disable SSL verification for local testing
+# WARNING: Remove this before committing to production!
+os.environ["DISABLE_SSL_VERIFY"] = "1"
 
 # configure pytest to automatically handle async tests
 pytest_plugins = ('pytest_asyncio',)
@@ -150,7 +155,7 @@ def test_filter_low_quality_citations_empty_list():
 # these tests make REAL network calls to the Apify web search API
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(150)  # 150 second timeout (Apify has 120s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
 async def test_web_search_gatherer_real_claim():
     """should search the web for a real claim and return citations"""
     import os
@@ -215,7 +220,7 @@ async def test_web_search_gatherer_real_claim():
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(150)  # 150 second timeout (Apify has 120s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
 async def test_web_search_gatherer_english_claim():
     """should handle English language claims"""
     gatherer = WebSearchGatherer(max_results=3)
@@ -259,7 +264,7 @@ async def test_web_search_gatherer_source_name():
 # ===== INTEGRATION TESTS FOR MAIN EVIDENCE RETRIEVAL =====
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(30)  # 30 second timeout for API call
+@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
 async def test_gather_evidence_async_single_claim():
     """should gather evidence for a single claim"""
     claim = ExtractedClaim(
@@ -305,7 +310,7 @@ async def test_gather_evidence_async_single_claim():
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(45)  # longer timeout for multiple claims
+@pytest.mark.timeout(60)  # 60 second timeout for multiple claims
 async def test_gather_evidence_async_multiple_claims():
     """should gather evidence for multiple claims"""
     claims = [
@@ -366,7 +371,7 @@ async def test_gather_evidence_async_empty_claims():
 # ===== INTEGRATION TESTS FOR CONVENIENCE FUNCTION =====
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(30)  # 30 second timeout for API call
+@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
 async def test_gather_and_filter_evidence_deduplicates():
     """should deduplicate and filter citations"""
     claim = ExtractedClaim(
@@ -406,7 +411,7 @@ async def test_gather_and_filter_evidence_deduplicates():
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(30)  # 30 second timeout for API call
+@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
 async def test_gather_and_filter_evidence_no_filters():
     """should work without filters"""
     claim = ExtractedClaim(

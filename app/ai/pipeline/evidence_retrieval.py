@@ -29,6 +29,8 @@ from app.models import (
     Citation,
 )
 from app.ai.context.web.apify_utils import searchGoogleClaim
+from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+
 
 
 # ===== EVIDENCE GATHERER PROTOCOL =====
@@ -52,7 +54,6 @@ class EvidenceGatherer(Protocol):
         Returns:
             List of citations found (can be empty if no evidence found)
         """
-        ...
 
     @property
     @abstractmethod
@@ -61,7 +62,6 @@ class EvidenceGatherer(Protocol):
         Returns the name of this evidence source.
         Used for citation.source field.
         """
-        ...
 
 
 # ===== WEB SEARCH EVIDENCE GATHERER =====
