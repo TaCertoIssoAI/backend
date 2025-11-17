@@ -13,8 +13,8 @@ import os
 
 pytest_plugins = ('pytest_asyncio',)
 
-from app.ai.pipeline.google_factcheck_gatherer import GoogleFactCheckGatherer
-from app.models import ExtractedClaim, ClaimSource, Citation
+from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+from app.models import ExtractedClaim, ClaimSource
 
 
 # ===== UNIT TESTS FOR PARSING =====
@@ -127,35 +127,11 @@ def test_source_name():
     assert gatherer.source_name == "google_fact_checking_api"
 
 
-def test_initialization_with_env_var():
-    """should read api key from environment variable"""
-    os.environ["GOOGLE_API_KEY"] = "env_test_key"
-    gatherer = GoogleFactCheckGatherer()
-    assert gatherer.api_key == "env_test_key"
-    del os.environ["GOOGLE_API_KEY"]
-
-
-def test_initialization_without_api_key():
-    """should raise error if no api key provided"""
-    # ensure env var is not set
-    if "GOOGLE_API_KEY" in os.environ:
-        del os.environ["GOOGLE_API_KEY"]
-
-    with pytest.raises(RuntimeError) as exc_info:
-        GoogleFactCheckGatherer()
-
-    assert "api key required" in str(exc_info.value).lower()
-
-
 # ===== INTEGRATION TESTS WITH REAL API =====
 # these tests make REAL network calls to Google Fact-Check API
 
 @pytest.mark.asyncio
 @pytest.mark.timeout(30)
-@pytest.mark.skipif(
-    os.getenv("GOOGLE_API_KEY") is None,
-    reason="GOOGLE_API_KEY not set"
-)
 async def test_gather_real_claim_vaccines():
     """should search google fact-check api for vaccine claim"""
     gatherer = GoogleFactCheckGatherer(max_results=5)
@@ -204,10 +180,6 @@ async def test_gather_real_claim_vaccines():
 
 @pytest.mark.asyncio
 @pytest.mark.timeout(30)
-@pytest.mark.skipif(
-    os.getenv("GOOGLE_API_KEY") is None,
-    reason="GOOGLE_API_KEY not set"
-)
 async def test_gather_real_claim_climate():
     """should search google fact-check api for climate claim"""
     gatherer = GoogleFactCheckGatherer(max_results=3)
@@ -239,10 +211,6 @@ async def test_gather_real_claim_climate():
 
 @pytest.mark.asyncio
 @pytest.mark.timeout(30)
-@pytest.mark.skipif(
-    os.getenv("GOOGLE_API_KEY") is None,
-    reason="GOOGLE_API_KEY not set"
-)
 async def test_gather_portuguese_claim():
     """should handle portuguese language claims"""
     gatherer = GoogleFactCheckGatherer(max_results=5)
@@ -277,10 +245,6 @@ async def test_compose_with_other_gatherers():
     """should work alongside other evidence gatherers"""
     from app.ai.pipeline.evidence_retrieval import gather_evidence_async
     from app.models import EvidenceRetrievalInput
-
-    # skip if no api key
-    if not os.getenv("GOOGLE_API_KEY"):
-        pytest.skip("GOOGLE_API_KEY not set")
 
     claim = ExtractedClaim(
         id="claim-compose-001",
@@ -325,12 +289,6 @@ async def test_combine_google_and_web_search():
         WebSearchGatherer
     )
     from app.models import EvidenceRetrievalInput
-
-    # skip if no api keys
-    if not os.getenv("GOOGLE_API_KEY"):
-        pytest.skip("GOOGLE_API_KEY not set")
-    if not os.getenv("APIFY_TOKEN"):
-        pytest.skip("APIFY_TOKEN not set")
 
     claim = ExtractedClaim(
         id="claim-multi-001",
