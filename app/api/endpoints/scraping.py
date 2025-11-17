@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.ai.context.apify_utils import scrapeGenericUrl
+from app.ai.context.web.apify_utils import scrapeGenericUrl
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

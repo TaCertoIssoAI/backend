@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.ai.context.apify_utils import searchGoogleClaim, scrapeGenericSimple
+from app.ai.context.web.apify_utils import searchGoogleClaim, scrapeGenericSimple
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -59,9 +59,15 @@ async def search_claim(request: ClaimSearchRequest) -> ClaimSearchResponse:
     - "coffee prevents cancer"
     """
     start_time = time.time()
+
+    max_results:int
+    if request.max_results is None:
+        max_results = 5
+    else:
+        max_results = request.max_results
     
     try:
-        result = await searchGoogleClaim(claim=request.claim, maxResults=request.max_results)
+        result = await searchGoogleClaim(claim=request.claim, maxResults=max_results)
         processing_time = int((time.time() - start_time) * 1000)
         
         if result["success"]:
