@@ -3,6 +3,7 @@ from app.models.api import Request, AnalysisResponse
 from app.api import request_to_data_sources
 from app.ai import run_fact_check_pipeline
 from app.config.default import get_default_pipeline_config
+from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
 
 router = APIRouter()
 
@@ -26,10 +27,11 @@ async def analyze_text(request: Request) -> AnalysisResponse:
 
         # step 2: get pipeline configuration
         config = get_default_pipeline_config()
+        pipeline_step = DefaultPipelineSteps()
 
         # step 3: run the async fact-checking pipeline
         # IMPORTANT: use 'await' to get the actual results
-        claim_outputs = await run_fact_check_pipeline(data_sources, config)
+        claim_outputs = await run_fact_check_pipeline(data_sources, config,pipeline_step)
 
         # step 4: process results and build response
         # collect all claims from all sources

@@ -11,9 +11,8 @@ Architecture:
 - Async-first design for efficient IO operations
 - Type-safe with Pydantic models throughout
 - Stateless functions with explicit dependencies
+- Dependency injection for pipeline steps (enables testing and customization)
 """
-from app.models.commondata import DataSource
-
 
 from typing import List
 from app.models import (
@@ -22,45 +21,13 @@ from app.models import (
     ClaimExtractionOutput,
     PipelineConfig,
 )
-from app.ai.pipeline.link_context_expander import expand_link_contexts
-from app.ai.pipeline.claim_extractor import extract_claims_async
+from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
 
-
-# extends the input data source link with additional data source, each one corresponding to a link in the original text
-def _extend_data_sources_with_links(sources: List[DataSource], cfg: PipelineConfig) ->List[DataSource]:
-    all_data_sources = list[DataSource](sources)  # start with provided sources
-    
-    for source in sources:
-        if source.source_type == "original_text":
-            print(f"\n[LINK EXPANSION] Processing original_text source: {source.id}")
-            print(f"  Text preview: {source.original_text[:100]}...")
-            
-            # expand link contexts using the existing function
-            expanded_sources = expand_link_contexts(source, cfg)
-            
-            if expanded_sources:
-                print(f"  Created {len(expanded_sources)} new link_context data source(s):")
-                for expanded in expanded_sources:
-                    url = expanded.metadata.get("url", "unknown")
-                    success = expanded.metadata.get("success", False)
-                    status = "✓" if success else "✗"
-                    print(f"    {status} {url}")
-                
-                all_data_sources.extend(expanded_sources)
-            else:
-                print("  No links found or expanded")
-    
-
-    return all_data_sources
-
-
-#extracts claims from all the data sources in parallel with a thread pool
-def _extract_claims_in_parallel():
-    pass
 
 async def run_fact_check_pipeline(
     data_sources: List[DataSource],
     config: PipelineConfig,
+    steps: PipelineSteps,
 ) -> List[ClaimExtractionOutput]:
     """
     run the fact-checking pipeline on a list of data sources.
@@ -74,6 +41,7 @@ async def run_fact_check_pipeline(
     args:
         data_sources: list of data sources to fact-check
         config: pipeline configuration with timeout and LLM settings (required)
+        steps: pipeline steps implementation. If None, uses DefaultPipelineSteps.
 
     returns:
         list of claim extraction outputs, one per data source
@@ -91,12 +59,13 @@ async def run_fact_check_pipeline(
         >>> config = get_default_pipeline_config()
         >>> results = await run_fact_check_pipeline(sources, config)
     """
+
     print("=" * 80)
     print("FACT-CHECK PIPELINE STARTING")
     print("=" * 80)
-    
+
     # step 1: identify original_text sources and expand their links
-    all_data_sources = _extend_data_sources_with_links(data_sources,config)
+    all_data_sources = await steps.expand_data_sources_with_links(data_sources, config)
     
     print(f"\n[PIPELINE] Total data sources to process: {len(all_data_sources)}")
     for i, source in enumerate(all_data_sources, 1):
@@ -106,35 +75,11 @@ async def run_fact_check_pipeline(
     print(f"\n{'=' * 80}")
     print("CLAIM EXTRACTION PHASE")
     print("=" * 80)
-    
-    claim_outputs: List[ClaimExtractionOutput] = []
-    
-    for source in all_data_sources:
-        print(f"\n[CLAIM EXTRACTION] Processing {source.source_type} source: {source.id}")
-        print(f"  Text preview: {source.original_text[:100]}...")
-        
-        # create input for claim extractor
-        extraction_input = ClaimExtractionInput(data_source=source)
-        
-        # extract claims
-        result = await extract_claims_async(
-            extraction_input=extraction_input,
-            llm_config=config.claim_extraction_llm_config
-        )
-        
-        claim_outputs.append(result)
-        
-        # print extracted claims
-        if result.claims:
-            print(f"  Extracted {len(result.claims)} claim(s):")
-            for i, claim in enumerate(result.claims, 1):
-                print(f"    {i}. {claim.text}")
-                if claim.entities:
-                    print(f"       entities: {', '.join(claim.entities)}")
-                if claim.llm_comment:
-                    print(f"       comment: {claim.llm_comment}")
-        else:
-            print("  No claims extracted")
+
+    claim_outputs = await steps.extract_claims_from_all_sources(
+        data_sources=all_data_sources,
+        llm_config=config.claim_extraction_llm_config
+    )
     
     # summary
     print(f"\n{'=' * 80}")
