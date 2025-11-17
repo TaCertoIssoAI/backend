@@ -47,6 +47,17 @@ ACTOR_MAP = {
     PlatformType.GENERIC: "apify/website-content-crawler"
 }
 
+# memory limits for apify actors (in MB)
+# with 4 max concurrent workers and 8GB free tier:
+# 4 workers × 2048MB = 8GB (max capacity)
+ACTOR_MEMORY_LIMITS = {
+    PlatformType.FACEBOOK: 256,      # social media - lightweight
+    PlatformType.INSTAGRAM: 256,     # social media - lightweight
+    PlatformType.TWITTER: 256,       # social media - lightweight
+    PlatformType.TIKTOK: 512,        # tiktok needs more (video platform)
+    PlatformType.GENERIC: 2048,      # websites with anti-scraping need full browser (2GB)
+}
+
 # compiled regex for fast non-printable character removal
 # matches any character that is NOT: printable, newline, carriage return, tab, or space
 NON_PRINTABLE_PATTERN = re.compile(r'[^\x20-\x7E\x0A\x0D\x09\u0080-\uFFFF]')
@@ -166,8 +177,13 @@ async def scrapeFacebookPost(url: str, maxChars: Optional[int] = None) -> dict:
             "resultsLimit": 1,
             "maxPostCount": 1
         }
-        
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+
+        # limit memory to reduce RAM usage (8GB free tier optimization)
+        callResult = await actorClient.call(
+            run_input=runInput,
+            timeout_secs=120,
+            memory_mbytes=ACTOR_MEMORY_LIMITS[PlatformType.FACEBOOK]
+        )
         
         if callResult is None:
             return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
@@ -213,8 +229,13 @@ async def scrapeInstagramPost(url: str, maxChars: Optional[int] = None) -> dict:
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.INSTAGRAM])
         
         runInput = {"directUrls": [url], "resultsLimit": 1}
-        
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+
+        # limit memory to reduce RAM usage (8GB free tier optimization)
+        callResult = await actorClient.call(
+            run_input=runInput,
+            timeout_secs=120,
+            memory_mbytes=ACTOR_MEMORY_LIMITS[PlatformType.INSTAGRAM]
+        )
         
         if callResult is None:
             return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
@@ -259,8 +280,13 @@ async def scrapeTwitterPost(url: str, maxChars: Optional[int] = None) -> dict:
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.TWITTER])
         
         runInput = {"startUrls": [url], "maxItems": 1}
-        
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+
+        # limit memory to reduce RAM usage (8GB free tier optimization)
+        callResult = await actorClient.call(
+            run_input=runInput,
+            timeout_secs=120,
+            memory_mbytes=ACTOR_MEMORY_LIMITS[PlatformType.TWITTER]
+        )
         
         if callResult is None:
             return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
@@ -306,8 +332,13 @@ async def scrapeTikTokPost(url: str, maxChars: Optional[int] = None) -> dict:
         actorClient = apifyClient.actor(ACTOR_MAP[PlatformType.TIKTOK])
         
         runInput = {"postURLs": [url], "resultsPerPage": 1}
-        
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+
+        # limit memory to reduce RAM usage (8GB free tier optimization)
+        callResult = await actorClient.call(
+            run_input=runInput,
+            timeout_secs=120,
+            memory_mbytes=ACTOR_MEMORY_LIMITS[PlatformType.TIKTOK]
+        )
         
         if callResult is None:
             return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
@@ -505,10 +536,15 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
         runInput = {
             "startUrls": [{"url": url}],
             "maxCrawlPages": 1,
-            "crawlerType": "playwright:firefox"
+            "crawlerType": "playwright:adaptive"  # adaptive: uses cheerio when possible, playwright when needed
         }
-        
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+
+        # limit memory to reduce RAM usage (8GB free tier optimization)
+        callResult = await actorClient.call(
+            run_input=runInput,
+            timeout_secs=120,
+            memory_mbytes=ACTOR_MEMORY_LIMITS[PlatformType.GENERIC]
+        )
         
         if callResult is None:
             return {"success": False, "content": "", "metadata": {}, "error": "actor run failed"}
@@ -579,8 +615,12 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 4
             "includeUnfilteredResults": False
         }
 
-        # use configurable timeout instead of hardcoded value
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=int(timeout))
+        # use configurable timeout and limit memory (google search is lightweight)
+        callResult = await actorClient.call(
+            run_input=runInput,
+            timeout_secs=int(timeout),
+            memory_mbytes=256  # google search doesn't need much RAM
+        )
         
         if callResult is None:
             return {

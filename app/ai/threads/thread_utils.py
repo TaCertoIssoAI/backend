@@ -7,6 +7,7 @@ with async bridge for awaitable completion and structured observability.
 
 import asyncio
 import logging
+import os
 import queue
 import threading
 import time
@@ -20,6 +21,11 @@ logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
 R = TypeVar("R")
+
+# default max workers optimized for Apify free tier (8GB RAM)
+# with complex actors needing 1-2GB, safer to limit to 4 concurrent jobs
+# can be overridden via THREAD_POOL_MAX_WORKERS env var
+DEFAULT_MAX_WORKERS = int(os.getenv("THREAD_POOL_MAX_WORKERS", "4"))
 
 
 class OperationType(Enum):
@@ -75,13 +81,16 @@ class ThreadPoolManager:
     _instance: Optional["ThreadPoolManager"] = None
     _lock = threading.Lock()
 
-    def __init__(self, max_workers: int = 25):
+    def __init__(self, max_workers: int = None):
         """
         initialize thread pool manager.
 
         args:
-            max_workers: number of worker threads to pre-allocate (default: 25)
+            max_workers: number of worker threads to pre-allocate
+                        (default: 10, optimized for Apify 8GB RAM free tier)
         """
+        if max_workers is None:
+            max_workers = DEFAULT_MAX_WORKERS
         self.max_workers = max_workers
         self.executor: Optional[ThreadPoolExecutor] = None
         self.job_queue: queue.PriorityQueue = queue.PriorityQueue()
@@ -106,12 +115,13 @@ class ThreadPoolManager:
         self._initialized = False
 
     @classmethod
-    def get_instance(cls, max_workers: int = 25) -> "ThreadPoolManager":
+    def get_instance(cls, max_workers: int = None) -> "ThreadPoolManager":
         """
         get or create singleton instance (thread-safe).
 
         args:
             max_workers: number of worker threads (only used on first call)
+                        (default: 10, optimized for Apify 8GB RAM free tier)
 
         returns:
             ThreadPoolManager singleton instance

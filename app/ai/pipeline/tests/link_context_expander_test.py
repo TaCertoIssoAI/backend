@@ -10,9 +10,20 @@ from app.ai.pipeline.link_context_expander import (
 )
 from app.models import DataSource
 from app.config import get_default_pipeline_config
+from app.ai.threads.thread_utils import ThreadPoolManager
 
 
 _cfg = get_default_pipeline_config()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def initialize_thread_pool():
+    """initialize ThreadPoolManager once for all tests"""
+    manager = ThreadPoolManager.get_instance()
+    manager.initialize()
+    yield
+    # cleanup after all tests
+    manager.shutdown()
 
 # ===== UNIT TESTS FOR extract_links =====
 
@@ -400,3 +411,130 @@ async def test_expand_link_contexts_timeout_with_nonexistent_site():
     print(f"Config timeout total: {total_timeout}s")
     print(f"Result: Timeout handled gracefully without crashing")
     print(f"{'=' * 80}\n")
+
+
+@pytest.mark.asyncio
+async def test_parallel_expansion_with_social_media_and_news():
+    """
+    simple test: scrape 4 links in parallel and measure time.
+    """
+    import time
+    from app.ai.threads.thread_utils import ThreadPoolManager, OperationType
+    from app.ai.pipeline.link_context_expander import expand_link_context_sync
+
+    # 4 links to test
+    urls = [
+        "https://www.facebook.com/share/p/1GXv2qwKbE/",
+        "https://www.instagram.com/p/DRKnubCjgtM/?utm_source=ig_web_copy_link&igsh=NTc4MTIwNjQ2YQ==",
+        "https://www.tiktok.com/@roteiro.em.dia/video/7572058473853226260?is_from_webapp=1&sender_device=pc",
+        "https://noticias.uol.com.br/colunas/jamil-chade/2025/11/17/conselho-da-onu-aprova-plano-de-trump-para-gaza-com-tropas-internacionais.htm"
+    ]
+
+    print(f"\n{'=' * 80}")
+    print(f"PARALLEL SCRAPING TEST - 4 LINKS")
+    print(f"{'=' * 80}")
+    for i, url in enumerate(urls, 1):
+        platform = "Unknown"
+        if "facebook.com" in url:
+            platform = "Facebook"
+        elif "instagram.com" in url:
+            platform = "Instagram"
+        elif "tiktok.com" in url:
+            platform = "TikTok"
+        elif "uol.com.br" in url:
+            platform = "UOL"
+        print(f"{i}. {platform}: {url[:60]}...")
+    print(f"{'=' * 80}\n")
+
+    # get thread pool manager
+    manager = ThreadPoolManager.get_instance()
+    if not manager._initialized:
+        manager.initialize()
+
+    print(f"ThreadPool: {manager.max_workers} workers")
+    print(f"Starting parallel scraping...\n")
+
+    # submit all 4 jobs at once
+    start_time = time.time()
+
+    futures = []
+    for url in urls:
+        future = manager.submit(
+            OperationType.LINK_CONTEXT_EXPANDING,
+            expand_link_context_sync,
+            url,
+            timeout_per_link=90.0  # 90s timeout per link (increased for TikTok)
+        )
+        futures.append(future)
+
+    print(f"✓ Submitted {len(futures)} jobs to ThreadPool")
+    print(f"⏳ Waiting for all to complete...\n")
+
+    # wait for all results
+    from app.ai.threads.thread_utils import wait_all
+    try:
+        results = wait_all(futures, timeout=120.0)
+    except TimeoutError:
+        print("❌ Timeout waiting for results")
+        results = []
+
+    end_time = time.time()
+    elapsed = end_time - start_time
+
+    # print results
+    print(f"\n{'=' * 80}")
+    print(f"RESULTS")
+    print(f"{'=' * 80}")
+    print(f"Total time: {elapsed:.2f}s")
+    print(f"Results received: {len(results)}/{len(urls)}")
+    print(f"{'=' * 80}\n")
+
+    success_count = 0
+    fail_count = 0
+
+    for i, result in enumerate(results, 1):
+        platform = "Unknown"
+        url = urls[i-1]
+        if "facebook.com" in url:
+            platform = "Facebook"
+        elif "instagram.com" in url:
+            platform = "Instagram"
+        elif "tiktok.com" in url:
+            platform = "TikTok"
+        elif "uol.com.br" in url:
+            platform = "UOL"
+
+        print(f"--- LINK {i}: {platform} ---")
+        print(f"   URL: {url}")
+
+        if result is None:
+            print(f"❌ FAILED (returned None - check logs above for timeout/error)")
+            fail_count += 1
+        elif result.success:
+            print(f"✅ SUCCESS")
+            print(f"   Content: {result.content_length} chars")
+            if result.content:
+                print(f"   Preview: {result.content[:100]}...")
+            if result.metadata:
+                print(f"   Metadata: {result.metadata}")
+            success_count += 1
+        else:
+            print(f"❌ FAILED")
+            print(f"   Error: {result.error}")
+            print(f"   Content length: {result.content_length}")
+            if result.metadata:
+                print(f"   Metadata: {result.metadata}")
+            fail_count += 1
+        print()
+
+    print(f"{'=' * 80}")
+    print(f"SUMMARY")
+    print(f"{'=' * 80}")
+    print(f"Success: {success_count}/{len(urls)}")
+    print(f"Failed: {fail_count}/{len(urls)}")
+    print(f"Total time: {elapsed:.2f}s")
+    print(f"Avg per link: {elapsed/len(urls):.2f}s")
+    print(f"{'=' * 80}\n")
+
+    # simple assertion: at least 1 should succeed
+    assert success_count > 0, "At least one link should scrape successfully"

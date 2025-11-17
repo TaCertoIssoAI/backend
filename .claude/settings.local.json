@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(source venv/bin/activate)",
+      "Bash(python -m pytest:*)"
     ],
     "deny": [],
     "ask": []
