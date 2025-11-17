@@ -168,7 +168,9 @@ class GoogleFactCheckGatherer:
             }
         """
         try:
-            logger.info(f"searching google fact-check api for: {claim.text[:80]}...")
+            print(f"\n{'='*80}")
+            print(f"[GOOGLE API] searching for claim: {claim.text}")
+            print(f"{'='*80}")
 
             # build request parameters
             params = {
@@ -176,35 +178,87 @@ class GoogleFactCheckGatherer:
                 "key": self.api_key,
             }
 
+            # log request details
+            print(f"[GOOGLE API] request URL: {self.base_url}")
+            print(f"[GOOGLE API] query parameter: {claim.text}")
+            print(f"[GOOGLE API] max_results: {self.max_results}")
+
             # make async HTTP request
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.get(self.base_url, params=params)
+
+                # log response metadata
+                print(f"\n[GOOGLE API] response status: {response.status_code}")
+                print(f"[GOOGLE API] response headers: {dict(response.headers)}")
+
                 response.raise_for_status()
 
             # parse JSON response
             data = response.json()
-            print("Dados da resposta do google: ", data)
+
+            # detailed response analysis
+            print(f"\n[GOOGLE API] raw response keys: {list(data.keys())}")
+
+            if "claims" in data:
+                print(f"[GOOGLE API] claims field exists: YES")
+                print(f"[GOOGLE API] number of claims in response: {len(data['claims'])}")
+
+                # show first claim structure if available
+                if data["claims"]:
+                    first_claim = data["claims"][0]
+                    print(f"\n[GOOGLE API] first claim structure:")
+                    print(f"  - text: {first_claim.get('text', 'N/A')[:100]}")
+                    print(f"  - claimant: {first_claim.get('claimant', 'N/A')}")
+                    print(f"  - claimDate: {first_claim.get('claimDate', 'N/A')}")
+                    print(f"  - claimReview count: {len(first_claim.get('claimReview', []))}")
+
+                    if first_claim.get('claimReview'):
+                        first_review = first_claim['claimReview'][0]
+                        print(f"\n[GOOGLE API] first review structure:")
+                        print(f"  - publisher: {first_review.get('publisher', {}).get('name', 'N/A')}")
+                        print(f"  - url: {first_review.get('url', 'N/A')}")
+                        print(f"  - title: {first_review.get('title', 'N/A')[:80]}")
+                        print(f"  - textualRating: {first_review.get('textualRating', 'N/A')}")
+                        print(f"  - reviewDate: {first_review.get('reviewDate', 'N/A')}")
+            else:
+                print(f"[GOOGLE API] claims field exists: NO")
+                print(f"[GOOGLE API] response is likely empty - no fact-checks found")
 
             # extract citations from response
+            print(f"\n[GOOGLE API] parsing response into citations...")
             citations = self._parse_response(data)
 
             # limit results
             citations = citations[:self.max_results]
 
-            logger.info(
-                f"found {len(citations)} fact-check(s) for claim: {claim.text[:50]}..."
-            )
+            print(f"[GOOGLE API] ✓ total citations extracted: {len(citations)}")
+            if citations:
+                print(f"[GOOGLE API] citations summary:")
+                for i, cit in enumerate(citations[:3], 1):
+                    print(f"  {i}. {cit.publisher}: {cit.title[:60]}...")
+                    print(f"     rating: {cit.rating}, url: {cit.url[:50]}...")
+            else:
+                print(f"[GOOGLE API] ⚠ no citations found for this claim")
+
+            print(f"{'='*80}\n")
+
             return citations
 
         except httpx.HTTPStatusError as e:
+            print(f"\n[GOOGLE API ERROR] HTTP error: {e.response.status_code}")
+            print(f"[GOOGLE API ERROR] response body: {e.response.text[:500]}")
             logger.error(
                 f"google fact-check api http error: {e.response.status_code} - {e}"
             )
             return []
         except httpx.RequestError as e:
+            print(f"\n[GOOGLE API ERROR] request error: {e}")
             logger.error(f"google fact-check api request error: {e}")
             return []
         except Exception as e:
+            print(f"\n[GOOGLE API ERROR] unexpected error: {e}")
+            import traceback
+            print(f"[GOOGLE API ERROR] traceback:\n{traceback.format_exc()}")
             logger.error(f"unexpected error in google fact-check api: {e}")
             return []
 
@@ -222,19 +276,31 @@ class GoogleFactCheckGatherer:
 
         # check if response has claims
         if "claims" not in data or not data["claims"]:
+            print("[GOOGLE API PARSER] no claims found in response")
             logger.debug("no claims found in google api response")
             return citations
 
+        print(f"[GOOGLE API PARSER] processing {len(data['claims'])} claim(s) from response")
+
         # process each claim in the response
-        for claim_data in data["claims"]:
+        for i, claim_data in enumerate(data["claims"], 1):
+            claim_text = claim_data.get("text", "N/A")[:60]
+            print(f"\n[GOOGLE API PARSER] claim {i}: {claim_text}...")
+
             # each claim can have multiple reviews from different fact-checkers
             claim_reviews = claim_data.get("claimReview", [])
+            print(f"[GOOGLE API PARSER]   - found {len(claim_reviews)} review(s)")
 
-            for review in claim_reviews:
+            for j, review in enumerate(claim_reviews, 1):
+                print(f"[GOOGLE API PARSER]   - processing review {j}/{len(claim_reviews)}...")
                 citation = self._parse_claim_review(claim_data, review)
                 if citation:
+                    print(f"[GOOGLE API PARSER]     ✓ citation created: {citation.publisher}")
                     citations.append(citation)
+                else:
+                    print(f"[GOOGLE API PARSER]     ✗ citation skipped (missing required fields)")
 
+        print(f"\n[GOOGLE API PARSER] total valid citations: {len(citations)}")
         return citations
 
     def _parse_claim_review(
@@ -259,6 +325,7 @@ class GoogleFactCheckGatherer:
 
             # skip if missing critical fields
             if not url or not title:
+                print(f"[GOOGLE API PARSER]       ⚠ skipping review - missing url={bool(url)} title={bool(title)}")
                 logger.debug("skipping review with missing url or title")
                 return None
 
@@ -312,5 +379,7 @@ class GoogleFactCheckGatherer:
             )
 
         except Exception as e:
+            print(f"[GOOGLE API PARSER]       ✗ error parsing review: {e}")
+            print(f"[GOOGLE API PARSER]       review data: {review}")
             logger.error(f"error parsing claim review: {e}")
             return None

@@ -22,6 +22,7 @@ from app.models import (
     DataSource,
     ClaimExtractionOutput,
     PipelineConfig,
+    EvidenceRetrievalInput
 )
 from app.ai.pipeline.steps import PipelineSteps
 
@@ -92,10 +93,25 @@ async def run_fact_check_pipeline(
     print(f"\n{'=' * 80}")
     print("PIPELINE SUMMARY")
     print("=" * 80)
-    
+
     total_claims = sum(len(output.claims) for output in claim_outputs)
     print(f"Total data sources processed: {len(all_data_sources)}")
     print(f"Total claims extracted: {total_claims}")
+
+    # step 3: gather evidence for all extracted claims
+    print(f"\n{'=' * 80}")
+    print("EVIDENCE GATHERING PHASE")
+    print("=" * 80)
+
+    # flatten all claims from all sources into a single list
+    all_claims = []
+    for output in claim_outputs:
+        all_claims.extend(output.claims)
+
+    evidence_input = EvidenceRetrievalInput(claims=all_claims)
+    result = await steps.gather_evidence(evidence_input)
+
+    print("Evidence Gathering results: ", result)
     
     return claim_outputs
 

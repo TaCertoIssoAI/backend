@@ -23,6 +23,10 @@ from app.models import (
 )
 from app.ai.context import EvidenceGatherer
 
+from app.ai.context.factcheckapi import (
+    GoogleFactCheckGatherer
+)
+
 
 class PipelineSteps(Protocol):
     """
@@ -230,7 +234,7 @@ class DefaultPipelineSteps:
     async def gather_evidence(
         self,
         retrieval_input: EvidenceRetrievalInput,
-        gatherers: List[EvidenceGatherer] | None = None
+        gatherers: List[EvidenceGatherer] | None = None 
     ) -> EvidenceRetrievalResult:
         """
         Default implementation: calls gather_evidence_async from evidence_retrieval.
@@ -238,4 +242,7 @@ class DefaultPipelineSteps:
         See evidence_retrieval.gather_evidence_async for detailed documentation.
         """
         from app.ai.pipeline.evidence_retrieval import gather_evidence_async
+
+
+        gatherers = [GoogleFactCheckGatherer()]
         return await gather_evidence_async(retrieval_input, gatherers)
