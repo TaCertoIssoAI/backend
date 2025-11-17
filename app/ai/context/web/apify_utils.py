@@ -550,18 +550,26 @@ async def scrapeGenericWebsite(url: str, maxChars: Optional[int] = None) -> dict
         return {"success": False, "content": "", "metadata": {}, "error": str(e)}
 
 
-async def searchGoogleClaim(claim: str, maxResults: int = 10) -> dict:
+async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 45.0) -> dict:
     """
     search google for information about a claim using apify actor.
-    returns structured search results to help with fact-checking.
+
+    args:
+        claim: the claim text to search for
+        maxResults: maximum number of search results to return
+        timeout: timeout in seconds for the search operation (default: 45.0)
+
+    returns:
+        dict with search results and metadata
     """
     try:
         logger.info(f"searching google for claim: {claim[:100]}...")
-        
+        logger.info(f"search timeout: {timeout}s, max results: {maxResults}")
+
         apifyClient = getApifyClientAsync()
         # using google search results scraper
         actorClient = apifyClient.actor("apify/google-search-scraper")
-        
+
         runInput = {
             "queries": claim,
             "maxPagesPerQuery": 1,
@@ -570,8 +578,9 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10) -> dict:
             "mobileResults": False,
             "includeUnfilteredResults": False
         }
-        
-        callResult = await actorClient.call(run_input=runInput, timeout_secs=120)
+
+        # use configurable timeout instead of hardcoded value
+        callResult = await actorClient.call(run_input=runInput, timeout_secs=int(timeout))
         
         if callResult is None:
             return {
@@ -623,8 +632,20 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10) -> dict:
             "error": None
         }
         
+    except TimeoutError as e:
+        logger.error(f"google search timeout after {timeout}s: {e}")
+        print(f"\n[APIFY SEARCH] TIMEOUT after {timeout}s")
+        print(f"[APIFY SEARCH] claim was: {claim[:100]}...")
+        return {
+            "success": False,
+            "claim": claim,
+            "results": [],
+            "total_results": 0,
+            "error": f"timeout after {timeout}s"
+        }
     except Exception as e:
         logger.error(f"google search error: {e}")
+        print(f"\n[APIFY SEARCH] ERROR: {type(e).__name__}: {str(e)[:100]}")
         return {
             "success": False,
             "claim": claim,

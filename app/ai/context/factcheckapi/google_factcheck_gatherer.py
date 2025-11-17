@@ -244,6 +244,11 @@ class GoogleFactCheckGatherer:
 
             return citations
 
+        except httpx.TimeoutException as e:
+            print(f"\n[GOOGLE API ERROR] TIMEOUT after {self.timeout}s")
+            print(f"[GOOGLE API ERROR] claim was: {claim.text[:100]}...")
+            logger.error(f"google fact-check api timeout after {self.timeout}s: {e}")
+            return []
         except httpx.HTTPStatusError as e:
             print(f"\n[GOOGLE API ERROR] HTTP error: {e.response.status_code}")
             print(f"[GOOGLE API ERROR] response body: {e.response.text[:500]}")

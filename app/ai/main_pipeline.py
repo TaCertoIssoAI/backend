@@ -109,7 +109,13 @@ async def run_fact_check_pipeline(
         all_claims.extend(output.claims)
 
     evidence_input = EvidenceRetrievalInput(claims=all_claims)
-    result = await steps.gather_evidence(evidence_input)
+
+    # use timeout from config for evidence gathering
+    evidence_timeout = config.timeout_config.evidence_retrieval_timeout_per_claim
+    result = await steps.gather_evidence(
+        retrieval_input=evidence_input,
+        timeout=evidence_timeout
+    )
 
     print("Evidence Gathering results: ", result)
     

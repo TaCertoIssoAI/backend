@@ -18,6 +18,7 @@ Key Design Principles:
 - Support for both sync and async operations
 """
 
+import asyncio
 from typing import List, Dict
 
 from app.models import (
@@ -39,7 +40,8 @@ from app.ai.context.web import (
 
 async def gather_evidence_async(
     retrieval_input: EvidenceRetrievalInput,
-    gatherers: List[EvidenceGatherer] | None = None
+    gatherers: List[EvidenceGatherer] | None = None,
+    timeout_per_gatherer: float = 45.0
 ) -> EvidenceRetrievalResult:
     """
     Main async function to gather evidence for all claims.
@@ -76,12 +78,31 @@ async def gather_evidence_async(
 
     # process each claim
     for claim in retrieval_input.claims:
+        print(f"\n[EVIDENCE GATHERING] processing claim: {claim.text[:80]}...")
+
         # gather citations from all sources
         all_citations: List[Citation] = []
 
         for gatherer in gatherers:
-            citations = await gatherer.gather(claim)
-            all_citations.extend(citations)
+            gatherer_name = gatherer.source_name if hasattr(gatherer, 'source_name') else type(gatherer).__name__
+
+            try:
+                print(f"[EVIDENCE GATHERING]   - querying {gatherer_name}...")
+                citations = await gatherer.gather(claim)
+
+                if citations:
+                    print(f"[EVIDENCE GATHERING]     ✓ {gatherer_name}: {len(citations)} citation(s) found")
+                else:
+                    print(f"[EVIDENCE GATHERING]     ⚠ {gatherer_name}: no citations found")
+
+                all_citations.extend(citations)
+
+            except asyncio.TimeoutError:
+                print(f"[EVIDENCE GATHERING]     ✗ {gatherer_name}: TIMEOUT - operation exceeded time limit")
+            except Exception as e:
+                print(f"[EVIDENCE GATHERING]     ✗ {gatherer_name}: ERROR - {type(e).__name__}: {str(e)[:100]}")
+
+        print(f"[EVIDENCE GATHERING]   total citations for this claim: {len(all_citations)}")
 
         # create enriched claim with citations
         # EnrichedClaim extends ExtractedClaim, so we copy all fields

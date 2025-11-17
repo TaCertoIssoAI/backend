@@ -45,7 +45,7 @@ def get_default_pipeline_config() -> PipelineConfig:
             link_content_expander_timeout_total=30.0,
             claim_extractor_timeout_per_source=10.0,
             claim_extractor_timeout_total=20.0,
-            evidence_retrieval_timeout_per_claim=20.0,
+            evidence_retrieval_timeout_per_claim=15.0,
             evidence_retrieval_timeout_total=40.0,
             adjudication_timeout=20.0
         ),

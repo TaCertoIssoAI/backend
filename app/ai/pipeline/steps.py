@@ -88,7 +88,8 @@ class PipelineSteps(Protocol):
     async def gather_evidence(
         self,
         retrieval_input: EvidenceRetrievalInput,
-        gatherers: List[EvidenceGatherer] | None = None
+        gatherers: List[EvidenceGatherer] | None = None,
+        timeout: float = 45.0
     ) -> EvidenceRetrievalResult:
         """
         Gather evidence for claims from multiple sources.
@@ -99,6 +100,7 @@ class PipelineSteps(Protocol):
         Args:
             retrieval_input: Input containing claims to gather evidence for
             gatherers: List of evidence gatherers. If None, uses defaults.
+            timeout: Timeout in seconds for evidence gathering operations (default: 45.0)
 
         Returns:
             EvidenceRetrievalResult mapping claim IDs to enriched claims with citations
@@ -234,15 +236,24 @@ class DefaultPipelineSteps:
     async def gather_evidence(
         self,
         retrieval_input: EvidenceRetrievalInput,
-        gatherers: List[EvidenceGatherer] | None = None 
+        gatherers: List[EvidenceGatherer] | None = None,
+        timeout: float = 45.0
     ) -> EvidenceRetrievalResult:
         """
         Default implementation: calls gather_evidence_async from evidence_retrieval.
 
+        Uses timeout from configuration to initialize gatherers with proper timeout values.
+
         See evidence_retrieval.gather_evidence_async for detailed documentation.
         """
         from app.ai.pipeline.evidence_retrieval import gather_evidence_async
+        from app.ai.context.web import WebSearchGatherer
 
+        # if no gatherers provided, create default gatherers with configured timeout
+        if gatherers is None:
+            gatherers = [
+                GoogleFactCheckGatherer(timeout=timeout),
+                WebSearchGatherer(max_results=5, timeout=timeout)
+            ]
 
-        gatherers = [GoogleFactCheckGatherer()]
         return await gather_evidence_async(retrieval_input, gatherers)
