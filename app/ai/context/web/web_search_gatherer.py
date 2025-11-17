@@ -1,4 +1,5 @@
 from typing import List, Optional
+import asyncio
 
 from app.models import (
     ExtractedClaim,
@@ -48,11 +49,11 @@ class WebSearchGatherer:
             print(f"[WEB SEARCH] timeout: {self.timeout}s, max results: {self.max_results}")
 
             # search google for the claim with configured timeout
-            search_result = await searchGoogleClaim(
+            search_result = await asyncio.wait_for(searchGoogleClaim(
                 claim=claim.text,
                 maxResults=self.max_results,
                 timeout=self.timeout
-            )
+            ), self.timeout)
 
             # if search failed, return empty list
             if not search_result.get("success", False):
