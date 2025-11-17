@@ -25,6 +25,66 @@ from app.models import ExtractedClaim, Citation
 logger = logging.getLogger(__name__)
 
 
+def map_english_rating_to_portuguese(english_rating: str) -> Optional[str]:
+    """
+    Map English fact-check ratings from Google API to Portuguese VerdictType.
+
+    Google API returns various English ratings from different fact-checkers:
+    - PolitiFact: "True", "Mostly True", "Half True", "Mostly False", "False", "Pants on Fire"
+    - Washington Post: "Geppetto Checkmark", "One Pinocchio", "Two Pinocchios", "Three Pinocchios", "Four Pinocchios"
+    - FactCheck.org: "True", "False", "Misleading", "Spins the Facts", "Exaggerates", "Not the Whole Story"
+    - Others: "Correct", "Incorrect", "Missing Context", "Unverifiable", etc.
+
+    Args:
+        english_rating: Rating string from Google Fact Check API
+
+    Returns:
+        Portuguese rating from VerdictType or None if no match
+    """
+    if not english_rating:
+        return None
+
+    rating_lower = english_rating.lower().strip()
+
+    # map to "Verdadeiro" (True)
+    if any(word in rating_lower for word in [
+        "true", "correct", "accurate", "verdadeiro",
+        "mostly true", "geppetto"
+    ]):
+        return "Verdadeiro"
+
+    # map to "Falso" (False)
+    # includes washington post pinocchios and politifact ratings
+    if any(word in rating_lower for word in [
+        "false", "incorrect", "inaccurate", "falso",
+        "mostly false", "pants on fire",
+        "four pinocchio", "three pinocchio"
+    ]):
+        return "Falso"
+
+    # map to "Fora de Contexto" (Out of Context / Misleading)
+    if any(word in rating_lower for word in [
+        "misleading", "mixture", "partly", "missing context",
+        "out of context", "lacks context", "exagger",
+        "enganoso", "fora de contexto",
+        "spins the fact", "not the whole story",
+        "half true", "one pinocchio", "two pinocchio"
+    ]):
+        return "Fora de Contexto"
+
+    # map to "Não foi possível verificar" (Could not verify)
+    if any(word in rating_lower for word in [
+        "unverifiable", "unproven", "unsupported", "unclear",
+        "research in progress", "legend", "satire",
+        "não foi possível", "impossível verificar"
+    ]):
+        return "Não foi possível verificar"
+
+    # default: if we don't recognize it, mark as unverifiable
+    logger.warning(f"unknown rating '{english_rating}' - defaulting to 'Não foi possível verificar'")
+    return "Não foi possível verificar"
+
+
 class GoogleFactCheckGatherer:
     """
     Evidence gatherer that searches the Google Fact-Check Tools API.
@@ -123,6 +183,7 @@ class GoogleFactCheckGatherer:
 
             # parse JSON response
             data = response.json()
+            print("Dados da resposta do google: ", data)
 
             # extract citations from response
             citations = self._parse_response(data)
@@ -205,8 +266,24 @@ class GoogleFactCheckGatherer:
             publisher_data = review.get("publisher", {})
             publisher = publisher_data.get("name", "Unknown Publisher")
 
-            # extract rating (textualRating like "True", "False", "Misleading")
-            rating = review.get("textualRating")
+            # extract rating (textualRating like "False" or "False. Comment here")
+            # split on first period to separate rating from comment
+            textual_rating = review.get("textualRating", "")
+            rating = None
+            rating_comment = None
+
+            if textual_rating:
+                # split on first period
+                parts = textual_rating.split(".", 1)
+                english_rating = parts[0].strip() if parts[0] else None
+
+                # map english rating to portuguese VerdictType
+                if english_rating:
+                    rating = map_english_rating_to_portuguese(english_rating)
+
+                # if there's a comment after the period, extract it
+                if len(parts) > 1 and parts[1].strip():
+                    rating_comment = parts[1].strip()
 
             # extract review date
             review_date = review.get("reviewDate")
@@ -230,6 +307,7 @@ class GoogleFactCheckGatherer:
                 citation_text=citation_text,
                 source="google_fact_checking_api",
                 rating=rating,
+                rating_comment=rating_comment,
                 date=review_date,
             )
 
