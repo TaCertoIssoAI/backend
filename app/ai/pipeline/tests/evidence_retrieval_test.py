@@ -150,21 +150,41 @@ def test_filter_low_quality_citations_empty_list():
 # these tests make REAL network calls to the Apify web search API
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(150)  # 150 second timeout (Apify has 120s internal timeout)
 async def test_web_search_gatherer_real_claim():
     """should search the web for a real claim and return citations"""
+    import os
+
+    # check if APIFY_TOKEN is set
+    apify_token = os.getenv("APIFY_TOKEN")
+    print(f"\n[DEBUG] APIFY_TOKEN present: {apify_token is not None}")
+    if apify_token:
+        print(f"[DEBUG] APIFY_TOKEN length: {len(apify_token)} chars")
+    else:
+        print("[DEBUG] APIFY_TOKEN is NOT set")
+
     gatherer = WebSearchGatherer(max_results=3)
 
     claim = ExtractedClaim(
         id="claim-test-001",
-        text="A vacina contra COVID-19 é segura para mulheres grávidas",
+        text="A vacina contra COVID-19 Ã© segura para mulheres grÃ¡vidas",
         source=ClaimSource(
             source_type="original_text",
             source_id="msg-001"
         ),
-        entities=["COVID-19", "vacina", "mulheres grávidas"]
+        entities=["COVID-19", "vacina", "mulheres grÃ¡vidas"]
     )
 
+    # call gather and check the result
     citations = await gatherer.gather(claim)
+
+    # debug: check if gather returned empty and why
+    if len(citations) == 0:
+        print("[DEBUG] No citations returned - checking search result...")
+        # call the underlying search function directly to see the error
+        from app.ai.context.web.apify_utils import searchGoogleClaim
+        search_result = await searchGoogleClaim(claim.text, maxResults=3)
+        print(f"[DEBUG] Search result: {search_result}")
 
     print(f"\n{'=' * 80}")
     print(f"TEST: Web Search for COVID-19 Vaccine Safety Claim")
@@ -195,6 +215,7 @@ async def test_web_search_gatherer_real_claim():
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(150)  # 150 second timeout (Apify has 120s internal timeout)
 async def test_web_search_gatherer_english_claim():
     """should handle English language claims"""
     gatherer = WebSearchGatherer(max_results=3)
@@ -238,6 +259,7 @@ async def test_web_search_gatherer_source_name():
 # ===== INTEGRATION TESTS FOR MAIN EVIDENCE RETRIEVAL =====
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(30)  # 30 second timeout for API call
 async def test_gather_evidence_async_single_claim():
     """should gather evidence for a single claim"""
     claim = ExtractedClaim(
@@ -283,26 +305,27 @@ async def test_gather_evidence_async_single_claim():
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(45)  # longer timeout for multiple claims
 async def test_gather_evidence_async_multiple_claims():
     """should gather evidence for multiple claims"""
     claims = [
         ExtractedClaim(
             id="claim-multi-001",
-            text="Beber água com limão em jejum emagrece",
+            text="Beber Ã¡gua com limÃ£o em jejum emagrece",
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-multi-001"
             ),
-            entities=["água com limão", "jejum", "emagrecer"]
+            entities=["Ã¡gua com limÃ£o", "jejum", "emagrecer"]
         ),
         ExtractedClaim(
             id="claim-multi-002",
-            text="O 5G causa câncer",
+            text="O 5G causa cÃ¢ncer",
             source=ClaimSource(
                 source_type="original_text",
                 source_id="msg-multi-001"
             ),
-            entities=["5G", "câncer"]
+            entities=["5G", "cÃ¢ncer"]
         ),
     ]
 
@@ -343,16 +366,17 @@ async def test_gather_evidence_async_empty_claims():
 # ===== INTEGRATION TESTS FOR CONVENIENCE FUNCTION =====
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(30)  # 30 second timeout for API call
 async def test_gather_and_filter_evidence_deduplicates():
     """should deduplicate and filter citations"""
     claim = ExtractedClaim(
         id="claim-filter-001",
-        text="Tomar café diariamente faz bem para a saúde",
+        text="Tomar cafÃ© diariamente faz bem para a saÃºde",
         source=ClaimSource(
             source_type="original_text",
             source_id="msg-filter-001"
         ),
-        entities=["café", "saúde"]
+        entities=["cafÃ©", "saÃºde"]
     )
 
     retrieval_input = EvidenceRetrievalInput(claims=[claim])
@@ -382,16 +406,17 @@ async def test_gather_and_filter_evidence_deduplicates():
 
 
 @pytest.mark.asyncio
+@pytest.mark.timeout(30)  # 30 second timeout for API call
 async def test_gather_and_filter_evidence_no_filters():
     """should work without filters"""
     claim = ExtractedClaim(
         id="claim-no-filter-001",
-        text="Exercícios físicos melhoram a saúde mental",
+        text="ExercÃ­cios fÃ­sicos melhoram a saÃºde mental",
         source=ClaimSource(
             source_type="original_text",
             source_id="msg-no-filter-001"
         ),
-        entities=["exercícios físicos", "saúde mental"]
+        entities=["exercÃ­cios fÃ­sicos", "saÃºde mental"]
     )
 
     retrieval_input = EvidenceRetrievalInput(claims=[claim])
@@ -419,7 +444,7 @@ async def test_custom_gatherer_composition():
     class MockGatherer:
         @property
         def source_name(self) -> str:
-            return "mock_source"
+            return "apify_web_search"
 
         async def gather(self, claim: ExtractedClaim):
             # return a fixed citation for testing
@@ -429,7 +454,7 @@ async def test_custom_gatherer_composition():
                     title="Mock Article",
                     publisher="Mock Publisher",
                     citation_text="This is a mock citation for testing purposes",
-                    source="mock_source"
+                    source="apify_web_search"
                 )
             ]
 
@@ -454,7 +479,7 @@ async def test_custom_gatherer_composition():
 
     # should have exactly one citation from mock gatherer
     assert len(enriched.citations) == 1
-    assert enriched.citations[0].source == "mock_source"
+    assert enriched.citations[0].source == "apify_web_search"
     assert enriched.citations[0].url == "https://mock.com/article"
 
 
@@ -465,7 +490,7 @@ async def test_multiple_gatherers_composition():
     class MockGatherer1:
         @property
         def source_name(self) -> str:
-            return "mock_source_1"
+            return "apify_web_search"
 
         async def gather(self, claim: ExtractedClaim):
             return [
@@ -474,14 +499,14 @@ async def test_multiple_gatherers_composition():
                     title="Mock Article 1",
                     publisher="Mock Publisher 1",
                     citation_text="Citation from source 1",
-                    source="mock_source_1"
+                    source="apify_web_search"
                 )
             ]
 
     class MockGatherer2:
         @property
         def source_name(self) -> str:
-            return "mock_source_2"
+            return "google_fact_checking_api"
 
         async def gather(self, claim: ExtractedClaim):
             return [
@@ -490,7 +515,7 @@ async def test_multiple_gatherers_composition():
                     title="Mock Article 2",
                     publisher="Mock Publisher 2",
                     citation_text="Citation from source 2",
-                    source="mock_source_2"
+                    source="google_fact_checking_api"
                 )
             ]
 
@@ -516,5 +541,5 @@ async def test_multiple_gatherers_composition():
     # should have citations from both gatherers
     assert len(enriched.citations) == 2
     sources = {cit.source for cit in enriched.citations}
-    assert "mock_source_1" in sources
-    assert "mock_source_2" in sources
+    assert "apify_web_search" in sources
+    assert "google_fact_checking_api" in sources

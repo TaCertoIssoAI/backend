@@ -12,6 +12,9 @@ Architecture:
 - Type-safe with Pydantic models throughout
 - Stateless functions with explicit dependencies
 """
+from app.models.commondata import DataSource
+
+
 from typing import List
 from app.models import (
     DataSource,
@@ -22,6 +25,38 @@ from app.models import (
 from app.ai.pipeline.link_context_expander import expand_link_contexts
 from app.ai.pipeline.claim_extractor import extract_claims_async
 
+
+# extends the input data source link with additional data source, each one corresponding to a link in the original text
+def _extend_data_sources_with_links(sources: List[DataSource], cfg: PipelineConfig) ->List[DataSource]:
+    all_data_sources = list[DataSource](sources)  # start with provided sources
+    
+    for source in sources:
+        if source.source_type == "original_text":
+            print(f"\n[LINK EXPANSION] Processing original_text source: {source.id}")
+            print(f"  Text preview: {source.original_text[:100]}...")
+            
+            # expand link contexts using the existing function
+            expanded_sources = expand_link_contexts(source, cfg)
+            
+            if expanded_sources:
+                print(f"  Created {len(expanded_sources)} new link_context data source(s):")
+                for expanded in expanded_sources:
+                    url = expanded.metadata.get("url", "unknown")
+                    success = expanded.metadata.get("success", False)
+                    status = "✓" if success else "✗"
+                    print(f"    {status} {url}")
+                
+                all_data_sources.extend(expanded_sources)
+            else:
+                print("  No links found or expanded")
+    
+
+    return all_data_sources
+
+
+#extracts claims from all the data sources in parallel with a thread pool
+def _extract_claims_in_parallel():
+    pass
 
 async def run_fact_check_pipeline(
     data_sources: List[DataSource],
@@ -61,27 +96,7 @@ async def run_fact_check_pipeline(
     print("=" * 80)
     
     # step 1: identify original_text sources and expand their links
-    all_data_sources = list(data_sources)  # start with provided sources
-    
-    for source in data_sources:
-        if source.source_type == "original_text":
-            print(f"\n[LINK EXPANSION] Processing original_text source: {source.id}")
-            print(f"  Text preview: {source.original_text[:100]}...")
-            
-            # expand link contexts using the existing function
-            expanded_sources = await expand_link_contexts(source, config)
-            
-            if expanded_sources:
-                print(f"  Created {len(expanded_sources)} new link_context data source(s):")
-                for expanded in expanded_sources:
-                    url = expanded.metadata.get("url", "unknown")
-                    success = expanded.metadata.get("success", False)
-                    status = "✓" if success else "✗"
-                    print(f"    {status} {url}")
-                
-                all_data_sources.extend(expanded_sources)
-            else:
-                print("  No links found or expanded")
+    all_data_sources = _extend_data_sources_with_links(data_sources,config)
     
     print(f"\n[PIPELINE] Total data sources to process: {len(all_data_sources)}")
     for i, source in enumerate(all_data_sources, 1):
