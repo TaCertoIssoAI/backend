@@ -46,7 +46,7 @@ class PipelineSteps(Protocol):
         config: PipelineConfig
     ) -> List[DataSource]:
         """
-        Expand all data sources by extracting and expanding links from original_text sources.
+        Expand links from original_text data sources into new link_context data sources.
 
         Processes a list of data sources, identifies those with type 'original_text',
         extracts URLs from them, and creates new 'link_context' data sources for each URL.
@@ -56,8 +56,8 @@ class PipelineSteps(Protocol):
             config: Pipeline configuration with timeout settings
 
         Returns:
-            Extended list containing original sources plus new 'link_context' sources
-            for each expanded link
+            List of new 'link_context' data sources created from expanding links.
+            Does NOT include the original input data sources.
         """
         ...
 
@@ -131,8 +131,9 @@ class DefaultPipelineSteps:
 
         Iterates through data sources, identifies 'original_text' types,
         and expands their links to create new 'link_context' data sources.
+        Returns only the new link_context sources, not the original sources.
         """
-        all_data_sources = list[DataSource](data_sources)  # start with provided sources
+        expanded_link_sources: List[DataSource] = []
 
         for source in data_sources:
             if source.source_type == "original_text":
@@ -140,7 +141,7 @@ class DefaultPipelineSteps:
                 print(f"  Text preview: {source.original_text[:100]}...")
 
                 # expand link contexts for this source
-                expanded_sources = await self.__expand_link_contexts(source, config)
+                expanded_sources = await self._expand_link_contexts(source, config)
 
                 if expanded_sources:
                     print(f"  Created {len(expanded_sources)} new link_context data source(s):")
@@ -150,13 +151,13 @@ class DefaultPipelineSteps:
                         status = "✓" if success else "✗"
                         print(f"    {status} {url}")
 
-                    all_data_sources.extend(expanded_sources)
+                    expanded_link_sources.extend(expanded_sources)
                 else:
                     print("  No links found or expanded")
 
-        return all_data_sources
+        return expanded_link_sources
 
-    async def __expand_link_contexts(
+    async def _expand_link_contexts(
         self,
         data_source: DataSource,
         config: PipelineConfig

@@ -14,6 +14,9 @@ Architecture:
 - Dependency injection for pipeline steps (enables testing and customization)
 """
 
+from app.models.commondata import DataSource
+
+
 from typing import List
 from app.models import (
     DataSource,
@@ -64,9 +67,14 @@ async def run_fact_check_pipeline(
     print("=" * 80)
 
     # step 1: identify original_text sources and expand their links
-    all_data_sources = await steps.expand_data_sources_with_links(data_sources, config)
-    
+    expanded_link_sources = await steps.expand_data_sources_with_links(data_sources, config)
+
+    # combine original sources with expanded link sources
+    all_data_sources = list[DataSource](data_sources) + expanded_link_sources
+
     print(f"\n[PIPELINE] Total data sources to process: {len(all_data_sources)}")
+    print(f"  Original sources: {len(data_sources)}")
+    print(f"  Expanded link sources: {len(expanded_link_sources)}")
     for i, source in enumerate(all_data_sources, 1):
         print(f"  {i}. {source.source_type} (id: {source.id})")
     
