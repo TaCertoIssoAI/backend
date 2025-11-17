@@ -29,6 +29,7 @@ from .commondata import DataSource
 
 # Rebuild models that have forward references now that DataSource is imported
 ClaimExtractionInput.model_rebuild()
+ClaimExtractionOutput.model_rebuild()
 DataSourceWithClaims.model_rebuild()
 
 __all__ = [

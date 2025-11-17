@@ -12,19 +12,24 @@ Architecture:
 - Type-safe with Pydantic models throughout
 - Stateless functions with explicit dependencies
 - Dependency injection for pipeline steps (enables testing and customization)
+- Parallel execution using ThreadPoolManager for IO-bound operations
 """
 
-from app.models.commondata import DataSource
-
-
 from typing import List
+
 from app.models import (
     DataSource,
     ClaimExtractionOutput,
     PipelineConfig,
-    EvidenceRetrievalInput
+    EvidenceRetrievalResult,
+    ClaimExtractionInput,
 )
 from app.ai.pipeline.steps import PipelineSteps
+from app.ai.threads.thread_utils import ThreadPoolManager
+from app.ai.async_code import fire_and_forget_streaming_pipeline
+from app.ai.pipeline.claim_extractor import extract_claims
+from app.ai.context.web import WebSearchGatherer
+from app.ai.context.factcheckapi import GoogleFactCheckGatherer
 
 
 async def run_fact_check_pipeline(
@@ -64,60 +69,80 @@ async def run_fact_check_pipeline(
     """
 
     print("=" * 80)
-    print("FACT-CHECK PIPELINE STARTING")
+    print("FACT-CHECK PIPELINE STARTING (FIRE-AND-FORGET MODE)")
     print("=" * 80)
 
-    # step 1: identify original_text sources and expand their links
-    expanded_link_sources = await steps.expand_data_sources_with_links(data_sources, config)
+    # initialize thread pool manager
+    manager = ThreadPoolManager.get_instance(max_workers=25)
+    manager.initialize()
 
-    # combine original sources with expanded link sources
-    all_data_sources = list[DataSource](data_sources) + expanded_link_sources
+    try:
+        # step 1: link context expansion (synchronous for now)
+        print(f"\n{'=' * 80}")
+        print("LINK EXPANSION PHASE (SYNCHRONOUS)")
+        print("=" * 80)
 
-    print(f"\n[PIPELINE] Total data sources to process: {len(all_data_sources)}")
-    print(f"  Original sources: {len(data_sources)}")
-    print(f"  Expanded link sources: {len(expanded_link_sources)}")
-    for i, source in enumerate(all_data_sources, 1):
-        print(f"  {i}. {source.source_type} (id: {source.id})")
-    
-    # step 2: extract claims from all data sources
-    print(f"\n{'=' * 80}")
-    print("CLAIM EXTRACTION PHASE")
-    print("=" * 80)
+        expanded_link_sources = await steps.expand_data_sources_with_links(
+            data_sources, config
+        )
 
-    claim_outputs = await steps.extract_claims_from_all_sources(
-        data_sources=all_data_sources,
-        llm_config=config.claim_extraction_llm_config
-    )
-    
-    # summary
-    print(f"\n{'=' * 80}")
-    print("PIPELINE SUMMARY")
-    print("=" * 80)
+        # combine original sources with expanded link sources
+        all_data_sources = list[DataSource](data_sources) + expanded_link_sources
 
-    total_claims = sum(len(output.claims) for output in claim_outputs)
-    print(f"Total data sources processed: {len(all_data_sources)}")
-    print(f"Total claims extracted: {total_claims}")
+        print(f"\n[PIPELINE] Total data sources to process: {len(all_data_sources)}")
+        print(f"  Original sources: {len(data_sources)}")
+        print(f"  Expanded link sources: {len(expanded_link_sources)}")
+        for i, source in enumerate(all_data_sources, 1):
+            print(f"  {i}. {source.source_type} (id: {source.id})")
 
-    # step 3: gather evidence for all extracted claims
-    print(f"\n{'=' * 80}")
-    print("EVIDENCE GATHERING PHASE")
-    print("=" * 80)
+        # step 2 & 3: fire-and-forget claim extraction + evidence gathering
+        print(f"\n{'=' * 80}")
+        print("STREAMING CLAIM EXTRACTION + EVIDENCE GATHERING")
+        print("=" * 80)
+        print("Pattern: fire all claim extraction jobs,")
+        print("then as each completes, immediately fire evidence gathering")
+        print("=" * 80)
 
-    # flatten all claims from all sources into a single list
-    all_claims = []
-    for output in claim_outputs:
-        all_claims.extend(output.claims)
+        # create wrapper function that binds the config
+        def extract_claims_with_config(
+            extraction_input: ClaimExtractionInput
+        ) -> ClaimExtractionOutput:
+            """calls extract_claims with bound config"""
+            return extract_claims(
+                extraction_input=extraction_input,
+                llm_config=config.claim_extraction_llm_config
+            )
 
-    evidence_input = EvidenceRetrievalInput(claims=all_claims)
+        # create evidence gatherers
+        evidence_gatherers = [
+            WebSearchGatherer(max_results=5),
+            GoogleFactCheckGatherer(),
+        ]
 
-    # use timeout from config for evidence gathering
-    evidence_timeout = config.timeout_config.evidence_retrieval_timeout_per_claim
-    result = await steps.gather_evidence(
-        retrieval_input=evidence_input,
-        timeout=evidence_timeout
-    )
+        # run fire-and-forget streaming pipeline (sync call)
+        claim_outputs, enriched_claims = fire_and_forget_streaming_pipeline(
+            all_data_sources,
+            extract_claims_with_config,
+            evidence_gatherers,
+            manager,
+        )
 
-    print("Evidence Gathering results: ", result)
-    
-    return claim_outputs
+        # build final evidence retrieval result
+        result = EvidenceRetrievalResult(claim_evidence_map=enriched_claims)
 
+        # summary
+        print(f"\n{'=' * 80}")
+        print("PIPELINE SUMMARY")
+        print("=" * 80)
+
+        total_claims = sum(len(output.claims) for output in claim_outputs)
+        print(f"Total data sources processed: {len(all_data_sources)}")
+        print(f"Total claims extracted: {total_claims}")
+        print(f"Total enriched claims: {len(enriched_claims)}")
+        print(f"Evidence gathering results: {len(result.claim_evidence_map)} claims with evidence")
+
+        return claim_outputs
+
+    finally:
+        # cleanup thread pool
+        manager.shutdown(wait=True)

@@ -17,6 +17,7 @@ https://developers.google.com/fact-check/tools/api/reference/rest/v1alpha1/claim
 
 import os
 import logging
+import asyncio
 from typing import List, Optional
 import httpx
 
@@ -388,3 +389,13 @@ class GoogleFactCheckGatherer:
             print(f"[GOOGLE API PARSER]       review data: {review}")
             logger.error(f"error parsing claim review: {e}")
             return None
+
+    def gather_sync(self, claim: ExtractedClaim) -> List[Citation]:
+        """synchronous version - creates new event loop and runs async gather"""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(self.gather(claim))
+        finally:
+            loop.close()
+            asyncio.set_event_loop(None)

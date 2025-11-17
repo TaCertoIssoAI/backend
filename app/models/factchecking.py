@@ -173,6 +173,12 @@ class ClaimExtractionOutput(BaseModel):
     """Output of the claim extraction step - a list of extracted claims"""
     model_config = ConfigDict(json_schema_extra={
         "example": {
+            "data_source": {
+                "id": "msg-001",
+                "source_type": "original_text",
+                "original_text": "Sample text",
+                "metadata": {}
+            },
             "claims": [
                 {
                     "id": "claim-uuid-456",
@@ -184,6 +190,11 @@ class ClaimExtractionOutput(BaseModel):
             ]
         }
     })
+
+    data_source: "DataSource" = Field(
+        ...,
+        description="The data source from which these claims were extracted"
+    )
 
     claims: List[ExtractedClaim] = Field(
         default_factory=list,

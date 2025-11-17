@@ -96,3 +96,13 @@ class WebSearchGatherer:
         except Exception as e:
             print(f"\n[WEB SEARCH ERROR] unexpected error: {type(e).__name__}: {str(e)[:100]}")
             return []
+
+    def gather_sync(self, claim: ExtractedClaim) -> List[Citation]:
+        """synchronous version - creates new event loop and runs async gather"""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            return loop.run_until_complete(self.gather(claim))
+        finally:
+            loop.close()
+            asyncio.set_event_loop(None)
