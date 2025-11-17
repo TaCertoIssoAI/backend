@@ -20,9 +20,9 @@ app.add_middleware(
 )
 
 # rotas de scraping, research e fact-checking
-app.include_router(scraping.router, prefix="/api", tags=["scraping"])
-app.include_router(research.router, prefix="/api", tags=["research"])
-app.include_router(text.router, prefix="/api", tags=["fact-checking"])
+app.include_router(scraping.router,  tags=["scraping"])
+app.include_router(research.router, tags=["research"])
+app.include_router(text.router, tags=["fact-checking"])
 
 @app.get("/")
 async def root():
