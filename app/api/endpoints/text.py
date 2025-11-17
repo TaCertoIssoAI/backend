@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
-from app.api import request_to_data_sources 
+from app.api import request_to_data_sources
 from app.ai import run_fact_check_pipeline
+from app.config.default import get_default_pipeline_config
 
 router = APIRouter()
 
@@ -22,12 +23,15 @@ async def analyze_text(request: Request) -> AnalysisResponse:
     try:
         # step 1: convert API request to internal DataSource format
         data_sources = request_to_data_sources(request)
-        
-        # step 2: run the async fact-checking pipeline
+
+        # step 2: get pipeline configuration
+        config = get_default_pipeline_config()
+
+        # step 3: run the async fact-checking pipeline
         # IMPORTANT: use 'await' to get the actual results
-        claim_outputs = await run_fact_check_pipeline(data_sources)
-        
-        # step 3: process results and build response
+        claim_outputs = await run_fact_check_pipeline(data_sources, config)
+
+        # step 4: process results and build response
         # collect all claims from all sources
         all_claims = []
         for output in claim_outputs:
