@@ -138,7 +138,7 @@ class WebSearchGatherer:
 
 async def gather_evidence_async(
     retrieval_input: EvidenceRetrievalInput,
-    gatherers: List[EvidenceGatherer] = None
+    gatherers: List[EvidenceGatherer] | None = None
 ) -> EvidenceRetrievalResult:
     """
     Main async function to gather evidence for all claims.
@@ -271,7 +271,7 @@ def filter_low_quality_citations(
 
 async def gather_and_filter_evidence(
     retrieval_input: EvidenceRetrievalInput,
-    gatherers: List[EvidenceGatherer] = None,
+    gatherers: List[EvidenceGatherer] | None  = None,
     deduplicate: bool = True,
     filter_quality: bool = True
 ) -> EvidenceRetrievalResult:

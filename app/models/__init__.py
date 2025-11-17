@@ -18,7 +18,11 @@ from .factchecking import (
     DataSourceResult,
     EvidenceRetrievalInput
 )
-from .llm import LLMConfig
+from .config import (
+    LLMConfig,
+    TimeoutConfig,
+    PipelineConfig,
+)
 
 from .commondata import DataSource
 
@@ -35,17 +39,19 @@ __all__ = [
     "EnrichedClaim",
     "Citation",
     "EvidenceRetrievalResult",
+    "EvidenceRetrievalInput",
     "AdjudicationInput",
     "FactCheckResult",
     "ClaimExtractionInput",
     "ClaimSource",
-    "LLMConfig",
     "ClaimSourceType",
-    "DataSource",
     "VerdictType",
+    "DataSource",
     "DataSourceWithClaims",
     "ClaimVerdict",
     "DataSourceResult",
-    "EvidenceRetrievalInput",
+    "LLMConfig",
+    "TimeoutConfig",
+    "PipelineConfig",
 ]
 
