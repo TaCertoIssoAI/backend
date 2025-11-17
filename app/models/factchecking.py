@@ -27,6 +27,11 @@ CitationSource = Literal[
 ]
 
 
+VerdictType = Literal["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+
+
+
+
 # ===== STEP 1: USER INPUT =====
 class UserInput(BaseModel):
     """Raw, unstructured input from the user"""
@@ -233,7 +238,8 @@ class Citation(BaseModel):
     publisher: str
     citation_text: str
     source: CitationSource
-    rating: Optional[str] = None  # Google fact-check rating: "Falso", "Enganoso", "Verdadeiro", etc.
+    rating: Optional[VerdictType] = None  # Google fact-check rating: "Falso", "Enganoso", "Verdadeiro", etc.
+    rating_comment: Optional[str] = None #optional comment about the rating
     date: Optional[str] = None  # When the fact-check was published
 
 class EnrichedClaim(ExtractedClaim):
@@ -296,9 +302,6 @@ class EvidenceRetrievalResult(BaseModel):
     )
 
 # ===== STEP 5: ADJUDICATION =====
-
-VerdictType = Literal["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
-
 
 class DataSourceWithClaims(BaseModel):
     """A data source paired with its enriched claims for adjudication"""

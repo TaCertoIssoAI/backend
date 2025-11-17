@@ -1,3 +1,4 @@
+from unittest.loader import VALID_MODULE_NAME
 from .factchecking import (
     UserInput,
     ExpandedUserInput,
