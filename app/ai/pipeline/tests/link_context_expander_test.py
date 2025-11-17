@@ -9,7 +9,10 @@ from app.ai.pipeline.link_context_expander import (
     expand_link_contexts,
 )
 from app.models import DataSource
+from app.config import get_default_pipeline_config
 
+
+_cfg = get_default_pipeline_config()
 
 # ===== UNIT TESTS FOR extract_links =====
 
@@ -236,7 +239,7 @@ async def test_expand_link_contexts_with_multiple_real_urls():
     )
 
     # expand all links
-    expanded_sources = await expand_link_contexts(data_source)
+    expanded_sources = await expand_link_contexts(data_source,_cfg)
 
     # validate results
     assert len(expanded_sources) == 3, f"Expected 3 expanded sources, got {len(expanded_sources)}"
@@ -271,7 +274,7 @@ async def test_expand_link_contexts_no_links():
         original_text="This is just plain text with no URLs at all."
     )
 
-    expanded_sources = await expand_link_contexts(data_source)
+    expanded_sources = await expand_link_contexts(data_source,_cfg)
 
     assert expanded_sources == []
     assert len(expanded_sources) == 0
@@ -287,7 +290,7 @@ async def test_expand_link_contexts_validates_source_type():
     )
 
     with pytest.raises(ValueError) as exc_info:
-        await expand_link_contexts(data_source)
+        await expand_link_contexts(data_source,_cfg)
 
     assert "original_text" in str(exc_info.value)
     assert "link_context" in str(exc_info.value)
@@ -306,7 +309,7 @@ async def test_expand_link_context_preserves_locale_and_timestamp():
         timestamp="2025-11-16T10:30:00Z"
     )
 
-    expanded_sources = await expand_link_contexts(data_source)
+    expanded_sources = await expand_link_contexts(data_source,_cfg)
 
     assert len(expanded_sources) == 1
     expanded = expanded_sources[0]
@@ -326,9 +329,74 @@ async def test_expand_link_contexts_single_url():
         original_text=text
     )
 
-    expanded_sources = await expand_link_contexts(data_source)
+    expanded_sources = await expand_link_contexts(data_source,_cfg)
 
     assert len(expanded_sources) == 1
     assert expanded_sources[0].metadata["success"] is True
     assert expanded_sources[0].original_text != ""
 
+
+@pytest.mark.asyncio
+async def test_expand_link_contexts_timeout_with_nonexistent_site():
+    """should handle timeout gracefully when scraping takes too long or site doesn't exist"""
+    from app.models import PipelineConfig, LLMConfig, TimeoutConfig
+
+    # create a config with very short timeouts
+    short_timeout_config = PipelineConfig(
+        claim_extraction_llm_config=LLMConfig(model_name="gpt-4o-mini", temperature=0.0, timeout=30.0),
+        adjudication_llm_config=LLMConfig(model_name="o3-mini", temperature=0.2, timeout=60.0),
+        timeout_config=TimeoutConfig(
+            link_content_expander_timeout_per_link=2.0,  # very short timeout
+            link_content_expander_timeout_total=5.0,     # very short total timeout
+            claim_extractor_timeout_per_source=10.0,
+            claim_extractor_timeout_total=20.0,
+            evidence_retrieval_timeout_per_claim=20.0,
+            evidence_retrieval_timeout_total=40.0,
+            adjudication_timeout=20.0
+        ),
+        max_links_to_expand=5,
+        max_claims_to_extract=10,
+        max_evidence_sources_per_claim=5
+    )
+
+    # create a DataSource with non-existent sites
+    text = """
+    Check these sites:
+    http://this-site-definitely-does-not-exist-12345.com
+    http://another-fake-site-that-will-timeout-67890.net
+    http://third-nonexistent-domain-99999.org
+    """
+
+    data_source = DataSource(
+        id="msg-timeout-test",
+        source_type="original_text",
+        original_text=text
+    )
+
+    # expand links with short timeout config
+    expanded_sources = await expand_link_contexts(data_source, short_timeout_config)
+
+    # should return empty list or partial results due to timeouts
+    # the function should handle timeouts gracefully and not crash
+    assert isinstance(expanded_sources, list)
+
+    # if any sources were expanded before timeout, they should have proper structure
+    for source in expanded_sources:
+        assert source.source_type == "link_context"
+        assert "url" in source.metadata
+        assert "parent_source_id" in source.metadata
+        assert source.metadata["parent_source_id"] == "msg-timeout-test"
+
+    # extract timeout values for printing
+    timeout_cfg: TimeoutConfig = short_timeout_config.timeout_config
+    per_link_timeout = timeout_cfg.link_content_expander_timeout_per_link
+    total_timeout = timeout_cfg.link_content_expander_timeout_total
+
+    print(f"\n{'=' * 80}")
+    print(f"TEST: Timeout Handling with Non-Existent Sites")
+    print(f"{'=' * 80}")
+    print(f"Total expanded sources: {len(expanded_sources)}")
+    print(f"Config timeout per link: {per_link_timeout}s")
+    print(f"Config timeout total: {total_timeout}s")
+    print(f"Result: Timeout handled gracefully without crashing")
+    print(f"{'=' * 80}\n")

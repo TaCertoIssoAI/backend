@@ -12,12 +12,12 @@ Architecture:
 - Type-safe with Pydantic models throughout
 - Stateless functions with explicit dependencies
 """
-from typing import List, Optional
+from typing import List
 from app.models import (
     DataSource,
     ClaimExtractionInput,
     ClaimExtractionOutput,
-    LLMConfig,
+    PipelineConfig,
 )
 from app.ai.pipeline.link_context_expander import expand_link_contexts
 from app.ai.pipeline.claim_extractor import extract_claims_async
@@ -25,26 +25,27 @@ from app.ai.pipeline.claim_extractor import extract_claims_async
 
 async def run_fact_check_pipeline(
     data_sources: List[DataSource],
-    llm_config: Optional[LLMConfig] = None,
+    config: PipelineConfig,
 ) -> List[ClaimExtractionOutput]:
     """
     run the fact-checking pipeline on a list of data sources.
-    
+
     pipeline steps:
     1. identify original_text sources and extract links
     2. expand links to create new link_context data sources
     3. extract claims from all data sources (original + expanded)
     4. return all extracted claims grouped by source
-    
+
     args:
         data_sources: list of data sources to fact-check
-        llm_config: configuration for LLM calls (optional, uses default if not provided)
-        
+        config: pipeline configuration with timeout and LLM settings (required)
+
     returns:
         list of claim extraction outputs, one per data source
-        
+
     example:
-        >>> from app.models import DataSource, LLMConfig
+        >>> from app.models import DataSource
+        >>> from app.config.default import get_default_pipeline_config
         >>> sources = [
         ...     DataSource(
         ...         id="msg-001",
@@ -52,16 +53,9 @@ async def run_fact_check_pipeline(
         ...         original_text="Check this: https://example.com"
         ...     )
         ... ]
-        >>> config = LLMConfig(model_name="gpt-4o-mini")
+        >>> config = get_default_pipeline_config()
         >>> results = await run_fact_check_pipeline(sources, config)
     """
-    # use default LLM config if not provided
-    if llm_config is None:
-        llm_config = LLMConfig(
-            model_name="gpt-4o-mini",
-            temperature=0.0,
-            timeout=30
-        )
     print("=" * 80)
     print("FACT-CHECK PIPELINE STARTING")
     print("=" * 80)
@@ -75,7 +69,7 @@ async def run_fact_check_pipeline(
             print(f"  Text preview: {source.original_text[:100]}...")
             
             # expand link contexts using the existing function
-            expanded_sources = await expand_link_contexts(source)
+            expanded_sources = await expand_link_contexts(source, config)
             
             if expanded_sources:
                 print(f"  Created {len(expanded_sources)} new link_context data source(s):")
@@ -110,7 +104,7 @@ async def run_fact_check_pipeline(
         # extract claims
         result = await extract_claims_async(
             extraction_input=extraction_input,
-            llm_config=llm_config
+            llm_config=config.claim_extraction_llm_config
         )
         
         claim_outputs.append(result)
