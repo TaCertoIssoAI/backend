@@ -1,3 +1,4 @@
+
 # async parallelization plan for fact-checking pipeline
 
 ## executive summary
