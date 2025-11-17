@@ -17,11 +17,10 @@ Architecture:
 from typing import List
 from app.models import (
     DataSource,
-    ClaimExtractionInput,
     ClaimExtractionOutput,
     PipelineConfig,
 )
-from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
+from app.ai.pipeline.steps import PipelineSteps
 
 
 async def run_fact_check_pipeline(

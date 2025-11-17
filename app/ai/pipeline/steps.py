@@ -61,26 +61,6 @@ class PipelineSteps(Protocol):
         """
         ...
 
-    async def expand_link_contexts(
-        self,
-        data_source: DataSource,
-        config: PipelineConfig
-    ) -> List[DataSource]:
-        """
-        Expand link contexts from a single original_text DataSource.
-
-        Extracts all URLs from the text, scrapes their content, and returns
-        a list of new DataSources of type 'link_context'.
-
-        Args:
-            data_source: Input DataSource of type 'original_text'
-            config: Pipeline configuration with timeout settings
-
-        Returns:
-            List of DataSources (type 'link_context'), one per expanded link
-        """
-        ...
-
     async def extract_claims_from_all_sources(
         self,
         data_sources: List[DataSource],
@@ -98,25 +78,6 @@ class PipelineSteps(Protocol):
 
         Returns:
             List of ClaimExtractionOutput, one per data source
-        """
-        ...
-
-    async def extract_claims(
-        self,
-        extraction_input: ClaimExtractionInput,
-        llm_config: LLMConfig
-    ) -> ClaimExtractionOutput:
-        """
-        Extract fact-checkable claims from a single data source.
-
-        Uses an LLM to identify and normalize claims that can be fact-checked.
-
-        Args:
-            extraction_input: Input wrapping a DataSource with text to analyze
-            llm_config: LLM configuration (model, temperature, timeout)
-
-        Returns:
-            ClaimExtractionOutput with list of extracted claims
         """
         ...
 
@@ -159,6 +120,7 @@ class DefaultPipelineSteps:
         ... )
     """
 
+
     async def expand_data_sources_with_links(
         self,
         data_sources: List[DataSource],
@@ -178,7 +140,7 @@ class DefaultPipelineSteps:
                 print(f"  Text preview: {source.original_text[:100]}...")
 
                 # expand link contexts for this source
-                expanded_sources = await self.expand_link_contexts(source, config)
+                expanded_sources = await self.__expand_link_contexts(source, config)
 
                 if expanded_sources:
                     print(f"  Created {len(expanded_sources)} new link_context data source(s):")
@@ -194,7 +156,7 @@ class DefaultPipelineSteps:
 
         return all_data_sources
 
-    async def expand_link_contexts(
+    async def __expand_link_contexts(
         self,
         data_source: DataSource,
         config: PipelineConfig
@@ -230,7 +192,7 @@ class DefaultPipelineSteps:
             extraction_input = ClaimExtractionInput(data_source=source)
 
             # extract claims using the single-source method
-            result = await self.extract_claims(
+            result = await self.__extract_claims(
                 extraction_input=extraction_input,
                 llm_config=llm_config
             )
@@ -251,7 +213,7 @@ class DefaultPipelineSteps:
 
         return claim_outputs
 
-    async def extract_claims(
+    async def __extract_claims(
         self,
         extraction_input: ClaimExtractionInput,
         llm_config: LLMConfig
