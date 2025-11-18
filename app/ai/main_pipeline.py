@@ -23,6 +23,9 @@ from app.models import (
     PipelineConfig,
     EvidenceRetrievalResult,
     ClaimExtractionInput,
+    AdjudicationInput,
+    DataSourceWithClaims,
+    EnrichedClaim,
 )
 from app.ai.pipeline.steps import PipelineSteps
 from app.ai.threads.thread_utils import ThreadPoolManager
@@ -30,6 +33,60 @@ from app.ai.async_code import fire_and_forget_streaming_pipeline
 from app.ai.pipeline.claim_extractor import extract_claims
 from app.ai.context.web import WebSearchGatherer
 from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+
+
+def build_adjudication_input(
+    claim_outputs: List[ClaimExtractionOutput],
+    evidence_result: EvidenceRetrievalResult,
+) -> AdjudicationInput:
+    """
+    build adjudication input by grouping enriched claims with their original data sources.
+
+    this function reconstructs the data lineage by:
+    1. taking each data source from claim extraction outputs
+    2. finding all enriched claims that were extracted from that source
+    3. grouping them together into DataSourceWithClaims objects
+
+    args:
+        claim_outputs: list of claim extraction outputs (each has a data source + extracted claims)
+        evidence_result: evidence retrieval result mapping claim IDs to enriched claims
+
+    returns:
+        AdjudicationInput ready for the adjudication step
+
+    example:
+        >>> claim_outputs = [...]  # from claim extraction step
+        >>> evidence_result = EvidenceRetrievalResult(claim_evidence_map={...})
+        >>> adj_input = build_adjudication_input(claim_outputs, evidence_result)
+        >>> print(len(adj_input.sources_with_claims))
+        2  # number of data sources
+    """
+    sources_with_claims: List[DataSourceWithClaims] = []
+
+    for output in claim_outputs:
+        data_source = output.data_source
+        enriched_claims_for_this_source: List[EnrichedClaim] = []
+
+        # for each claim extracted from this data source
+        for extracted_claim in output.claims:
+            claim_id = extracted_claim.id
+
+            # find the corresponding enriched claim in evidence result
+            if claim_id in evidence_result.claim_evidence_map:
+                enriched_claim = evidence_result.claim_evidence_map[claim_id]
+                enriched_claims_for_this_source.append(enriched_claim)
+
+        # create DataSourceWithClaims object
+        source_with_claims = DataSourceWithClaims(
+            data_source=data_source,
+            enriched_claims=enriched_claims_for_this_source
+        )
+        sources_with_claims.append(source_with_claims)
+
+    return AdjudicationInput(
+        sources_with_claims=sources_with_claims,
+        additional_context=None
+    )
 
 
 async def run_fact_check_pipeline(
@@ -138,6 +195,29 @@ async def run_fact_check_pipeline(
 
         # build final evidence retrieval result
         result = EvidenceRetrievalResult(claim_evidence_map=enriched_claims)
+
+        # build adjudication input by grouping enriched claims with data sources
+        print(f"\n{'=' * 80}")
+        print("BUILDING ADJUDICATION INPUT")
+        print("=" * 80)
+
+        adjudication_input = build_adjudication_input(claim_outputs, result)
+
+        print(f"Adjudication input created successfully:")
+        print(f"  - Total data sources: {len(adjudication_input.sources_with_claims)}")
+
+        for i, ds_with_claims in enumerate(adjudication_input.sources_with_claims, 1):
+            ds = ds_with_claims.data_source
+            claims = ds_with_claims.enriched_claims
+            print(f"\n  {i}. DataSource: {ds.id} ({ds.source_type})")
+            print(f"     - Enriched claims: {len(claims)}")
+
+            for j, claim in enumerate(claims, 1):
+                citations_count = len(claim.citations)
+                print(f"       {j}) Claim ID: {claim.id}")
+                print(f"          Text: {claim.text[:80]}...")
+                print(f"          Citations: {citations_count}")
+                print(f"          Source: {claim.source.source_type} ({claim.source.source_id})")
 
         # summary
         print(f"\n{'=' * 80}")
