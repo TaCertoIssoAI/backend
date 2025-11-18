@@ -31,30 +31,46 @@ async def analyze_text(request: Request) -> AnalysisResponse:
 
         # step 3: run the async fact-checking pipeline
         # IMPORTANT: use 'await' to get the actual results
-        claim_outputs = await run_fact_check_pipeline(data_sources, config,pipeline_step)
+        fact_check_result = await run_fact_check_pipeline(data_sources, config, pipeline_step)
 
         # step 4: process results and build response
-        # collect all claims from all sources
-        all_claims = []
-        for output in claim_outputs:
-            all_claims.extend(output.claims)
-        
-        # build rationale text from extracted claims
-        if all_claims:
-            rationale_parts = ["Análise das alegações extraídas:\n"]
-            for i, claim in enumerate(all_claims, 1):
-                rationale_parts.append(f"{i}. {claim.text}")
-                if claim.entities:
-                    rationale_parts.append(f"   Entidades: {', '.join(claim.entities)}")
+        # collect all verdicts from all data sources
+        all_verdicts = []
+        for ds_result in fact_check_result.results:
+            all_verdicts.extend(ds_result.claim_verdicts)
+
+        # build rationale text from verdicts
+        if all_verdicts:
+            rationale_parts = ["Resultado da verificação:\n"]
+
+            for i, verdict_item in enumerate(all_verdicts, 1):
+                rationale_parts.append(f"\n{i}. Alegação: {verdict_item.claim_text}")
+                rationale_parts.append(f"   Veredito: {verdict_item.verdict}")
+                rationale_parts.append(f"   Justificativa: {verdict_item.justification}")
+
+            # add overall summary if present
+            if fact_check_result.overall_summary:
+                rationale_parts.append(f"\n\nResumo Geral:\n{fact_check_result.overall_summary}")
+
             rationale = "\n".join(rationale_parts)
-            verdict = f"{len(all_claims)} claim(s) extracted"
+
+            # determine overall verdict based on individual verdicts
+            verdict_counts = {}
+            for v in all_verdicts:
+                verdict_counts[v.verdict] = verdict_counts.get(v.verdict, 0) + 1
+
+            # use the most common verdict as overall verdict
+            if verdict_counts:
+                overall_verdict = max(verdict_counts, key=verdict_counts.get)
+            else:
+                overall_verdict = "no_claims"
         else:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
-            verdict = "no_claims"
-        
+            overall_verdict = "no_claims"
+
         return AnalysisResponse(
             message_id=data_sources[0].id if data_sources else "unknown",
-            verdict=verdict,
+            verdict=overall_verdict,
             rationale=rationale,
             responseWithoutLinks=rationale,
             processing_time_ms=0  # TODO: measure actual time
