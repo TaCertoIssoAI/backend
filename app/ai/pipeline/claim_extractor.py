@@ -164,7 +164,10 @@ def extract_claims(
         )
         claims.append(claim)
 
-    return ClaimExtractionOutput(claims=claims)
+    return ClaimExtractionOutput(
+        data_source=extraction_input.data_source,
+        claims=claims
+    )
 
 
 async def extract_claims_async(
@@ -216,7 +219,10 @@ async def extract_claims_async(
         )
         claims.append(claim)
 
-    return ClaimExtractionOutput(claims=claims)
+    return ClaimExtractionOutput(
+        data_source=extraction_input.data_source,
+        claims=claims
+    )
 
 
 # ===== HELPER FUNCTIONS =====

@@ -77,33 +77,16 @@ async def run_fact_check_pipeline(
     manager.initialize()
 
     try:
-        # step 1: link context expansion (synchronous for now)
+        # step 1 & 2 & 3: fire-and-forget claim extraction + link expansion + evidence gathering
         print(f"\n{'=' * 80}")
-        print("LINK EXPANSION PHASE (SYNCHRONOUS)")
+        print("STREAMING CLAIM EXTRACTION + LINK EXPANSION + EVIDENCE GATHERING")
         print("=" * 80)
-
-        expanded_link_sources = await steps.expand_data_sources_with_links(
-            data_sources, config
-        )
-
-        # combine original sources with expanded link sources
-        all_data_sources = list[DataSource](data_sources) + expanded_link_sources
-
-        print(f"\n[PIPELINE] Total data sources to process: {len(all_data_sources)}")
-        print(f"  Original sources: {len(data_sources)}")
-        print(f"  Expanded link sources: {len(expanded_link_sources)}")
-        for i, source in enumerate(all_data_sources, 1):
-            print(f"  {i}. {source.source_type} (id: {source.id})")
-
-        # step 2 & 3: fire-and-forget claim extraction + evidence gathering
-        print(f"\n{'=' * 80}")
-        print("STREAMING CLAIM EXTRACTION + EVIDENCE GATHERING")
-        print("=" * 80)
-        print("Pattern: fire all claim extraction jobs,")
+        print("Pattern: fire claim extraction for original sources,")
+        print("fire link expansion job,")
         print("then as each completes, immediately fire evidence gathering")
         print("=" * 80)
 
-        # create wrapper function that binds the config
+        # create wrapper function that binds the config for regular claim extraction
         def extract_claims_with_config(
             extraction_input: ClaimExtractionInput
         ) -> ClaimExtractionOutput:
@@ -113,6 +96,31 @@ async def run_fact_check_pipeline(
                 llm_config=config.claim_extraction_llm_config
             )
 
+        # create wrapper function for link expansion
+        def expand_links_from_sources(
+            sources: List[DataSource]
+        ) -> List[DataSource]:
+            """expands links from sources and returns new DataSource objects"""
+            # run link expansion (synchronous function using ThreadPoolManager internally)
+            expanded_sources = steps.expand_data_sources_with_links(sources, config)
+
+            # ensure we always return a list
+            if expanded_sources is None:
+                print("\n[LINK EXPANSION] Warning: expansion returned None")
+                return []
+
+            print(f"\n[LINK EXPANSION] Expanded {len(expanded_sources)} link sources")
+            for i, source in enumerate(expanded_sources, 1):
+                url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
+                success = source.metadata.get("success", False) if source.metadata else False
+                status = "✓" if success else "✗"
+                content_preview = source.original_text[:1000] if source.original_text else "(no content)"
+                print(f"  {i}. {status} {source.source_type} (id: {source.id})")
+                print(f"     URL: {url}")
+                print(f"     Content preview: {content_preview}...")
+
+            return expanded_sources
+
         # create evidence gatherers
         evidence_gatherers = [
             WebSearchGatherer(max_results=5),
@@ -121,10 +129,11 @@ async def run_fact_check_pipeline(
 
         # run fire-and-forget streaming pipeline (sync call)
         claim_outputs, enriched_claims = fire_and_forget_streaming_pipeline(
-            all_data_sources,
+            data_sources,
             extract_claims_with_config,
             evidence_gatherers,
-            manager,
+            link_expansion_fn=expand_links_from_sources,
+            manager=manager,
         )
 
         # build final evidence retrieval result
@@ -136,7 +145,7 @@ async def run_fact_check_pipeline(
         print("=" * 80)
 
         total_claims = sum(len(output.claims) for output in claim_outputs)
-        print(f"Total data sources processed: {len(all_data_sources)}")
+        print(f"Total claim extraction outputs: {len(claim_outputs)}")
         print(f"Total claims extracted: {total_claims}")
         print(f"Total enriched claims: {len(enriched_claims)}")
         print(f"Evidence gathering results: {len(result.claim_evidence_map)} claims with evidence")

@@ -44,7 +44,7 @@ class PipelineSteps(Protocol):
     - Type-safe dependency injection
     """
 
-    async def expand_data_sources_with_links(
+    def expand_data_sources_with_links(
         self,
         data_sources: List[DataSource],
         config: PipelineConfig
@@ -127,7 +127,7 @@ class DefaultPipelineSteps:
     """
 
 
-    async def expand_data_sources_with_links(
+    def expand_data_sources_with_links(
         self,
         data_sources: List[DataSource],
         config: PipelineConfig
@@ -146,24 +146,38 @@ class DefaultPipelineSteps:
                 print(f"\n[LINK EXPANSION] Processing original_text source: {source.id}")
                 print(f"  Text preview: {source.original_text[:100]}...")
 
-                # expand link contexts for this source
-                expanded_sources = await self._expand_link_contexts(source, config)
+                try:
+                    # expand link contexts for this source
+                    expanded_sources = self._expand_link_contexts(source, config)
 
-                if expanded_sources:
-                    print(f"  Created {len(expanded_sources)} new link_context data source(s):")
-                    for expanded in expanded_sources:
-                        url = expanded.metadata.get("url", "unknown")
-                        success = expanded.metadata.get("success", False)
-                        status = "✓" if success else "✗"
-                        print(f"    {status} {url}")
+                    # handle None return
+                    if expanded_sources is None:
+                        print("  Warning: link expansion returned None")
+                        continue
 
-                    expanded_link_sources.extend(expanded_sources)
-                else:
-                    print("  No links found or expanded")
+                    if expanded_sources:
+                        print(f"  Created {len(expanded_sources)} new link_context data source(s):")
+                        for expanded in expanded_sources:
+                            url = expanded.metadata.get("url", "unknown")
+                            success = expanded.metadata.get("success", False)
+                            status = "✓" if success else "✗"
+                            print(f"    {status} {url}")
+
+                        expanded_link_sources.extend(expanded_sources)
+                    else:
+                        print("  No links found or expanded")
+
+                except Exception as e:
+                    print(f"  Error expanding links for source {source.id}: {e}")
+                    import logging
+                    logging.getLogger(__name__).error(
+                        f"Link expansion failed for source {source.id}: {e}",
+                        exc_info=True
+                    )
 
         return expanded_link_sources
 
-    async def _expand_link_contexts(
+    def _expand_link_contexts(
         self,
         data_source: DataSource,
         config: PipelineConfig
@@ -176,7 +190,7 @@ class DefaultPipelineSteps:
         from app.ai.pipeline.link_context_expander import (
             expand_link_contexts as _expand_link_contexts
         )
-        return await _expand_link_contexts(data_source, config)
+        return _expand_link_contexts(data_source, config)
 
     async def extract_claims_from_all_sources(
         self,

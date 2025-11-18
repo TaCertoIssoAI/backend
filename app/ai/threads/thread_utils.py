@@ -34,9 +34,10 @@ class OperationType(Enum):
 
     higher weight = higher priority in job queue.
     """
-    CLAIMS_EXTRACTION = 10          # highest priority - critical path
-    LINK_CONTEXT_EXPANDING = 5      # medium priority - context gathering
-    LINK_EVIDENCE_RETRIEVER = 3     # lowest priority - evidence retrieval
+    CLAIMS_EXTRACTION = 10               # highest priority - critical path
+    LINK_EXPANSION_PIPELINE = 6          # high priority - full link expansion + DataSource creation
+    LINK_CONTEXT_EXPANDING = 5           # medium priority - individual URL scraping
+    LINK_EVIDENCE_RETRIEVER = 3          # lowest priority - evidence retrieval
 
     @property
     def weight(self) -> int:

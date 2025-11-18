@@ -161,7 +161,7 @@ def expand_link_context_sync(url: str, timeout_per_link: float) -> Optional[WebC
         return None
 
 
-async def expand_link_contexts(
+def expand_link_contexts(
     data_source: DataSource,
     config: PipelineConfig
 ) -> List[DataSource]:
@@ -188,14 +188,13 @@ async def expand_link_contexts(
     Example:
         >>> from app.models import DataSource
         >>> from app.config.default import get_default_pipeline_config
-        >>> import asyncio
         >>> original = DataSource(
         ...     id="msg-001",
         ...     source_type="original_text",
         ...     original_text="Check out https://example.com for more info"
         ... )
         >>> config = get_default_pipeline_config()
-        >>> expanded = asyncio.run(expand_link_contexts(original, config))
+        >>> expanded = expand_link_contexts(original, config)
         >>> len(expanded)
         1
         >>> expanded[0].source_type

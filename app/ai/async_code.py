@@ -211,23 +211,27 @@ def fire_and_forget_streaming_pipeline(
     data_sources: List[DataSource],
     extract_fn: Callable[[ClaimExtractionInput], ClaimExtractionOutput],
     evidence_gatherers: List[Any],
+    link_expansion_fn: Optional[Callable[[List[DataSource]], List[DataSource]]] = None,
     manager: Optional[ThreadPoolManager] = None,
 ) -> tuple[List[ClaimExtractionOutput], Dict[str, EnrichedClaim]]:
     """
     extract claims and gather evidence using fire-and-forget streaming pattern.
 
     workflow:
-    1. fire all claim extraction jobs (don't wait)
-    2. loop while claim extraction jobs are pending:
-       - check if any claim extraction completed
-       - for each claim, fire INDIVIDUAL jobs for each evidence gatherer (don't wait)
-    3. wait for all evidence gathering jobs to complete
-    4. group citations by claim id and build enriched claims
+    1. fire claim extraction jobs for original data sources (don't wait)
+    2. if link_expansion_fn provided, fire link expansion job (don't wait)
+    3. loop while claim extraction or link expansion jobs are pending:
+       - if claim extraction completes → fire evidence jobs for each claim
+       - if link expansion completes → fire claim extraction jobs for each expanded source
+    4. wait for all evidence gathering jobs to complete
+    5. group citations by claim id and build enriched claims
 
     args:
-        data_sources: list of data sources to extract claims from
+        data_sources: list of original data sources to extract claims from
         extract_fn: function that extracts claims from a single source
         evidence_gatherers: list of evidence gatherers (e.g., WebSearchGatherer, GoogleFactCheckGatherer)
+        link_expansion_fn: optional function that expands links from data sources,
+                          returns list of new DataSource objects
         manager: thread pool manager (uses singleton if None)
 
     returns:
@@ -237,7 +241,8 @@ def fire_and_forget_streaming_pipeline(
         >>> claim_outputs, enriched_claims = fire_and_forget_streaming_pipeline(
         ...     data_sources=sources,
         ...     extract_fn=extract_claims,
-        ...     evidence_gatherers=[WebSearchGatherer(), GoogleFactCheckGatherer()]
+        ...     evidence_gatherers=[WebSearchGatherer(), GoogleFactCheckGatherer()],
+        ...     link_expansion_fn=expand_links
         ... )
     """
     if manager is None:
@@ -245,7 +250,7 @@ def fire_and_forget_streaming_pipeline(
 
     logger.info(f"starting fire-and-forget pipeline for {len(data_sources)} sources")
 
-    # step 1: fire all claim extraction jobs (don't wait)
+    # step 1: fire claim extraction jobs for original data sources (don't wait)
     claim_extraction_jobs_submitted = 0
     for source in data_sources:
         extraction_input = ClaimExtractionInput(data_source=source)
@@ -255,6 +260,17 @@ def fire_and_forget_streaming_pipeline(
             extraction_input,
         )
         claim_extraction_jobs_submitted += 1
+
+    # step 2: fire link expansion pipeline job if provided (don't wait)
+    link_expansion_pending = False
+    if link_expansion_fn is not None:
+        manager.submit(
+            OperationType.LINK_EXPANSION_PIPELINE,
+            link_expansion_fn,
+            data_sources,
+        )
+        link_expansion_pending = True
+        logger.info("fired link expansion pipeline job")
 
     logger.info(f"fired {claim_extraction_jobs_submitted} claim extraction jobs")
 
@@ -266,14 +282,15 @@ def fire_and_forget_streaming_pipeline(
     evidence_jobs_submitted = 0
     evidence_jobs_by_claim: Dict[str, List[str]] = {}  # claim_id -> list of gatherer names
 
-    # step 2: loop while claim extraction jobs are pending
+    # step 3: loop while claim extraction or link expansion jobs are pending
     claim_extractions_completed = 0
-    while claim_extractions_completed < claim_extraction_jobs_submitted:
+
+    while claim_extractions_completed < claim_extraction_jobs_submitted or link_expansion_pending:
+        # check for completed claim extraction
         try:
-            # wait for next completed claim extraction (5 second timeout)
-            job_id, output = manager.wait_next_completed(
+            _job_id, output = manager.wait_next_completed(
                 operation_type=OperationType.CLAIMS_EXTRACTION,
-                timeout=10.0,
+                timeout=0.1,  # non-blocking check
                 raise_on_error=True,
             )
 
@@ -298,12 +315,50 @@ def fire_and_forget_streaming_pipeline(
                 evidence_jobs_submitted += jobs_fired
 
         except TimeoutError:
-            # no completion yet, continue loop
-            logger.debug("no claim extraction completed in last 5s, retrying...")
-            continue
+            # no claim extraction completed, check link expansion
+            pass
         except Exception as e:
             logger.error(f"claim extraction job failed: {e}", exc_info=True)
             claim_extractions_completed += 1
+
+        # check for completed link expansion pipeline
+        if link_expansion_pending:
+            try:
+                _job_id, expanded_sources = manager.wait_next_completed(
+                    operation_type=OperationType.LINK_EXPANSION_PIPELINE,
+                    timeout=0.1,  # non-blocking check
+                    raise_on_error=True,
+                )
+
+                link_expansion_pending = False
+
+                # handle None or non-list results
+                if expanded_sources is None:
+                    logger.warning("link expansion returned None - no sources expanded")
+                    expanded_sources = []
+                elif not isinstance(expanded_sources, list):
+                    logger.error(f"link expansion returned unexpected type: {type(expanded_sources)}")
+                    expanded_sources = []
+
+                logger.info(f"link expansion pipeline completed: {len(expanded_sources)} sources expanded")
+
+                # fire claim extraction jobs for each expanded source
+                for source in expanded_sources:
+                    extraction_input = ClaimExtractionInput(data_source=source)
+                    manager.submit(
+                        OperationType.CLAIMS_EXTRACTION,
+                        extract_fn,
+                        extraction_input,
+                    )
+                    claim_extraction_jobs_submitted += 1
+                    logger.info(f"fired claim extraction for expanded source: {source.id}")
+
+            except TimeoutError:
+                # no link expansion completed yet
+                pass
+            except Exception as e:
+                logger.error(f"link expansion pipeline job failed: {e}", exc_info=True)
+                link_expansion_pending = False
 
     logger.info(
         f"all claim extractions completed. waiting for {evidence_jobs_submitted} "
