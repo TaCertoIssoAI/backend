@@ -41,8 +41,8 @@ def get_default_pipeline_config() -> PipelineConfig:
         ),
         # timeout configuration
         timeout_config=TimeoutConfig(
-            link_content_expander_timeout_per_link=20.0,
-            link_content_expander_timeout_total=30.0,
+            link_content_expander_timeout_per_link=45.0,  # increased from 20.0 for Facebook scraping
+            link_content_expander_timeout_total=120.0,    # increased from 30.0 for multiple links
             claim_extractor_timeout_per_source=10.0,
             claim_extractor_timeout_total=20.0,
             evidence_retrieval_timeout_per_claim=15.0,

@@ -51,7 +51,7 @@ ACTOR_MAP = {
 # with 4 max concurrent workers and 8GB free tier:
 # 4 workers × 2048MB = 8GB (max capacity)
 ACTOR_MEMORY_LIMITS = {
-    PlatformType.FACEBOOK: 256,      # social media - lightweight
+    PlatformType.FACEBOOK: 512,      # increased from 256 - facebook needs more for anti-scraping
     PlatformType.INSTAGRAM: 256,     # social media - lightweight
     PlatformType.TWITTER: 256,       # social media - lightweight
     PlatformType.TIKTOK: 512,        # tiktok needs more (video platform)
