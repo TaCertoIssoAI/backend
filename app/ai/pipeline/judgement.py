@@ -30,6 +30,7 @@ from app.models import (
     EnrichedClaim,
 )
 from .prompts import get_adjudication_prompt
+from app.observability.logger import time_profile, PipelineStep, get_logger
 
 
 # ===== INTERNAL LLM SCHEMAS =====
@@ -299,12 +300,63 @@ def build_adjudication_chain(llm_config: LLMConfig) -> Runnable:
     
     # Compose the chain using LCEL
     chain = prompt | structured_model
-    
+
     return chain
+
+
+def _log_input_metrics(
+    adjudication_input: AdjudicationInput,
+    formatted_sources: str,
+    additional_context_str: str
+) -> None:
+    """
+    log input size metrics for adjudication performance analysis.
+
+    logs metrics about the input complexity to help correlate with execution time:
+    - number of data sources and claims
+    - total evidence citations
+    - estimated prompt size in characters and tokens
+
+    args:
+        adjudication_input: the adjudication input with sources and claims
+        formatted_sources: the formatted sources string for the prompt
+        additional_context_str: additional context string (if any)
+    """
+    logger = get_logger(__name__, PipelineStep.ADJUDICATION)
+
+    # calculate input metrics
+    total_claims = sum(
+        len(source.enriched_claims)
+        for source in adjudication_input.sources_with_claims
+    )
+    total_sources = len(adjudication_input.sources_with_claims)
+    total_citations = sum(
+        len(claim.citations)
+        for source in adjudication_input.sources_with_claims
+        for claim in source.enriched_claims
+    )
+
+    # log metrics with prefix
+    logger.set_prefix("[ADJUNDICATOR INPUT METRICS]")
+    logger.info(f"total data sources: {total_sources}")
+    logger.info(f"total claims to adjudicate: {total_claims}")
+    logger.info(f"total evidence citations: {total_citations}")
+
+    if total_claims > 0:
+        avg_citations_per_claim = total_citations / total_claims
+        logger.info(f"average citations per claim: {avg_citations_per_claim:.1f}")
+
+    # log prompt size estimate
+    total_prompt_chars = len(formatted_sources) + len(additional_context_str)
+    estimated_tokens = total_prompt_chars // 4  # rough estimate: 1 token ≈ 4 chars
+    logger.info(f"total prompt size: {total_prompt_chars} chars (~{estimated_tokens} tokens estimated)")
+
+    logger.clear_prefix()
 
 
 # ===== MAIN ADJUDICATION FUNCTIONS =====
 
+@time_profile(PipelineStep.ADJUDICATION)
 def adjudicate_claims(
     adjudication_input: AdjudicationInput,
     llm_config: LLMConfig
@@ -332,7 +384,8 @@ def adjudicate_claims(
         >>> print(result.results[0].claim_verdicts[0].verdict)
         "Falso"
     """
-    print("[ADJUDICATOR DEBUG] Starting adjudicate_claims function")
+    logger = get_logger(__name__, PipelineStep.ADJUDICATION)
+    logger.debug("starting adjudicate_claims function")
 
     # Build the chain
     print("[ADJUDICATOR DEBUG] Building LangChain...")
@@ -372,6 +425,9 @@ def adjudicate_claims(
         "additional_context": additional_context_str
     }
     print(f"[ADJUDICATOR DEBUG] Chain input keys: {list(chain_input.keys())}")
+
+    # Log input metrics for performance analysis
+    _log_input_metrics(adjudication_input, formatted_sources, additional_context_str)
 
     # Invoke the chain - gets LLM output
     print("[ADJUDICATOR DEBUG] Invoking LLM chain...")

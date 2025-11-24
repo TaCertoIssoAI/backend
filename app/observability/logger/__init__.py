@@ -5,7 +5,7 @@ provides structured logging with pipeline step context, configurable output
 destinations (stdout, file, or both), and environment-based configuration.
 
 usage:
-    >>> from app.observability.logger import get_logger, PipelineStep, setup_logging
+    >>> from app.observability.logger import get_logger, PipelineStep, setup_logging, time_profile
     >>>
     >>> # initialize logging (call once at app startup)
     >>> setup_logging()
@@ -14,6 +14,13 @@ usage:
     >>> logger = get_logger(__name__, PipelineStep.CLAIM_EXTRACTION)
     >>> logger.info("processing claim")
     >>> logger.error("failed to extract claim", exc_info=True)
+    >>>
+    >>> # use time profiling decorator
+    >>> @time_profile(PipelineStep.EVIDENCE_RETRIEVAL)
+    >>> async def gather_evidence(claim):
+    >>>     # your code here
+    >>>     return evidence
+    >>> # logs: [TIME PROFILE] gather_evidence completed in 2.34s
 
 configuration:
     set via environment variables:
@@ -32,6 +39,7 @@ from app.observability.logger.logger import (
     setup_logging,
 )
 from app.observability.logger.pipeline_step import PipelineStep
+from app.observability.logger.decorators import time_profile
 
 __all__ = [
     # main logger functions
@@ -44,4 +52,6 @@ __all__ = [
     # configuration
     "LoggerConfig",
     "get_logger_config",
+    # decorators
+    "time_profile",
 ]
