@@ -218,6 +218,13 @@ def setup_logging() -> None:
     # remove existing handlers to avoid duplicates
     root_logger.handlers.clear()
 
+    # silence noisy third-party libraries to avoid verbose HTTP logging
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("openai").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+
     # create formatter
     formatter = PipelineLogFormatter(
         fmt=config.log_format,

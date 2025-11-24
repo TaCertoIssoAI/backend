@@ -166,6 +166,9 @@ class DefaultPipelineSteps:
 
         link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
 
+        link_logger.info(f"expand_links_from_sources called with {len(sources)} sources")
+        link_logger.debug(f"source types: {[s.source_type for s in sources]}")
+
         # run link expansion (synchronous function using ThreadPoolManager internally)
         expanded_sources = self._expand_data_sources_with_links(sources, config)
 
@@ -203,13 +206,22 @@ class DefaultPipelineSteps:
         Returns only the new link_context sources, not the original sources.
         """
         from app.ai.pipeline.link_context_expander import expand_link_contexts
+        from app.observability.logger import get_logger, PipelineStep
+
+        link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
+
+        link_logger.info(f"_expand_data_sources_with_links called with {len(data_sources)} sources")
+        link_logger.debug(
+            f"source types: {[s.source_type for s in data_sources]}"
+        )
 
         expanded_link_sources: List[DataSource] = []
 
         for source in data_sources:
             if source.source_type == "original_text":
-                print(f"\n[LINK EXPANSION] Processing original_text source: {source.id}")
-                print(f"  Text preview: {source.original_text[:100]}...")
+                text_preview = source.original_text[:100] if source.original_text else ""
+                link_logger.info(f"processing original_text source: {source.id}")
+                link_logger.debug(f"text preview: {text_preview}...")
 
                 try:
                     # expand link contexts for this source
@@ -217,26 +229,26 @@ class DefaultPipelineSteps:
 
                     # handle None return
                     if expanded_sources is None:
-                        print("  Warning: link expansion returned None")
+                        link_logger.warning("link expansion returned None")
                         continue
 
                     if expanded_sources:
-                        print(f"  Created {len(expanded_sources)} new link_context data source(s):")
+                        link_logger.info(
+                            f"created {len(expanded_sources)} new link_context data source(s)"
+                        )
                         for expanded in expanded_sources:
                             url = expanded.metadata.get("url", "unknown")
                             success = expanded.metadata.get("success", False)
                             status = "✓" if success else "✗"
-                            print(f"    {status} {url}")
+                            link_logger.debug(f"{status} {url}")
 
                         expanded_link_sources.extend(expanded_sources)
                     else:
-                        print("  No links found or expanded")
+                        link_logger.debug("no links found or expanded")
 
                 except Exception as e:
-                    print(f"  Error expanding links for source {source.id}: {e}")
-                    import logging
-                    logging.getLogger(__name__).error(
-                        f"Link expansion failed for source {source.id}: {e}",
+                    link_logger.error(
+                        f"link expansion failed for source {source.id}: {e}",
                         exc_info=True
                     )
 
@@ -252,14 +264,11 @@ class DefaultPipelineSteps:
         Default implementation: processes each data source and extracts claims.
 
         Iterates through all data sources, creates ClaimExtractionInput for each,
-        calls extract_claims, and returns all results with logging.
+        calls extract_claims, and returns all results.
         """
         claim_outputs: List[ClaimExtractionOutput] = []
 
         for source in data_sources:
-            print(f"\n[CLAIM EXTRACTION] Processing {source.source_type} source: {source.id}")
-            print(f"  Text preview: {source.original_text[:100]}...")
-
             # create input for claim extractor
             extraction_input = ClaimExtractionInput(data_source=source)
 
@@ -270,18 +279,6 @@ class DefaultPipelineSteps:
             )
 
             claim_outputs.append(result)
-
-            # print extracted claims
-            if result.claims:
-                print(f"  Extracted {len(result.claims)} claim(s):")
-                for i, claim in enumerate(result.claims, 1):
-                    print(f"    {i}. {claim.text}")
-                    if claim.entities:
-                        print(f"       entities: {', '.join(claim.entities)}")
-                    if claim.llm_comment:
-                        print(f"       comment: {claim.llm_comment}")
-            else:
-                print("  No claims extracted")
 
         return claim_outputs
 

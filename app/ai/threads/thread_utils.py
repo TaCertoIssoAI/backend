@@ -309,15 +309,8 @@ class ThreadPoolManager:
                 # submit to thread pool
                 self.executor.submit(self._execute_job, job)
 
-                logger.debug(
-                    f"job dispatched: {job.id}",
-                    extra={
-                        "job_id": job.id,
-                        "operation": job.operation_type.name,
-                        "status": "DISPATCHED",
-                        "running_jobs": len(self.running_jobs)
-                    }
-                )
+                # logger.debug can be slow, use print for dispatcher debugging
+                # print(f"[DISPATCHER] Dispatched {job.operation_type.name} job {job.id}")
 
             except queue.Empty:
                 # no jobs available, continue loop
@@ -336,21 +329,19 @@ class ThreadPoolManager:
         """
         thread_name = threading.current_thread().name
 
-        logger.info(
-            f"job started: {job.id}",
-            extra={
-                "job_id": job.id,
-                "operation": job.operation_type.name,
-                "status": "RUNNING",
-                "thread": thread_name
-            }
-        )
+        print(f"[THREAD] Job {job.id} ({job.operation_type.name}) STARTED in {thread_name}")
+
+        # NOTE: logger.info/error calls removed from _execute_job to avoid deadlock
+        # Standard Python logger uses locks that can block worker threads
+        # Use print statements for thread pool debugging instead
 
         start_time = time.time()
 
         try:
             # execute function
+            print(f"[THREAD] Job {job.id} calling {job.func.__name__}...")
             result = job.func(*job.args, **job.kwargs)
+            print(f"[THREAD] Job {job.id} returned {type(result).__name__}")
 
             # set result on future
             job.future.set_result(result)
@@ -360,16 +351,7 @@ class ThreadPoolManager:
             self.global_completion_queue.put((job.operation_type, job.id, result))
 
             elapsed = time.time() - start_time
-            logger.info(
-                f"job completed: {job.id}",
-                extra={
-                    "job_id": job.id,
-                    "operation": job.operation_type.name,
-                    "status": "COMPLETED",
-                    "thread": thread_name,
-                    "elapsed_time": elapsed
-                }
-            )
+            print(f"[THREAD] Job {job.id} COMPLETED in {elapsed:.2f}s")
 
         except Exception as e:
             # set exception on future
@@ -380,18 +362,9 @@ class ThreadPoolManager:
             self.global_completion_queue.put((job.operation_type, job.id, e))
 
             elapsed = time.time() - start_time
-            logger.error(
-                f"job failed: {job.id} - {e}",
-                extra={
-                    "job_id": job.id,
-                    "operation": job.operation_type.name,
-                    "status": "FAILED",
-                    "thread": thread_name,
-                    "elapsed_time": elapsed,
-                    "error": str(e)
-                },
-                exc_info=True
-            )
+            print(f"[THREAD] Job {job.id} FAILED in {elapsed:.2f}s: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
 
         finally:
             # move from running to completed

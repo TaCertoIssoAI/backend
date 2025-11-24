@@ -161,16 +161,14 @@ def hybrid_expand_link_contexts(
             source_type=data_source.source_type,
             original_text=generic_text,
             metadata=data_source.metadata,
-            parent_source_id=data_source.parent_source_id
+            locale=data_source.locale,
+            timestamp=data_source.timestamp
         )
 
         # call real link expansion for generic URLs
         real_expanded = expand_link_contexts(temp_source, config)
 
         if real_expanded:
-            # update parent_source_id to match original
-            for source in real_expanded:
-                source.parent_source_id = data_source.id
             expanded_sources.extend(real_expanded)
 
     return expanded_sources

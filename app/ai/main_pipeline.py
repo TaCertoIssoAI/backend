@@ -156,7 +156,10 @@ async def run_fact_check_pipeline(
             sources: List[DataSource]
         ) -> List[DataSource]:
             """calls steps.expand_links_from_sources with bound config"""
-            return steps.expand_links_from_sources(sources, config)
+            pipeline_logger.info(f"expand_links_with_config wrapper called with {len(sources)} sources")
+            result = steps.expand_links_from_sources(sources, config)
+            pipeline_logger.info(f"expand_links_with_config completed: {len(result) if result else 0} sources expanded")
+            return result
 
         # get evidence gatherers from pipeline steps
         evidence_gatherers = steps.get_evidence_gatherers()
