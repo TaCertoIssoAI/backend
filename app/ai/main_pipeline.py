@@ -33,9 +33,8 @@ from app.ai.threads.thread_utils import ThreadPoolManager
 from app.ai.async_code import fire_and_forget_streaming_pipeline
 from app.ai.pipeline.claim_extractor import extract_claims
 from app.ai.pipeline.judgement import adjudicate_claims
-from app.ai.context.web import WebSearchGatherer
-from app.ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.observability.logger import get_logger, PipelineStep
+from app.ai.log_utils import log_adjudication_input, log_adjudication_output
 
 
 def build_adjudication_input(
@@ -179,107 +178,44 @@ async def run_fact_check_pipeline(
         result = EvidenceRetrievalResult(claim_evidence_map=enriched_claims)
 
         # build adjudication input by grouping enriched claims with data sources
-        print(f"\n{'=' * 80}")
-        print("BUILDING ADJUDICATION INPUT")
-        print("=" * 80)
-
         adjudication_input = build_adjudication_input(claim_outputs, result)
 
-        print(f"Adjudication input created successfully:")
-        print(f"  - Total data sources: {len(adjudication_input.sources_with_claims)}")
+        # log adjudication input details
+        log_adjudication_input(adjudication_input, config.adjudication_llm_config)
 
-        for i, ds_with_claims in enumerate(adjudication_input.sources_with_claims, 1):
-            ds = ds_with_claims.data_source
-            claims = ds_with_claims.enriched_claims
-            print(f"\n  {i}. DataSource: {ds.id} ({ds.source_type})")
-            print(f"     - Enriched claims: {len(claims)}")
-
-            for j, claim in enumerate(claims, 1):
-                citations_count = len(claim.citations)
-                print(f"       {j}) Claim ID: {claim.id}")
-                print(f"          Text: {claim.text[:80]}...")
-                print(f"          Citations: {citations_count}")
-                print(f"          Source: {claim.source.source_type} ({claim.source.source_id})")
-
-        # step 5: adjudication - make final verdicts
-        print(f"\n{'=' * 80}")
-        print("STEP 5: ADJUDICATION - MAKING FINAL VERDICTS")
-        print("=" * 80)
-
-        # DEBUG: Log adjudication input details
-        print(f"\n[DEBUG] Adjudication input validation:")
-        print(f"  - sources_with_claims type: {type(adjudication_input.sources_with_claims)}")
-        print(f"  - sources_with_claims length: {len(adjudication_input.sources_with_claims)}")
-
-        for i, swc in enumerate(adjudication_input.sources_with_claims):
-            print(f"\n  Source {i+1}:")
-            print(f"    - data_source.id: {swc.data_source.id}")
-            print(f"    - data_source.source_type: {swc.data_source.source_type}")
-            print(f"    - enriched_claims length: {len(swc.enriched_claims)}")
-
-            if swc.enriched_claims:
-                first_claim = swc.enriched_claims[0]
-                print(f"    - first claim ID: {first_claim.id}")
-                print(f"    - first claim has 'text' attr: {hasattr(first_claim, 'text')}")
-                print(f"    - first claim has 'citations' attr: {hasattr(first_claim, 'citations')}")
-                if hasattr(first_claim, 'text'):
-                    print(f"    - first claim text preview: {first_claim.text[:50]}...")
-                if hasattr(first_claim, 'citations'):
-                    print(f"    - first claim citations count: {len(first_claim.citations)}")
-                    if first_claim.citations:
-                        first_citation = first_claim.citations[0]
-                        print(f"    - first citation type: {type(first_citation)}")
-                        print(f"    - first citation has 'citation_text': {hasattr(first_citation, 'citation_text')}")
-                        print(f"    - first citation has 'date': {hasattr(first_citation, 'date')}")
-
-        print(f"\n[DEBUG] LLM config:")
-        print(f"  - model_name: {config.adjudication_llm_config.model_name}")
-        print(f"  - temperature: {config.adjudication_llm_config.temperature}")
-        print(f"  - timeout: {config.adjudication_llm_config.timeout}")
-
-        print(f"\n[DEBUG] Calling adjudicate_claims...")
+        # adjudicate claims
+        adjudication_logger = get_logger(__name__, PipelineStep.ADJUDICATION)
+        adjudication_logger.debug("calling adjudicate_claims...")
         try:
             fact_check_result = adjudicate_claims(
                 adjudication_input=adjudication_input,
                 llm_config=config.adjudication_llm_config
             )
-            print(f"[DEBUG] adjudicate_claims completed successfully")
+            adjudication_logger.debug("adjudicate_claims completed successfully")
         except Exception as e:
-            print(f"\n[ERROR] Exception in adjudicate_claims:")
-            print(f"  Type: {type(e).__name__}")
-            print(f"  Message: {str(e)}")
-            import traceback
-            print(f"  Traceback:")
-            traceback.print_exc()
+            adjudication_logger.error(f"exception in adjudicate_claims: {type(e).__name__}")
+            adjudication_logger.error(f"error message: {str(e)}")
+            adjudication_logger.error("traceback:", exc_info=True)
             raise
 
-        print(f"\nAdjudication completed:")
-        print(f"  - Total data source results: {len(fact_check_result.results)}")
-
-        for i, ds_result in enumerate(fact_check_result.results, 1):
-            print(f"\n  {i}. DataSource: {ds_result.data_source_id} ({ds_result.source_type})")
-            print(f"     - Verdicts: {len(ds_result.claim_verdicts)}")
-
-            for j, verdict in enumerate(ds_result.claim_verdicts, 1):
-                print(f"       {j}) Claim: {verdict.claim_text[:60]}...")
-                print(f"          Verdict: {verdict.verdict}")
-                print(f"          Justification: {verdict.justification[:100]}...")
-
-        if fact_check_result.overall_summary:
-            print(f"\n  Overall Summary:")
-            print(f"  {fact_check_result.overall_summary}")
+        # log adjudication output
+        log_adjudication_output(fact_check_result)
 
         # summary with prefix
         pipeline_logger.set_prefix("[SUMMARY]")
         pipeline_logger.info(f"{'=' * 80}")
 
         total_claims = sum(len(output.claims) for output in claim_outputs)
+        total_verdicts = sum(len(r.claim_verdicts) for r in fact_check_result.results)
+
         pipeline_logger.info(f"total claim extraction outputs: {len(claim_outputs)}")
         pipeline_logger.info(f"total claims extracted: {total_claims}")
         pipeline_logger.info(f"total enriched claims: {len(enriched_claims)}")
-        pipeline_logger.info(f"evidence gathering results: {len(result.claim_evidence_map)} claims with evidence")
-        print(f"Final verdicts: {sum(len(r.claim_verdicts) for r in fact_check_result.results)} verdicts")
-        
+        pipeline_logger.info(
+            f"evidence gathering results: {len(result.claim_evidence_map)} claims with evidence"
+        )
+        pipeline_logger.info(f"final verdicts: {total_verdicts} verdicts")
+
         pipeline_logger.clear_prefix()
 
         return fact_check_result
