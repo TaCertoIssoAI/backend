@@ -16,8 +16,8 @@ class LoggerConfig:
     """environment-based logger configuration"""
 
     def __init__(self):
-        # log level: DEBUG, INFO, WARN, ERROR
-        self.log_level: LogLevel = os.getenv("LOG_LEVEL", "INFO").upper()  # type: ignore
+        # log level: DEBUG, INFO, WARN, ERROR (default: DEBUG)
+        self.log_level: LogLevel = os.getenv("LOG_LEVEL", "DEBUG").upper()  # type: ignore
 
         # output destination: STDOUT, FILE, or BOTH (default: BOTH)
         self.log_output: LogOutput = os.getenv("LOG_OUTPUT", "BOTH").upper()  # type: ignore

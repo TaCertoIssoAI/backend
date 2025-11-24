@@ -35,6 +35,7 @@ from app.ai.pipeline.claim_extractor import extract_claims
 from app.ai.pipeline.judgement import adjudicate_claims
 from app.ai.context.web import WebSearchGatherer
 from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+from app.observability.logger import get_logger, PipelineStep
 
 
 def build_adjudication_input(
@@ -90,7 +91,6 @@ def build_adjudication_input(
         additional_context=None
     )
 
-
 async def run_fact_check_pipeline(
     data_sources: List[DataSource],
     config: PipelineConfig,
@@ -132,6 +132,10 @@ async def run_fact_check_pipeline(
         "Falso"
     """
 
+    # get logger for main pipeline orchestration
+    pipeline_logger = get_logger(__name__, PipelineStep.SYSTEM)
+    link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
+
     # initialize thread pool manager
     manager = ThreadPoolManager.get_instance(max_workers=25)
     manager.initialize()
@@ -159,18 +163,20 @@ async def run_fact_check_pipeline(
 
             # ensure we always return a list
             if expanded_sources is None:
-                print("\n[LINK EXPANSION] Warning: expansion returned None") #warn
+                link_logger.warning("link expansion returned None")
                 return []
 
-            print(f"\n[LINK EXPANSION] Expanded {len(expanded_sources)} link sources")  #this is debug 
+            link_logger.debug(f"expanded {len(expanded_sources)} link sources")
+
             for i, source in enumerate(expanded_sources, 1):
                 url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
                 success = source.metadata.get("success", False) if source.metadata else False
                 status = "✓" if success else "✗"
                 content_preview = source.original_text[:1000] if source.original_text else "(no content)"
-                print(f"  {i}. {status} {source.source_type} (id: {source.id})")
-                print(f"     URL: {url}")
-                print(f"     Content preview: {content_preview}...")
+
+                link_logger.debug(f"{i}. {status} {source.source_type} (id: {source.id})")
+                link_logger.debug(f"   URL: {url}")
+                link_logger.debug(f"   content preview: {content_preview}...")
 
             return expanded_sources
 
@@ -283,19 +289,22 @@ async def run_fact_check_pipeline(
             print(f"\n  Overall Summary:")
             print(f"  {fact_check_result.overall_summary}")
 
-        # summary
-        print(f"\n{'=' * 80}")
-        print("PIPELINE SUMMARY")
+        # summary with prefix
+        pipeline_logger.set_prefix("[SUMMARY]")
+        pipeline_logger.info(f"{'=' * 80}")
 
         total_claims = sum(len(output.claims) for output in claim_outputs)
-        print(f"Total claim extraction outputs: {len(claim_outputs)}")
-        print(f"Total claims extracted: {total_claims}")
-        print(f"Total enriched claims: {len(enriched_claims)}")
-        print(f"Evidence gathering results: {len(result.claim_evidence_map)} claims with evidence")
+        pipeline_logger.info(f"total claim extraction outputs: {len(claim_outputs)}")
+        pipeline_logger.info(f"total claims extracted: {total_claims}")
+        pipeline_logger.info(f"total enriched claims: {len(enriched_claims)}")
+        pipeline_logger.info(f"evidence gathering results: {len(result.claim_evidence_map)} claims with evidence")
         print(f"Final verdicts: {sum(len(r.claim_verdicts) for r in fact_check_result.results)} verdicts")
+        
+        pipeline_logger.clear_prefix()
 
         return fact_check_result
 
     finally:
         # cleanup thread pool
+        pipeline_logger.info("shutting down thread pool")
         manager.shutdown(wait=True)

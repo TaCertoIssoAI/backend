@@ -31,7 +31,7 @@ class TestLoggerConfig:
         with patch.dict(os.environ, {}, clear=True):
             config = LoggerConfig()
 
-            assert config.log_level == "INFO"
+            assert config.log_level == "DEBUG"
             assert config.log_output == "BOTH"  # default is now BOTH
             assert config.log_dir == "logs"
             assert config.log_file_max_bytes == 10485760  # 10MB

@@ -95,7 +95,8 @@ configure via environment variables:
 
 ```bash
 # set minimum log level (DEBUG, INFO, WARN, ERROR)
-export LOG_LEVEL=INFO
+# default is DEBUG for detailed logging
+export LOG_LEVEL=DEBUG
 ```
 
 ### output destination
