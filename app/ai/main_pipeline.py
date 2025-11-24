@@ -159,8 +159,8 @@ async def run_fact_check_pipeline(
             """calls steps.expand_links_from_sources with bound config"""
             return steps.expand_links_from_sources(sources, config)
 
-        # get evidence gatherers from config
-        evidence_gatherers = config.evidence_gatherers
+        # get evidence gatherers from pipeline steps
+        evidence_gatherers = steps.get_evidence_gatherers()
         pipeline_logger.info(
             f"using {len(evidence_gatherers)} evidence gatherers: "
             f"{', '.join(g.source_name for g in evidence_gatherers)}"

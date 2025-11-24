@@ -6,8 +6,6 @@ with sensible production defaults.
 """
 
 from app.models import PipelineConfig, LLMConfig, TimeoutConfig
-from app.ai.context.web import WebSearchGatherer
-from app.ai.context.factcheckapi import GoogleFactCheckGatherer
 
 
 def get_default_pipeline_config() -> PipelineConfig:
@@ -54,12 +52,7 @@ def get_default_pipeline_config() -> PipelineConfig:
         # pipeline limits
         max_links_to_expand=5,
         max_claims_to_extract=10,
-        max_evidence_sources_per_claim=5,
-        # evidence gatherers
-        evidence_gatherers=[
-            WebSearchGatherer(max_results=5, timeout=15.0),
-            GoogleFactCheckGatherer(timeout=15.0),
-        ]
+        max_evidence_sources_per_claim=5
     )
 
 
@@ -101,12 +94,7 @@ def get_fast_pipeline_config() -> PipelineConfig:
         ),
         max_links_to_expand=3,                # fewer links
         max_claims_to_extract=5,              # fewer claims
-        max_evidence_sources_per_claim=3,     # fewer sources
-        # evidence gatherers (faster configuration)
-        evidence_gatherers=[
-            WebSearchGatherer(max_results=3, timeout=10.0),
-            GoogleFactCheckGatherer(timeout=10.0),
-        ]
+        max_evidence_sources_per_claim=3      # fewer sources
     )
 
 
@@ -147,10 +135,5 @@ def get_thorough_pipeline_config() -> PipelineConfig:
         ),
         max_links_to_expand=10,               # more links
         max_claims_to_extract=20,             # more claims
-        max_evidence_sources_per_claim=10,    # more sources
-        # evidence gatherers (thorough configuration)
-        evidence_gatherers=[
-            WebSearchGatherer(max_results=10, timeout=30.0),
-            GoogleFactCheckGatherer(timeout=30.0),
-        ]
+        max_evidence_sources_per_claim=10     # more sources
     )

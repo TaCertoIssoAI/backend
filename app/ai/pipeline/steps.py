@@ -85,6 +85,15 @@ class PipelineSteps(Protocol):
         """
         ...
 
+    def get_evidence_gatherers(self) -> List[EvidenceGatherer]:
+        """
+        Get the list of evidence gatherers to use for evidence retrieval.
+
+        Returns:
+            List of EvidenceGatherer instances configured for this pipeline
+        """
+        ...
+
     async def gather_evidence(
         self,
         retrieval_input: EvidenceRetrievalInput,
@@ -126,6 +135,60 @@ class DefaultPipelineSteps:
         ... )
     """
 
+    def get_evidence_gatherers(self) -> List[EvidenceGatherer]:
+        """
+        Get the default list of evidence gatherers.
+
+        Returns a standard set of evidence gatherers with reasonable timeout values.
+
+        Returns:
+            List of EvidenceGatherer instances (WebSearchGatherer, GoogleFactCheckGatherer)
+        """
+        from app.ai.context.web import WebSearchGatherer
+
+        return [
+            GoogleFactCheckGatherer(timeout=15.0),
+            WebSearchGatherer(max_results=5, timeout=15.0)
+        ]
+
+    def expand_links_from_sources(
+        self,
+        sources: List[DataSource],
+        config: PipelineConfig
+    ) -> List[DataSource]:
+        """
+        wrapper for _expand_data_sources_with_links with enhanced logging.
+
+        expands links from sources and returns new DataSource objects with detailed logging.
+        used as callback in fire-and-forget pipeline.
+        """
+        from app.observability.logger import get_logger, PipelineStep
+
+        link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
+
+        # run link expansion (synchronous function using ThreadPoolManager internally)
+        expanded_sources = self._expand_data_sources_with_links(sources, config)
+
+        # ensure we always return a list
+        if expanded_sources is None:
+            link_logger.warning("link expansion returned None")
+            return []
+
+        link_logger.debug(f"expanded {len(expanded_sources)} link sources")
+
+        for i, source in enumerate(expanded_sources, 1):
+            url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
+            success = source.metadata.get("success", False) if source.metadata else False
+            status = "✓" if success else "✗"
+            content_preview = (
+                source.original_text[:1000] if source.original_text else "(no content)"
+            )
+
+            link_logger.debug(f"{i}. {status} {source.source_type} (id: {source.id})")
+            link_logger.debug(f"   URL: {url}")
+            link_logger.debug(f"   content preview: {content_preview}...")
+
+        return expanded_sources
 
     def _expand_data_sources_with_links(
         self,
@@ -179,44 +242,6 @@ class DefaultPipelineSteps:
 
         return expanded_link_sources
 
-    def expand_links_from_sources(
-        self,
-        sources: List[DataSource],
-        config: PipelineConfig
-    ) -> List[DataSource]:
-        """
-        wrapper for _expand_data_sources_with_links with enhanced logging.
-
-        expands links from sources and returns new DataSource objects with detailed logging.
-        used as callback in fire-and-forget pipeline.
-        """
-        from app.observability.logger import get_logger, PipelineStep
-
-        link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
-
-        # run link expansion (synchronous function using ThreadPoolManager internally)
-        expanded_sources = self._expand_data_sources_with_links(sources, config)
-
-        # ensure we always return a list
-        if expanded_sources is None:
-            link_logger.warning("link expansion returned None")
-            return []
-
-        link_logger.debug(f"expanded {len(expanded_sources)} link sources")
-
-        for i, source in enumerate(expanded_sources, 1):
-            url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
-            success = source.metadata.get("success", False) if source.metadata else False
-            status = "✓" if success else "✗"
-            content_preview = (
-                source.original_text[:1000] if source.original_text else "(no content)"
-            )
-
-            link_logger.debug(f"{i}. {status} {source.source_type} (id: {source.id})")
-            link_logger.debug(f"   URL: {url}")
-            link_logger.debug(f"   content preview: {content_preview}...")
-
-        return expanded_sources
 
     async def extract_claims_from_all_sources(
         self,

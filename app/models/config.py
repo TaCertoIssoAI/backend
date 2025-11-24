@@ -1,4 +1,4 @@
-from typing import Optional, List, Any
+from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -156,10 +156,4 @@ class PipelineConfig(BaseModel):
         default=5,
         description="Maximum number of evidence sources to retrieve per claim",
         gt=0
-    )
-
-    # evidence gatherers configuration
-    evidence_gatherers: List[Any] = Field(
-        default_factory=list,
-        description="List of evidence gatherer instances to use for retrieving citations"
     )
