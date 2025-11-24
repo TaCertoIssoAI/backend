@@ -11,7 +11,6 @@ from uuid import uuid4
 
 from app.models import DataSource, PipelineConfig
 from app.ai.context.web.apify_utils import detectPlatform, PlatformType
-from app.ai.pipeline.link_context_expander import expand_link_contexts
 
 
 # mock dictionary mapping URLs to their content
@@ -89,18 +88,18 @@ def extract_urls_from_text(text: str) -> List[str]:
 
 def hybrid_expand_link_contexts(
     data_source: DataSource,
-    config: PipelineConfig
+    _config: PipelineConfig
 ) -> List[DataSource]:
     """
     hybrid implementation: mocks social media URLs, uses real scraping for generic URLs.
 
     social media URLs (Facebook, Instagram, Twitter, TikTok) would use Apify API,
     so they are mocked using a dictionary. generic URLs use real simple HTTP scraping
-    from the actual link_context_expander implementation.
+    (no Apify fallback) using scrapeGenericSimple directly.
 
     args:
         data_source: data source to extract links from
-        config: pipeline configuration
+        _config: pipeline configuration (unused, kept for compatibility)
 
     returns:
         list of new 'link_context' data sources (mocked + real)
@@ -152,23 +151,60 @@ def hybrid_expand_link_contexts(
 
         expanded_sources.append(link_source)
 
-    # process generic URLs with real scraping
+    # process generic URLs with simple HTTP scraping (no Apify fallback)
     if generic_urls:
-        # create temporary data source with only generic URLs
-        generic_text = " ".join(generic_urls)
-        temp_source = DataSource(
-            id=data_source.id,
-            source_type=data_source.source_type,
-            original_text=generic_text,
-            metadata=data_source.metadata,
-            locale=data_source.locale,
-            timestamp=data_source.timestamp
-        )
+        import asyncio
+        from app.ai.context.web.apify_utils import scrapeGenericSimple
 
-        # call real link expansion for generic URLs
-        real_expanded = expand_link_contexts(temp_source, config)
+        # scrape each generic URL with simple HTTP only
+        for url in generic_urls:
+            try:
+                # use asyncio to run the async scraping function
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    result = loop.run_until_complete(scrapeGenericSimple(url, maxChars=None))
+                finally:
+                    loop.close()
 
-        if real_expanded:
-            expanded_sources.extend(real_expanded)
+                # create DataSource from result
+                metadata = {
+                    "url": url,
+                    "title": result.get("title", ""),
+                    "success": result.get("success", False),
+                    "error": result.get("error"),
+                    "mock": False
+                }
+
+                link_source = DataSource(
+                    id=f"link-{uuid4().hex[:8]}",
+                    source_type="link_context",
+                    original_text=result.get("content", ""),
+                    metadata=metadata,
+                    locale=data_source.locale,
+                    timestamp=data_source.timestamp
+                )
+
+                expanded_sources.append(link_source)
+
+            except Exception as e:
+                # on error, create failed DataSource
+                metadata = {
+                    "url": url,
+                    "success": False,
+                    "error": str(e),
+                    "mock": False
+                }
+
+                link_source = DataSource(
+                    id=f"link-{uuid4().hex[:8]}",
+                    source_type="link_context",
+                    original_text="",
+                    metadata=metadata,
+                    locale=data_source.locale,
+                    timestamp=data_source.timestamp
+                )
+
+                expanded_sources.append(link_source)
 
     return expanded_sources
