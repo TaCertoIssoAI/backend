@@ -44,24 +44,24 @@ class PipelineSteps(Protocol):
     - Type-safe dependency injection
     """
 
-    def expand_data_sources_with_links(
+    def expand_links_from_sources(
         self,
-        data_sources: List[DataSource],
+        sources: List[DataSource],
         config: PipelineConfig
     ) -> List[DataSource]:
         """
-        Expand links from original_text data sources into new link_context data sources.
+        Expand links from data sources with enhanced logging.
 
-        Processes a list of data sources, identifies those with type 'original_text',
+        Used as a callback function in the fire-and-forget pipeline.
+        Processes data sources, identifies those with type 'original_text',
         extracts URLs from them, and creates new 'link_context' data sources for each URL.
 
         Args:
-            data_sources: List of input data sources to process
+            sources: List of data sources to expand links from
             config: Pipeline configuration with timeout settings
 
         Returns:
-            List of new 'link_context' data sources created from expanding links.
-            Does NOT include the original input data sources.
+            List of new 'link_context' data sources created from expanding links
         """
         ...
 
@@ -127,18 +127,20 @@ class DefaultPipelineSteps:
     """
 
 
-    def expand_data_sources_with_links(
+    def _expand_data_sources_with_links(
         self,
         data_sources: List[DataSource],
         config: PipelineConfig
     ) -> List[DataSource]:
         """
-        Default implementation: processes all data sources and expands links.
+        Private method: processes all data sources and expands links.
 
         Iterates through data sources, identifies 'original_text' types,
         and expands their links to create new 'link_context' data sources.
         Returns only the new link_context sources, not the original sources.
         """
+        from app.ai.pipeline.link_context_expander import expand_link_contexts
+
         expanded_link_sources: List[DataSource] = []
 
         for source in data_sources:
@@ -148,7 +150,7 @@ class DefaultPipelineSteps:
 
                 try:
                     # expand link contexts for this source
-                    expanded_sources = self._expand_link_contexts(source, config)
+                    expanded_sources = expand_link_contexts(source, config)
 
                     # handle None return
                     if expanded_sources is None:
@@ -177,20 +179,44 @@ class DefaultPipelineSteps:
 
         return expanded_link_sources
 
-    def _expand_link_contexts(
+    def expand_links_from_sources(
         self,
-        data_source: DataSource,
+        sources: List[DataSource],
         config: PipelineConfig
     ) -> List[DataSource]:
         """
-        Default implementation: calls expand_link_contexts from link_context_expander.
+        wrapper for _expand_data_sources_with_links with enhanced logging.
 
-        See link_context_expander.expand_link_contexts for detailed documentation.
+        expands links from sources and returns new DataSource objects with detailed logging.
+        used as callback in fire-and-forget pipeline.
         """
-        from app.ai.pipeline.link_context_expander import (
-            expand_link_contexts as _expand_link_contexts
-        )
-        return _expand_link_contexts(data_source, config)
+        from app.observability.logger import get_logger, PipelineStep
+
+        link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
+
+        # run link expansion (synchronous function using ThreadPoolManager internally)
+        expanded_sources = self._expand_data_sources_with_links(sources, config)
+
+        # ensure we always return a list
+        if expanded_sources is None:
+            link_logger.warning("link expansion returned None")
+            return []
+
+        link_logger.debug(f"expanded {len(expanded_sources)} link sources")
+
+        for i, source in enumerate(expanded_sources, 1):
+            url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
+            success = source.metadata.get("success", False) if source.metadata else False
+            status = "✓" if success else "✗"
+            content_preview = (
+                source.original_text[:1000] if source.original_text else "(no content)"
+            )
+
+            link_logger.debug(f"{i}. {status} {source.source_type} (id: {source.id})")
+            link_logger.debug(f"   URL: {url}")
+            link_logger.debug(f"   content preview: {content_preview}...")
+
+        return expanded_sources
 
     async def extract_claims_from_all_sources(
         self,

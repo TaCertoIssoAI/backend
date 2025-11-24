@@ -134,7 +134,6 @@ async def run_fact_check_pipeline(
 
     # get logger for main pipeline orchestration
     pipeline_logger = get_logger(__name__, PipelineStep.SYSTEM)
-    link_logger = get_logger(__name__, PipelineStep.LINK_EXPANSION)
 
     # initialize thread pool manager
     manager = ThreadPoolManager.get_instance(max_workers=25)
@@ -153,45 +152,26 @@ async def run_fact_check_pipeline(
                 llm_config=config.claim_extraction_llm_config
             )
 
-        # create wrapper function for link expansion
-        def expand_links_from_sources(
+        # create wrapper function for link expansion that binds the config
+        def expand_links_with_config(
             sources: List[DataSource]
         ) -> List[DataSource]:
-            """expands links from sources and returns new DataSource objects"""
-            # run link expansion (synchronous function using ThreadPoolManager internally)
-            expanded_sources = steps.expand_data_sources_with_links(sources, config)
+            """calls steps.expand_links_from_sources with bound config"""
+            return steps.expand_links_from_sources(sources, config)
 
-            # ensure we always return a list
-            if expanded_sources is None:
-                link_logger.warning("link expansion returned None")
-                return []
-
-            link_logger.debug(f"expanded {len(expanded_sources)} link sources")
-
-            for i, source in enumerate(expanded_sources, 1):
-                url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
-                success = source.metadata.get("success", False) if source.metadata else False
-                status = "✓" if success else "✗"
-                content_preview = source.original_text[:1000] if source.original_text else "(no content)"
-
-                link_logger.debug(f"{i}. {status} {source.source_type} (id: {source.id})")
-                link_logger.debug(f"   URL: {url}")
-                link_logger.debug(f"   content preview: {content_preview}...")
-
-            return expanded_sources
-
-        # create evidence gatherers
-        evidence_gatherers = [
-            WebSearchGatherer(max_results=5),
-            GoogleFactCheckGatherer(),
-        ]
+        # get evidence gatherers from config
+        evidence_gatherers = config.evidence_gatherers
+        pipeline_logger.info(
+            f"using {len(evidence_gatherers)} evidence gatherers: "
+            f"{', '.join(g.source_name for g in evidence_gatherers)}"
+        )
 
         # run fire-and-forget streaming pipeline (sync call)
         claim_outputs, enriched_claims = fire_and_forget_streaming_pipeline(
             data_sources,
             extract_claims_with_config,
             evidence_gatherers,
-            link_expansion_fn=expand_links_from_sources,
+            link_expansion_fn=expand_links_with_config,
             manager=manager,
         )
 
