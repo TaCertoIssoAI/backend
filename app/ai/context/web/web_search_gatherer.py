@@ -10,6 +10,8 @@ from app.ai.context.web import (
     searchGoogleClaim
 )
 
+from app.observability.logger import time_profile, PipelineStep
+
 # ===== WEB SEARCH EVIDENCE GATHERER =====
 
 class WebSearchGatherer:
@@ -34,6 +36,7 @@ class WebSearchGatherer:
     def source_name(self) -> str:
         return "apify_web_search"
 
+    @time_profile(PipelineStep.EVIDENCE_RETRIEVAL)
     async def gather(self, claim: ExtractedClaim) -> List[Citation]:
         """
         Search the web for information about the claim.
@@ -97,6 +100,7 @@ class WebSearchGatherer:
             print(f"\n[WEB SEARCH ERROR] unexpected error: {type(e).__name__}: {str(e)[:100]}")
             return []
 
+    @time_profile(PipelineStep.EVIDENCE_RETRIEVAL)
     def gather_sync(self, claim: ExtractedClaim) -> List[Citation]:
         """synchronous version - creates new event loop and runs async gather"""
         loop = asyncio.new_event_loop()
