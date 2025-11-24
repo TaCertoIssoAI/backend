@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import scraping, research, text
+from app.api.endpoints import scraping, research, text, test
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(scraping.router,  tags=["scraping"])
 app.include_router(research.router, tags=["research"])
 app.include_router(text.router, tags=["fact-checking"])
+app.include_router(test.router, tags=["testing"])
 
 @app.get("/")
 async def root():
