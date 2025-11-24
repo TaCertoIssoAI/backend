@@ -29,6 +29,12 @@ class EvidenceGatherer(Protocol):
             List of citations found (can be empty if no evidence found)
         """
 
+    @abstractmethod
+    def gather_sync(self, claim: ExtractedClaim) -> List[Citation]:
+        """
+        Gather evidence citations for a given claim in an sync way
+        """
+
     @property
     @abstractmethod
     def source_name(self) -> str:

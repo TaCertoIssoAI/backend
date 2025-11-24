@@ -132,23 +132,12 @@ async def run_fact_check_pipeline(
         "Falso"
     """
 
-    print("=" * 80)
-    print("FACT-CHECK PIPELINE STARTING (FIRE-AND-FORGET MODE)")
-    print("=" * 80)
-
     # initialize thread pool manager
     manager = ThreadPoolManager.get_instance(max_workers=25)
     manager.initialize()
 
     try:
         # step 1 & 2 & 3: fire-and-forget claim extraction + link expansion + evidence gathering
-        print(f"\n{'=' * 80}")
-        print("STREAMING CLAIM EXTRACTION + LINK EXPANSION + EVIDENCE GATHERING")
-        print("=" * 80)
-        print("Pattern: fire claim extraction for original sources,")
-        print("fire link expansion job,")
-        print("then as each completes, immediately fire evidence gathering")
-        print("=" * 80)
 
         # create wrapper function that binds the config for regular claim extraction
         def extract_claims_with_config(
@@ -170,10 +159,10 @@ async def run_fact_check_pipeline(
 
             # ensure we always return a list
             if expanded_sources is None:
-                print("\n[LINK EXPANSION] Warning: expansion returned None")
+                print("\n[LINK EXPANSION] Warning: expansion returned None") #warn
                 return []
 
-            print(f"\n[LINK EXPANSION] Expanded {len(expanded_sources)} link sources")
+            print(f"\n[LINK EXPANSION] Expanded {len(expanded_sources)} link sources")  #this is debug 
             for i, source in enumerate(expanded_sources, 1):
                 url = source.metadata.get("url", "unknown") if source.metadata else "unknown"
                 success = source.metadata.get("success", False) if source.metadata else False
@@ -297,7 +286,6 @@ async def run_fact_check_pipeline(
         # summary
         print(f"\n{'=' * 80}")
         print("PIPELINE SUMMARY")
-        print("=" * 80)
 
         total_claims = sum(len(output.claims) for output in claim_outputs)
         print(f"Total claim extraction outputs: {len(claim_outputs)}")
