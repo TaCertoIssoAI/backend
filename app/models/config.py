@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_core.language_models.chat_models import BaseChatModel
 
 
 class LLMConfig(BaseModel):
@@ -13,9 +13,9 @@ class LLMConfig(BaseModel):
         }
     )
 
-    llm: BaseChatOpenAI = Field(
+    llm: BaseChatModel = Field(
         ...,
-        description="langchain BaseChatOpenAI instance (e.g., ChatOpenAI, AzureChatOpenAI)"
+        description="langchain BaseChatModel instance (supports ChatOpenAI, AzureChatOpenAI, ChatGoogleGenerativeAI, custom models, etc.)"
     )
 
 
