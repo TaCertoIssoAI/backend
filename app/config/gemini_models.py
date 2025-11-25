@@ -42,9 +42,9 @@ def get_gemini_default_pipeline_config() -> PipelineConfig:
         # adjudication uses gemini with thinking mode
         adjudication_llm_config=LLMConfig(
             llm=GeminiChatModel(
-                model="gemini-3-pro-preview",
+                model="gemini-2.5-flash",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
-                thinking_level="low",
+               # thinking_level="low",
                 temperature=1.0
             )
         ),
