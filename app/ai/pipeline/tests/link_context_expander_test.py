@@ -351,11 +351,16 @@ async def test_expand_link_contexts_single_url():
 async def test_expand_link_contexts_timeout_with_nonexistent_site():
     """should handle timeout gracefully when scraping takes too long or site doesn't exist"""
     from app.models import PipelineConfig, LLMConfig, TimeoutConfig
+    from langchain_openai import ChatOpenAI
 
     # create a config with very short timeouts
     short_timeout_config = PipelineConfig(
-        claim_extraction_llm_config=LLMConfig(model_name="gpt-4o-mini", temperature=0.0, timeout=30.0),
-        adjudication_llm_config=LLMConfig(model_name="o3-mini", temperature=0.2, timeout=60.0),
+        claim_extraction_llm_config=LLMConfig(
+            llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0)
+        ),
+        adjudication_llm_config=LLMConfig(
+            llm=ChatOpenAI(model="o3-mini", timeout=60.0)
+        ),
         timeout_config=TimeoutConfig(
             link_content_expander_timeout_per_link=2.0,  # very short timeout
             link_content_expander_timeout_total=5.0,     # very short total timeout

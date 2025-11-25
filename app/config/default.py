@@ -1,27 +1,29 @@
 """
-Default configuration factory for the fact-checking pipeline.
+default configuration factory for the fact-checking pipeline.
 
-Provides a centralized location for creating default PipelineConfig instances
+provides a centralized location for creating default PipelineConfig instances
 with sensible production defaults.
 """
+
+from langchain_openai import ChatOpenAI
 
 from app.models import PipelineConfig, LLMConfig, TimeoutConfig
 
 
 def get_default_pipeline_config() -> PipelineConfig:
     """
-    Create and return a PipelineConfig with default values.
+    create and return a PipelineConfig with default values.
 
-    This is the recommended way to get a default configuration for the pipeline.
-    All defaults are production-ready and can be customized as needed.
+    this is the recommended way to get a default configuration for the pipeline.
+    all defaults are production-ready and can be customized as needed.
 
-    Returns:
+    returns:
         PipelineConfig with all default values set
 
-    Example:
+    example:
         >>> from app.config.default import get_default_pipeline_config
         >>> config = get_default_pipeline_config()
-        >>> config.claim_extraction_llm_config.model_name
+        >>> config.claim_extraction_llm_config.llm.model_name
         'gpt-4o-mini'
         >>> config.timeout_config.adjudication_timeout
         60.0
@@ -29,15 +31,18 @@ def get_default_pipeline_config() -> PipelineConfig:
     return PipelineConfig(
         # claim extraction uses fast, cheap model
         claim_extraction_llm_config=LLMConfig(
-            model_name="gpt-4o-mini",
-            temperature=0.0,
-            timeout=30.0
+            llm=ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.0,
+                timeout=30.0
+            )
         ),
-        # adjudication uses more powerful model
+        # adjudication uses more powerful model (o3-mini doesn't support temperature)
         adjudication_llm_config=LLMConfig(
-            model_name="o3-mini",
-            temperature=0.2,
-            timeout=60.0
+            llm=ChatOpenAI(
+                model="gpt-5-nano",
+                timeout=60.0
+            )
         ),
         # timeout configuration
         timeout_config=TimeoutConfig(
@@ -58,15 +63,15 @@ def get_default_pipeline_config() -> PipelineConfig:
 
 def get_fast_pipeline_config() -> PipelineConfig:
     """
-    Create a PipelineConfig optimized for speed (shorter timeouts, fewer sources).
+    create a PipelineConfig optimized for speed (shorter timeouts, fewer sources).
 
-    Useful for development, testing, or when quick responses are more important
+    useful for development, testing, or when quick responses are more important
     than thoroughness.
 
-    Returns:
+    returns:
         PipelineConfig with fast/minimal settings
 
-    Example:
+    example:
         >>> from app.config.default import get_fast_pipeline_config
         >>> config = get_fast_pipeline_config()
         >>> config.timeout_config.link_content_expander_timeout_per_link
@@ -74,14 +79,18 @@ def get_fast_pipeline_config() -> PipelineConfig:
     """
     return PipelineConfig(
         claim_extraction_llm_config=LLMConfig(
-            model_name="gpt-4o-mini",
-            temperature=0.0,
-            timeout=15.0  # faster
+            llm=ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.0,
+                timeout=15.0
+            )
         ),
         adjudication_llm_config=LLMConfig(
-            model_name="gpt-4o-mini",  # use faster model
-            temperature=0.1,
-            timeout=30.0  # faster
+            llm=ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.1,
+                timeout=30.0
+            )
         ),
         timeout_config=TimeoutConfig(
             link_content_expander_timeout_per_link=10.0,   # much faster
@@ -100,14 +109,14 @@ def get_fast_pipeline_config() -> PipelineConfig:
 
 def get_thorough_pipeline_config() -> PipelineConfig:
     """
-    Create a PipelineConfig optimized for thoroughness (longer timeouts, more sources).
+    create a PipelineConfig optimized for thoroughness (longer timeouts, more sources).
 
-    Useful for high-stakes fact-checking where accuracy and coverage are critical.
+    useful for high-stakes fact-checking where accuracy and coverage are critical.
 
-    Returns:
+    returns:
         PipelineConfig with thorough/comprehensive settings
 
-    Example:
+    example:
         >>> from app.config.default import get_thorough_pipeline_config
         >>> config = get_thorough_pipeline_config()
         >>> config.max_evidence_sources_per_claim
@@ -115,14 +124,18 @@ def get_thorough_pipeline_config() -> PipelineConfig:
     """
     return PipelineConfig(
         claim_extraction_llm_config=LLMConfig(
-            model_name="gpt-4o",  # use better model
-            temperature=0.0,
-            timeout=60.0  # more time
+            llm=ChatOpenAI(
+                model="gpt-4o",
+                temperature=0.0,
+                timeout=60.0
+            )
         ),
         adjudication_llm_config=LLMConfig(
-            model_name="gpt-4o",
-            temperature=0.2,
-            timeout=120.0  # much more time
+            llm=ChatOpenAI(
+                model="gpt-4o",
+                temperature=0.2,
+                timeout=120.0
+            )
         ),
         timeout_config=TimeoutConfig(
             link_content_expander_timeout_per_link=60.0,    # more time per link

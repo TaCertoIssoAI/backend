@@ -17,6 +17,7 @@ The -s flag shows stdout so you can see the LLM responses for debugging.
 """
 
 import pytest
+from langchain_openai import ChatOpenAI
 
 from app.models import (
     AdjudicationInput,
@@ -175,10 +176,10 @@ def test_basic_adjudication_single_claim():
         additional_context="Usuário demonstra preocupação com segurança de vacinas"
     )
     
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=60.0
+        timeout=60.0)
     )
     
     # Print input for debugging
@@ -249,10 +250,10 @@ def test_adjudication_multiple_claims_same_source():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=60.0
+        timeout=60.0)
     )
     
     # Print input for debugging
@@ -341,10 +342,10 @@ def test_adjudication_multiple_data_sources():
         sources_with_claims=sources_with_claims
     )
     
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=60.0
+        timeout=60.0)
     )
     
     # Print input for debugging
@@ -399,10 +400,10 @@ def test_adjudication_no_evidence():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=60.0
+        timeout=60.0)
     )
     
     # Print input for debugging
@@ -471,10 +472,10 @@ def test_adjudication_with_contradictory_sources():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=60.0
+        timeout=60.0)
     )
     
     # Print input for debugging
@@ -497,10 +498,10 @@ def test_adjudication_with_contradictory_sources():
 
 def test_chain_building():
     """Test that the adjudication chain can be built without errors."""
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=30.0
+        timeout=30.0)
     )
     
     # Build chain
@@ -543,10 +544,10 @@ def test_return_type_is_fact_check_result():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
         temperature=0.0,
-        timeout=60.0
+        timeout=60.0)
     )
     
     # Execute

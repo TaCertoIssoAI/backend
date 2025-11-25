@@ -18,6 +18,7 @@ The -s flag shows stdout so you can see the LLM responses for debugging.
 
 import pytest
 from typing import List
+from langchain_openai import ChatOpenAI
 
 from app.models import ClaimExtractionInput, ExtractedClaim, ClaimExtractionOutput, LLMConfig, DataSource
 from app.ai.pipeline import (
@@ -108,9 +109,11 @@ def test_basic_claim_extraction_from_user_message():
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
     llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
-        temperature=0.0,
-        timeout=30.0
+        llm=ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            timeout=30.0
+        )
     )
 
     # Execute
@@ -158,7 +161,13 @@ A pesquisa foi conduzida pelo Ministério da Saúde ao longo de 3 anos."""
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig(timeout=30.0)
+    llm_config = LLMConfig(
+        llm=ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            timeout=30.0
+        )
+    )
 
     # Execute
     result = extract_and_validate_claims(
@@ -201,7 +210,7 @@ Isso torna o maior investimento climático da história."""
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0))
 
     # Execute
     result = extract_and_validate_claims(
@@ -238,7 +247,7 @@ def test_portuguese_message_extraction():
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0))
 
     # Execute
     result = extract_and_validate_claims(
@@ -274,7 +283,7 @@ def test_image_ocr_extraction():
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0))
 
     # Execute
     result = extract_and_validate_claims(
@@ -315,7 +324,7 @@ def test_empty_text():
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0))
 
     # Execute
     result = extract_and_validate_claims(
@@ -352,7 +361,7 @@ def test_opinion_vs_claim():
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0))
 
     # Execute
     result = extract_and_validate_claims(
@@ -449,9 +458,11 @@ def test_chain_building():
     from app.ai.pipeline import build_claim_extraction_chain
 
     llm_config = LLMConfig(
-        model_name="gpt-4o-mini",
-        temperature=0.0,
-        timeout=30.0
+        llm=ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            timeout=30.0
+        )
     )
 
     # Build chain
@@ -479,7 +490,7 @@ def test_return_type_is_wrapper():
 
     extraction_input = ClaimExtractionInput(data_source=data_source)
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.0, timeout=30.0))
 
     # Execute
     result = extract_claims(

@@ -16,7 +16,6 @@ Architecture:
 
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
 from langchain_core.runnables import Runnable
 
 from app.models import (
@@ -255,50 +254,35 @@ def get_claim_verdicts(
 
 def build_adjudication_chain(llm_config: LLMConfig) -> Runnable:
     """
-    Builds the LCEL chain for fact-check adjudication.
-    
-    The chain follows this structure:
+    builds the LCEL chain for fact-check adjudication.
+
+    the chain follows this structure:
         prompt | model.with_structured_output() -> _LLMAdjudicationOutput
-    
-    Args:
-        llm_config: LLM configuration (model name, temperature, timeout).
-    
-    Returns:
-        A Runnable chain that takes dict input and returns _LLMAdjudicationOutput
-    
-    Best practices applied:
-    - Structured output binding for type safety
-    - Uses OpenAI o3 model for advanced reasoning
-    - Stateless design - no global state
+
+    args:
+        llm_config: LLM configuration with BaseChatOpenAI instance.
+
+    returns:
+        a Runnable chain that takes dict input and returns _LLMAdjudicationOutput
+
+    best practices applied:
+    - structured output binding for type safety
+    - uses configured LLM model for advanced reasoning
+    - stateless design - no global state
     """
-    # Get the prompt template
+    # get the prompt template
     prompt = get_adjudication_prompt()
 
-    # Initialize the model with structured output
-    # Using o3 model as specified
-    # NOTE: o3-mini does not support temperature parameter
-    model_name = llm_config.model_name or "o3-mini"
+    # use the llm from config directly
+    model = llm_config.llm
 
-    # o3 models don't support temperature, reasoning_effort controls behavior instead
-    if "o3" in model_name.lower():
-        model = ChatOpenAI(
-            model=model_name,
-            timeout=llm_config.timeout,
-        )
-    else:
-        model = ChatOpenAI(
-            model=model_name,
-            temperature=llm_config.temperature,
-            timeout=llm_config.timeout,
-        )
-    
-    # Bind the structured output schema
-    # Note: Using default method instead of json_mode for better reliability
+    # bind the structured output schema
+    # note: using default method instead of json_mode for better reliability
     structured_model = model.with_structured_output(
         _LLMAdjudicationOutput
     )
-    
-    # Compose the chain using LCEL
+
+    # compose the chain using LCEL
     chain = prompt | structured_model
 
     return chain

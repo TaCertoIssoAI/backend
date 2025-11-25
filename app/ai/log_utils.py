@@ -105,9 +105,19 @@ def log_adjudication_input(
 
     # log LLM configuration
     logger.debug("LLM config:")
-    logger.debug(f"  model_name: {llm_config.model_name}")
-    logger.debug(f"  temperature: {llm_config.temperature}")
-    logger.debug(f"  timeout: {llm_config.timeout}")
+
+    # handle both ChatOpenAI (has model_name) and AzureChatOpenAI (has azure_deployment)
+    model_identifier = getattr(llm_config.llm, 'model_name', None) or \
+                      getattr(llm_config.llm, 'azure_deployment', 'unknown')
+    logger.debug(f"  model: {model_identifier}")
+
+    # temperature might be None for o3 models
+    temperature = getattr(llm_config.llm, 'temperature', 'N/A')
+    logger.debug(f"  temperature: {temperature}")
+
+    # timeout should always be present
+    timeout = getattr(llm_config.llm, 'timeout', 'N/A')
+    logger.debug(f"  timeout: {timeout}")
 
     logger.info("=" * 80)
     logger.info("adjudication - making final verdicts")

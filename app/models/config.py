@@ -1,31 +1,21 @@
-from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 
 class LLMConfig(BaseModel):
-    """Configuration for LLM model calls"""
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "model_name": "gpt-4o-mini",
-            "temperature": 0.0,
-            "timeout": 30.0
+    """configuration for LLM model calls using langchain chat models"""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        json_schema_extra={
+            "example": {
+                "llm": "ChatOpenAI(model='gpt-4o-mini', temperature=0.0)"
+            }
         }
-    })
+    )
 
-    model_name: str = Field(
-        default="gpt-4o-mini",
-        description="OpenAI model name to use"
-    )
-    temperature: float = Field(
-        default=0.0,
-        description="Model temperature (0.0 for deterministic, higher for more creative)",
-        ge=0.0,
-        le=2.0
-    )
-    timeout: Optional[float] = Field(
-        default=30.0,
-        description="Timeout in seconds for the model call",
-        gt=0
+    llm: BaseChatOpenAI = Field(
+        ...,
+        description="langchain BaseChatOpenAI instance (e.g., ChatOpenAI, AzureChatOpenAI)"
     )
 
 
@@ -88,19 +78,17 @@ class TimeoutConfig(BaseModel):
 
 
 class PipelineConfig(BaseModel):
-    """Complete configuration for the fact-checking pipeline"""
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "claim_extraction_llm_config": {
-                "model_name": "gpt-4o-mini",
-                "temperature": 0.0,
-                "timeout": 30.0
-            },
-            "adjudication_llm_config": {
-                "model_name": "gpt-4o",
-                "temperature": 0.2,
-                "timeout": 60.0
-            },
+    """complete configuration for the fact-checking pipeline"""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        json_schema_extra={
+            "example": {
+                "claim_extraction_llm_config": {
+                    "llm": "ChatOpenAI(model='gpt-4o-mini', temperature=0.0)"
+                },
+                "adjudication_llm_config": {
+                    "llm": "ChatOpenAI(model='gpt-4o', temperature=0.2)"
+                },
             "timeout_config": {
                 "link_content_expander_timeout_per_link": 30,
                 "link_content_expander_timeout_total": 120,
@@ -118,20 +106,12 @@ class PipelineConfig(BaseModel):
 
     # LLM configurations
     claim_extraction_llm_config: LLMConfig = Field(
-        default_factory=lambda: LLMConfig(
-            model_name="gpt-4o-mini",
-            temperature=0.0,
-            timeout=30.0
-        ),
+        ...,
         description="LLM configuration for claim extraction step"
     )
 
     adjudication_llm_config: LLMConfig = Field(
-        default_factory=lambda: LLMConfig(
-            model_name="gpt-4o",
-            temperature=0.2,
-            timeout=60.0
-        ),
+        ...,
         description="LLM configuration for final adjudication step"
     )
 

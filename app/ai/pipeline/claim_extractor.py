@@ -19,7 +19,6 @@ from typing import List, Optional
 import uuid
 
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
 from langchain_core.runnables import Runnable
 
 from app.models import (
@@ -56,40 +55,36 @@ def build_claim_extraction_chain(
     llm_config: LLMConfig
 ) -> Runnable:
     """
-    Builds the LCEL chain for claim extraction.
+    builds the LCEL chain for claim extraction.
 
-    The chain follows this structure:
+    the chain follows this structure:
         prompt | model.with_structured_output() -> ClaimExtractionOutput
 
-    Args:
-        llm_config: LLM configuration (model name, temperature, timeout).
+    args:
+        llm_config: LLM configuration with BaseChatOpenAI instance.
 
-    Returns:
-        A Runnable chain that takes dict input and returns ClaimExtractionOutput
+    returns:
+        a Runnable chain that takes dict input and returns ClaimExtractionOutput
 
-    Best practices applied:
-    - Structured output binding for type safety
-    - Low temperature for consistent extractions
-    - Stateless design - no global state
+    best practices applied:
+    - structured output binding for type safety
+    - low temperature for consistent extractions
+    - stateless design - no global state
     """
-    # Get the prompt template
+    # get the prompt template
     prompt = get_claim_extraction_prompt()
 
-    # Initialize the model with structured output
-    model = ChatOpenAI(
-        model=llm_config.model_name,
-        temperature=llm_config.temperature,
-        timeout=llm_config.timeout,
-    )
+    # use the llm from config directly
+    model = llm_config.llm
 
-    # Bind the structured output schema to enforce JSON format
-    # Use internal schema - LLM only returns claim content, not ID or source
+    # bind the structured output schema to enforce JSON format
+    # use internal schema - LLM only returns claim content, not ID or source
     structured_model = model.with_structured_output(
         _LLMClaimOutput,
-        method="json_mode"  # Use JSON mode for reliable parsing
+        method="json_mode"  # use JSON mode for reliable parsing
     )
 
-    # Compose the chain using LCEL
+    # compose the chain using LCEL
     chain = prompt | structured_model
 
     return chain
