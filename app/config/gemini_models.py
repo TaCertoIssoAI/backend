@@ -7,9 +7,22 @@ while keeping the same structure as the default config.
 
 import os
 from langchain_openai import ChatOpenAI
+from google.genai import types
 
 from app.models import PipelineConfig, LLMConfig, TimeoutConfig
 from app.llms.gemini import GeminiChatModel
+
+
+def _create_google_search_grounding_tool() -> types.Tool:
+    """
+    create google search grounding tool for gemini models.
+
+    returns:
+        types.Tool configured with google_search
+    """
+    return types.Tool(
+        google_search=types.GoogleSearch()
+    )
 
 
 def get_gemini_default_pipeline_config() -> PipelineConfig:
@@ -45,7 +58,8 @@ def get_gemini_default_pipeline_config() -> PipelineConfig:
                 model="gemini-2.5-flash",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
                # thinking_level="low",
-                temperature=0.0
+                temperature=0.0,
+                tools=[_create_google_search_grounding_tool()]
             )
         ),
         # timeout configuration (same as default)

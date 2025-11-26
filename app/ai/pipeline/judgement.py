@@ -423,7 +423,18 @@ def adjudicate_claims(
         import traceback
         traceback.print_exc()
         raise
-    
+
+    # Log grounding metadata if present (for Google Search Grounding)
+    # Note: When using with_structured_output, grounding_metadata is in the underlying
+    # AIMessage's additional_kwargs but not directly accessible in the parsed result.
+    # To access it, we would need to either:
+    # 1. Use a callback handler to capture the raw AIMessage
+    # 2. Modify the chain to preserve metadata alongside parsed output
+    # 3. Access the last message from the chain's internal state
+    # For now, we log that we're checking - actual metadata access to be implemented.
+    logger.debug("checking for grounding metadata in adjudication response")
+    logger.debug("grounding_metadata (if present) would be in AIMessage.additional_kwargs")
+
     # Debug: Print what LLM returned
     print("\n[DEBUG] LLM returned:")
     print(f"  - Number of data source results: {len(result.results)}")
@@ -515,7 +526,13 @@ async def adjudicate_claims_async(
     
     # Invoke the chain asynchronously - gets LLM output
     result: _LLMAdjudicationOutput = await chain.ainvoke(chain_input)
-    
+
+    # Log grounding metadata if present (for Google Search Grounding)
+    # Note: Same limitation as sync version - metadata in AIMessage.additional_kwargs
+    logger = get_logger(__name__, PipelineStep.ADJUDICATION)
+    logger.debug("checking for grounding metadata in adjudication response (async)")
+    logger.debug("grounding_metadata (if present) would be in AIMessage.additional_kwargs")
+
     # Debug: Print what LLM returned
     print("\n[DEBUG] LLM returned (async):")
     print(f"  - Number of data source results: {len(result.results)}")

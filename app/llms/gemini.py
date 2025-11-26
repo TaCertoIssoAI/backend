@@ -79,6 +79,10 @@ class GeminiChatModel(BaseChatModel):
         default=None,
         description="top-k sampling parameter"
     )
+    tools: Optional[List[Any]] = PydanticField(
+        default=None,
+        description="list of tools to enable (e.g., [types.Tool(google_search=types.GoogleSearch())])"
+    )
 
     class Config:
         """pydantic config"""
@@ -177,6 +181,8 @@ class GeminiChatModel(BaseChatModel):
             config_dict["thinking_config"] = types.ThinkingConfig(
                 thinking_level=self.thinking_level
             )
+        if self.tools is not None:
+            config_dict["tools"] = self.tools
 
         return types.GenerateContentConfig(**config_dict)
 
@@ -236,7 +242,33 @@ class GeminiChatModel(BaseChatModel):
                 )
 
                 # convert response to langchain format
-                message = AIMessage(content=response.text)
+                # extract grounding metadata if available
+                additional_kwargs = {}
+                if hasattr(response, 'candidates') and response.candidates:
+                    candidate = response.candidates[0]
+                    if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                        additional_kwargs["grounding_metadata"] = {
+                            "web_search_queries": [
+                                str(q) for q in getattr(candidate.grounding_metadata, 'web_search_queries', [])
+                            ],
+                            "grounding_chunks": [
+                                {
+                                    "uri": chunk.web.uri,
+                                    "title": chunk.web.title
+                                }
+                                for chunk in getattr(candidate.grounding_metadata, 'grounding_chunks', [])
+                                if hasattr(chunk, 'web')
+                            ],
+                            "grounding_supports": [
+                                {
+                                    "segment_text": support.segment.text,
+                                    "chunk_indices": list(support.grounding_chunk_indices)
+                                }
+                                for support in getattr(candidate.grounding_metadata, 'grounding_supports', [])
+                            ]
+                        }
+
+                message = AIMessage(content=response.text, additional_kwargs=additional_kwargs)
                 generation = ChatGeneration(message=message)
 
                 # close http client
@@ -317,7 +349,33 @@ class GeminiChatModel(BaseChatModel):
         )
 
         # convert response to langchain format
-        message = AIMessage(content=response.text)
+        # extract grounding metadata if available
+        additional_kwargs = {}
+        if hasattr(response, 'candidates') and response.candidates:
+            candidate = response.candidates[0]
+            if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                additional_kwargs["grounding_metadata"] = {
+                    "web_search_queries": [
+                        str(q) for q in getattr(candidate.grounding_metadata, 'web_search_queries', [])
+                    ],
+                    "grounding_chunks": [
+                        {
+                            "uri": chunk.web.uri,
+                            "title": chunk.web.title
+                        }
+                        for chunk in getattr(candidate.grounding_metadata, 'grounding_chunks', [])
+                        if hasattr(chunk, 'web')
+                    ],
+                    "grounding_supports": [
+                        {
+                            "segment_text": support.segment.text,
+                            "chunk_indices": list(support.grounding_chunk_indices)
+                        }
+                        for support in getattr(candidate.grounding_metadata, 'grounding_supports', [])
+                    ]
+                }
+
+        message = AIMessage(content=response.text, additional_kwargs=additional_kwargs)
         generation = ChatGeneration(message=message)
 
         return ChatResult(generations=[generation])
@@ -388,6 +446,8 @@ class GeminiChatModel(BaseChatModel):
                     config_dict["thinking_config"] = types.ThinkingConfig(
                         thinking_level=self.thinking_level
                     )
+                if self.tools is not None:
+                    config_dict["tools"] = self.tools
 
                 # add response schema for structured output
                 config_dict["response_mime_type"] = "application/json"
@@ -426,7 +486,8 @@ class GeminiChatModel(BaseChatModel):
             max_output_tokens=self.max_output_tokens,
             thinking_level=self.thinking_level,
             top_p=self.top_p,
-            top_k=self.top_k
+            top_k=self.top_k,
+            tools=self.tools
         )
 
         # create a chain that extracts the parsed output
