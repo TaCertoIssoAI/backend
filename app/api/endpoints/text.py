@@ -4,6 +4,7 @@ from app.api import request_to_data_sources
 from app.ai import run_fact_check_pipeline
 from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
+import uuid
 
 router = APIRouter()
 
@@ -22,6 +23,8 @@ async def analyze_text(request: Request) -> AnalysisResponse:
     3. FastAPI handles the rest automatically
     """
     try:
+        msg_id = uuid.uuid4()
+
         # step 1: convert API request to internal DataSource format
         data_sources = request_to_data_sources(request)
 
@@ -58,21 +61,12 @@ async def analyze_text(request: Request) -> AnalysisResponse:
             verdict_counts = {}
             for v in all_verdicts:
                 verdict_counts[v.verdict] = verdict_counts.get(v.verdict, 0) + 1
-
-            # use the most common verdict as overall verdict
-            if verdict_counts:
-                overall_verdict = max(verdict_counts, key=verdict_counts.get)
-            else:
-                overall_verdict = "no_claims"
         else:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
-            overall_verdict = "no_claims"
 
         return AnalysisResponse(
             message_id=data_sources[0].id if data_sources else "unknown",
-            verdict=overall_verdict,
             rationale=rationale,
-            responseWithoutLinks=rationale,
             processing_time_ms=0  # TODO: measure actual time
         )
     except Exception as e:

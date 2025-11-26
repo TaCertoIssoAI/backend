@@ -101,9 +101,7 @@ class Request(BaseModel):
 class AnalysisResponse(BaseModel):
     """Response from fact-checking analysis"""
     message_id: str = Field(..., description="Unique identifier for this analysis")
-    verdict: str = Field(..., description="Fact-check verdict")
     rationale: str = Field(..., description="Complete analysis text with context, verdicts, and citations")
-    responseWithoutLinks: str = Field(..., description="Analysis text before sources section (before 'Fontes de apoio:')")
     processing_time_ms: int = Field(default=0, description="Processing time in milliseconds")
 
     model_config = ConfigDict(
