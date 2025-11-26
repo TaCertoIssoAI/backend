@@ -1,36 +1,23 @@
 """
 google gemini configuration factory for the fact-checking pipeline.
 
-provides pipeline configurations using GeminiChatModel for adjudication
+provides pipeline configurations using Gemini (via LangChain or custom wrapper)
 while keeping the same structure as the default config.
 """
 
 import os
 from langchain_openai import ChatOpenAI
-from google.genai import types
 
 from app.models import PipelineConfig, LLMConfig, TimeoutConfig
-from app.llms.gemini import GeminiChatModel
-
-
-def _create_google_search_grounding_tool() -> types.Tool:
-    """
-    create google search grounding tool for gemini models.
-
-    returns:
-        types.Tool configured with google_search
-    """
-    return types.Tool(
-        google_search=types.GoogleSearch()
-    )
+from app.llms.gemini_langchain import create_gemini_model
 
 
 def get_gemini_default_pipeline_config() -> PipelineConfig:
     """
     create and return a PipelineConfig using Gemini for adjudication.
 
-    uses the same configuration as get_default_pipeline_config() but replaces
-    the adjudication LLM with Google's Gemini model with thinking mode enabled.
+    uses gemini for adjudication with google search grounding.
+    uses openai for claim extraction (faster and cheaper).
 
     returns:
         PipelineConfig with gemini adjudication model
@@ -39,27 +26,34 @@ def get_gemini_default_pipeline_config() -> PipelineConfig:
         >>> from app.config.gemini_models import get_gemini_default_pipeline_config
         >>> config = get_gemini_default_pipeline_config()
         >>> config.adjudication_llm_config.llm.model
-        'gemini-3-pro-preview'
-        >>> config.adjudication_llm_config.llm.thinking_level
-        'low'
+        'gemini-2.5-flash'
     """
+    # try to use openai for claim extraction, fallback to gemini if no api key
+    try:
+        claim_llm = ChatOpenAI(
+            model="gpt-4o-mini",
+            temperature=0.0,
+            timeout=30.0
+        )
+    except Exception:
+        # no openai key - use gemini for claim extraction too
+        claim_llm = create_gemini_model(
+            model="gemini-2.5-flash",
+            enable_search=False,
+            temperature=0.0,
+            google_api_key=os.getenv("GOOGLE_API_KEY")
+        )
+
     return PipelineConfig(
-        # claim extraction uses fast, cheap OpenAI model (same as default)
-        claim_extraction_llm_config=LLMConfig(
-            llm=ChatOpenAI(
-                model="gpt-4o-mini",
-                temperature=0.0,
-                timeout=30.0
-            )
-        ),
-        # adjudication uses gemini with thinking mode
+        # claim extraction uses fast model
+        claim_extraction_llm_config=LLMConfig(llm=claim_llm),
+        # adjudication uses gemini with google search grounding (langchain native)
         adjudication_llm_config=LLMConfig(
-            llm=GeminiChatModel(
+            llm=create_gemini_model(
                 model="gemini-2.5-flash",
-                google_api_key=os.getenv("GOOGLE_API_KEY"),
-               # thinking_level="low",
+                enable_search=True,
                 temperature=0.0,
-                tools=[_create_google_search_grounding_tool()]
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
             )
         ),
         # timeout configuration (same as default)
@@ -104,12 +98,11 @@ def get_gemini_fast_pipeline_config() -> PipelineConfig:
             )
         ),
         adjudication_llm_config=LLMConfig(
-            llm=GeminiChatModel(
-                model="gemini-3-pro-preview",
-                google_api_key=os.getenv("GOOGLE_API_KEY"),
-                thinking_level="low",
+            llm=create_gemini_model(
+                model="gemini-2.5-flash",
+                enable_search=True,
                 temperature=0.0,
-                tools=[_create_google_search_grounding_tool()]
+                google_api_key=os.getenv("GOOGLE_API_KEY")
             )
         ),
         timeout_config=TimeoutConfig(
@@ -152,12 +145,11 @@ def get_gemini_thorough_pipeline_config() -> PipelineConfig:
             )
         ),
         adjudication_llm_config=LLMConfig(
-            llm=GeminiChatModel(
-                model="gemini-3-pro-preview",
-                google_api_key=os.getenv("GOOGLE_API_KEY"),
-                thinking_level="high",  # higher thinking level for thorough analysis
+            llm=create_gemini_model(
+                model="gemini-2.5-flash",
+                enable_search=True,
                 temperature=0.0,
-                tools=[_create_google_search_grounding_tool()]
+                google_api_key=os.getenv("GOOGLE_API_KEY")
             )
         ),
         timeout_config=TimeoutConfig(

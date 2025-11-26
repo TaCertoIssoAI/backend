@@ -88,7 +88,7 @@ def request_to_data_sources(
     return data_sources
 
 
-def fact_check_result_to_response(msg_id: uuid.UUID,input_data_sources:DataSource,result: FactCheckResult)->AnalysisResponse:
+def fact_check_result_to_response(msg_id: uuid.UUID,result: FactCheckResult)->AnalysisResponse:
      # step 4: process results and build response
         # collect all verdicts from all data sources
         all_verdicts = []

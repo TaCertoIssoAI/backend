@@ -388,6 +388,41 @@ def test_text_with_broken_link():
     print("\n✅ Test passed: Broken link handled gracefully")
     return response_data
 
+def test_text_tusca():
+    """
+    test with text containing a link that might fail to scrape.
+    """
+    print("\n" + "=" * 80)
+    print("TEST 6: Text with Potentially Broken Link")
+    print("=" * 80)
+    
+    payload = {
+        "content": [
+            {
+                "textContent": "A UFSCAR ganhou o tusca de 2025",
+                "type": "text"
+            }
+        ]
+    }
+    
+    print("\n📤 Request payload:")
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    
+    print("\n⏳ Sending request... (may fail gracefully for broken link)")
+    start_time = time.time()
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+    response_data = response.json()
+    pretty_print_response(response_data)
+    
+    print("\n✅ Test passed: Broken link handled gracefully")
+    return response_data
+
 
 def run_all_tests():
     """
@@ -408,6 +443,7 @@ def run_all_tests():
     # run all tests
     tests = [
         test_text_with_single_link,
+        test_text_tusca,
         test_text_with_broken_link
        # test_text_with_multiple_links,
         #test_link_only_no_surrounding_text,

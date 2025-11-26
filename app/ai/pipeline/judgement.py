@@ -31,6 +31,12 @@ from app.models import (
 from .prompts import get_adjudication_prompt
 from app.observability.logger import time_profile, PipelineStep, get_logger
 
+try:
+    from app.llms.gemini_langchain import extract_grounding_metadata, has_grounding
+    _GROUNDING_HELPERS_AVAILABLE = True
+except ImportError:
+    _GROUNDING_HELPERS_AVAILABLE = False
+
 
 # ===== INTERNAL LLM SCHEMAS =====
 # These are what the LLM returns - only verdicts and justifications
@@ -277,10 +283,8 @@ def build_adjudication_chain(llm_config: LLMConfig) -> Runnable:
     model = llm_config.llm
 
     # bind the structured output schema
-    # note: using default method instead of json_mode for better reliability
-    structured_model = model.with_structured_output(
-        _LLMAdjudicationOutput
-    )
+    # ChatGoogleGenerativeAIWithTools automatically uses function calling when tools are present
+    structured_model = model.with_structured_output(_LLMAdjudicationOutput)
 
     # compose the chain using LCEL
     chain = prompt | structured_model
@@ -416,7 +420,7 @@ def adjudicate_claims(
     # Invoke the chain - gets LLM output
     print("[ADJUDICATOR DEBUG] Invoking LLM chain...")
     try:
-        result: _LLMAdjudicationOutput = chain.invoke(chain_input)
+        result = chain.invoke(chain_input)
         print("[ADJUDICATOR DEBUG] LLM invocation completed successfully")
     except Exception as e:
         print(f"[ADJUDICATOR ERROR] LLM invocation failed: {e}")
@@ -424,19 +428,70 @@ def adjudicate_claims(
         traceback.print_exc()
         raise
 
-    # Log grounding metadata if present (for Google Search Grounding)
-    # Note: When using with_structured_output, grounding_metadata is in the underlying
-    # AIMessage's additional_kwargs but not directly accessible in the parsed result.
-    # To access it, we would need to either:
-    # 1. Use a callback handler to capture the raw AIMessage
-    # 2. Modify the chain to preserve metadata alongside parsed output
-    # 3. Access the last message from the chain's internal state
-    # For now, we log that we're checking - actual metadata access to be implemented.
-    logger.debug("checking for grounding metadata in adjudication response")
-    logger.debug("grounding_metadata (if present) would be in AIMessage.additional_kwargs")
+    # Check if result is structured or raw AIMessage
+    from langchain_core.messages import AIMessage
+    import json
+
+    if isinstance(result, AIMessage):
+        # Tools were used - result is raw AIMessage, need to parse
+        print("[ADJUDICATOR DEBUG] Result is AIMessage (tools were used, no structured output)")
+        print(f"[ADJUDICATOR DEBUG] Content type: {type(result.content)}")
+
+        # Try to parse JSON from content
+        try:
+            if isinstance(result.content, str):
+                # Try to extract JSON from the content
+                content_str = result.content.strip()
+                # Look for JSON block
+                if '```json' in content_str:
+                    start = content_str.find('```json') + 7
+                    end = content_str.find('```', start)
+                    content_str = content_str[start:end].strip()
+                elif '{' in content_str and '}' in content_str:
+                    # Find the JSON object
+                    start = content_str.find('{')
+                    end = content_str.rfind('}') + 1
+                    content_str = content_str[start:end]
+
+                parsed_data = json.loads(content_str)
+                result = _LLMAdjudicationOutput(**parsed_data)
+                print("[ADJUDICATOR DEBUG] Successfully parsed AIMessage content to structured output")
+        except Exception as e:
+            print(f"[ADJUDICATOR ERROR] Failed to parse AIMessage content: {e}")
+            print(f"[ADJUDICATOR ERROR] Content was: {result.content[:500]}")
+            raise ValueError(f"Cannot parse AIMessage content into structured output: {e}")
+
+    # Check for Google Search Grounding metadata
+    if _GROUNDING_HELPERS_AVAILABLE and has_grounding(result):
+        grounding = extract_grounding_metadata(result)
+        logger.info("✅ Google Search Grounding was used in adjudication")
+
+        # Log search queries if present
+        search_queries = grounding.get('search_queries') or grounding.get('web_search_queries', [])
+        if search_queries:
+            logger.info(f"Search queries performed: {search_queries}")
+
+        # Log number of grounding chunks (sources)
+        chunks = grounding.get('grounding_chunks', [])
+        if chunks:
+            logger.info(f"Grounding sources found: {len(chunks)} chunks")
+            # Log first few sources
+            for i, chunk in enumerate(chunks[:3]):
+                if isinstance(chunk, dict):
+                    uri = chunk.get('uri', 'N/A')
+                    title = chunk.get('title', 'N/A')
+                    logger.debug(f"  Source {i+1}: {title} ({uri})")
+
+        print(f"\n[GROUNDING] ✅ Google Search was used!")
+        print(f"[GROUNDING] Queries: {search_queries}")
+        print(f"[GROUNDING] Sources: {len(chunks)} chunks")
+    else:
+        logger.debug("No grounding metadata found in response")
+        print("[GROUNDING] ℹ️  No Google Search grounding detected")
 
     # Debug: Print what LLM returned
     print("\n[DEBUG] LLM returned:")
+    print(f"  - Type: {type(result)}")
     print(f"  - Number of data source results: {len(result.results)}")
     print(f"  - Overall summary present: {bool(result.overall_summary)}")
     if result.results:
