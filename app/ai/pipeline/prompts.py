@@ -118,7 +118,11 @@ def get_claim_extraction_prompt() -> ChatPromptTemplate:
 
 ADJUDICATION_SYSTEM_PROMPT = """Você é um especialista em verificação de fatos (fact-checking) para um sistema de checagem de notícias e alegações.
 
-Sua tarefa é analisar alegações extraídas de diferentes fontes de dados e emitir um veredito fundamentado para cada uma, baseando-se estritamente nas evidências e citações fornecidas.
+Sua tarefa é analisar alegações extraídas de diferentes fontes de dados e emitir um veredito fundamentado para cada uma, baseando-se estritamente nas evidências e citações fornecidas. 
+
+Após todas as afirmações individuais terem seu veredito, você irá analizar o contexto de todas elas juntas, verificando como cada afirmação interaje com a outra
+a partir dessa análise geral, você irá emitir uma resumo/sumário geral de todos as informações enviadas. Esse sumário irá abordar o contexto geral e irá mencionar se
+as afirmações tem uma linha coerente de pensamento, ou se algumas delas estão desconexas.
 
 ## Categorias de Veredito:
 
@@ -166,8 +170,9 @@ Você deve retornar um objeto JSON estruturado contendo:
   - justification: sua explicação detalhada, citando as fontes
 
 IMPORTANTE: 
-- Inclua o data_source_id e claim_id quando possível para identificar cada grupo de vereditos 
+- Inclua o data_source_id e claim_id quando possível para identificar cada grupo de vereditos, mas não mencione essa fonte de dados no resumo final/justificativa
 - mantenha os resultados NA MESMA ORDEM das fontes apresentadas
+- Menciona na justificativa se todas as afirmações contem uma mesma narrativa/contexto ou se existe alguma afirmação que é um outlier. Não mencione IDs nessa parte
 
 ## Exemplo de Justificação:
 

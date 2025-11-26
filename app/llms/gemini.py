@@ -8,6 +8,9 @@ like thinking_config that may not be available in langchain-google-genai.
 from typing import Any, List, Optional, Dict, Type, Union
 from pydantic import BaseModel as PydanticBaseModel, Field as PydanticField
 import json
+import time
+import httpx
+import ssl
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -24,6 +27,11 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from google import genai
 from google.genai import types
+
+from app.observability.logger.logger import get_logger
+
+# create module logger
+logger = get_logger(__name__)
 
 
 class GeminiChatModel(BaseChatModel):
@@ -112,6 +120,42 @@ class GeminiChatModel(BaseChatModel):
 
         return system_instruction, user_content
 
+    def _create_http_client(self) -> httpx.Client:
+        """
+        create a robust HTTP client with better SSL and connection handling.
+
+        returns:
+            configured httpx.Client
+        """
+        # create SSL context with more lenient settings
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = True
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+
+        # configure connection limits and timeouts
+        limits = httpx.Limits(
+            max_keepalive_connections=5,
+            max_connections=10,
+            keepalive_expiry=30.0
+        )
+
+        timeout = httpx.Timeout(
+            timeout=60.0,
+            connect=10.0,
+            read=30.0,
+            write=10.0,
+            pool=5.0
+        )
+
+        # create client with robust settings
+        return httpx.Client(
+            verify=ssl_context,
+            limits=limits,
+            timeout=timeout,
+            http2=True,  # enable HTTP/2
+            follow_redirects=True
+        )
+
     def _build_generation_config(self) -> types.GenerateContentConfig:
         """
         build gemini generation config from model parameters.
@@ -144,7 +188,7 @@ class GeminiChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """
-        generate response from gemini.
+        generate response from gemini with retry logic for connection errors.
 
         args:
             messages: list of langchain messages
@@ -155,37 +199,77 @@ class GeminiChatModel(BaseChatModel):
         returns:
             ChatResult with generated response
         """
-        # initialize client with api key if provided
-        client_kwargs = {}
-        if self.google_api_key:
-            client_kwargs["api_key"] = self.google_api_key
-        client = genai.Client(**client_kwargs)
+        # retry configuration
+        max_retries = 3
+        base_delay = 1.0
+        last_exception = None
 
-        # convert messages
-        system_instruction, user_content = self._convert_messages_to_gemini_format(messages)
+        for attempt in range(max_retries):
+            try:
+                # create HTTP client with robust settings
+                http_client = self._create_http_client()
 
-        # build config
-        gen_config = self._build_generation_config()
+                # initialize client with api key and custom http client
+                client_kwargs = {"http_options": {"client": http_client}}
+                if self.google_api_key:
+                    client_kwargs["api_key"] = self.google_api_key
+                client = genai.Client(**client_kwargs)
 
-        # add system instruction if present
-        if system_instruction:
-            # create new config with system instruction
-            config_dict = gen_config.to_dict() if hasattr(gen_config, 'to_dict') else {}
-            config_dict["system_instruction"] = system_instruction
-            gen_config = types.GenerateContentConfig(**config_dict)
+                # convert messages
+                system_instruction, user_content = self._convert_messages_to_gemini_format(messages)
 
-        # call gemini api
-        response = client.models.generate_content(
-            model=self.model,
-            contents=user_content,
-            config=gen_config
-        )
+                # build config
+                gen_config = self._build_generation_config()
 
-        # convert response to langchain format
-        message = AIMessage(content=response.text)
-        generation = ChatGeneration(message=message)
+                # add system instruction if present
+                if system_instruction:
+                    # create new config with system instruction
+                    config_dict = gen_config.to_dict() if hasattr(gen_config, 'to_dict') else {}
+                    config_dict["system_instruction"] = system_instruction
+                    gen_config = types.GenerateContentConfig(**config_dict)
 
-        return ChatResult(generations=[generation])
+                # call gemini api
+                response = client.models.generate_content(
+                    model=self.model,
+                    contents=user_content,
+                    config=gen_config
+                )
+
+                # convert response to langchain format
+                message = AIMessage(content=response.text)
+                generation = ChatGeneration(message=message)
+
+                # close http client
+                http_client.close()
+
+                return ChatResult(generations=[generation])
+
+            except (httpx.ConnectError, httpx.RemoteProtocolError, ssl.SSLError) as e:
+                last_exception = e
+                http_client.close()
+
+                if attempt < max_retries - 1:
+                    # exponential backoff
+                    delay = base_delay * (2 ** attempt)
+                    logger.warning(
+                        f"gemini API connection error (attempt {attempt + 1}/{max_retries}): {str(e)}. "
+                        f"retrying in {delay}s..."
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(
+                        f"gemini API connection failed after {max_retries} attempts: {str(e)}"
+                    )
+
+            except Exception as e:
+                # for non-connection errors, fail immediately
+                logger.error(f"gemini API error: {str(e)}")
+                if 'http_client' in locals():
+                    http_client.close()
+                raise
+
+        # if we get here, all retries failed
+        raise last_exception
 
     async def _agenerate(
         self,
@@ -328,6 +412,7 @@ class GeminiChatModel(BaseChatModel):
                         message = AIMessage(content=response.text, additional_kwargs={"parsed": parsed_output})
                 except Exception as e:
                     # if parsing fails, return raw text
+                    logger.warning(f"failed to parse structured output: {str(e)}, returning raw text")
                     message = AIMessage(content=response.text)
 
                 generation = ChatGeneration(message=message)

@@ -26,6 +26,76 @@ TEXT_ENDPOINT = f"{BASE_URL}/api/text"
 HEALTH_ENDPOINT = f"{BASE_URL}/health"
 
 
+def pretty_print_response(response_data: dict):
+    """
+    print API response in a human-readable format.
+    """
+    print("\n" + "=" * 80)
+    print("📋 RESPONSE SUMMARY")
+    print("=" * 80)
+
+    # message id
+    if "message_id" in response_data:
+        print(f"\n🆔 Message ID: {response_data['message_id']}")
+
+    # verdict
+    if "verdict" in response_data:
+        verdict_emoji = {
+            "true": "✅",
+            "false": "❌",
+            "misleading": "⚠️",
+            "unverifiable": "❓",
+        }
+        verdict = response_data["verdict"].lower()
+        emoji = verdict_emoji.get(verdict, "🔍")
+        print(f"\n{emoji} Verdict: {response_data['verdict'].upper()}")
+
+    # confidence
+    if "confidence" in response_data:
+        confidence = response_data["confidence"]
+        print(f"📊 Confidence: {confidence:.2%}")
+
+    # rationale
+    if "rationale" in response_data:
+        print(f"\n💡 Rationale:")
+        print(f"   {response_data['rationale']}")
+
+    # response without links
+    if "responseWithoutLinks" in response_data:
+        print(f"\n📝 Response (without links):")
+        print(f"   {response_data['responseWithoutLinks']}")
+
+    # claims
+    if "claims" in response_data and response_data["claims"]:
+        print(f"\n🔎 Extracted Claims ({len(response_data['claims'])} total):")
+        for i, claim in enumerate(response_data["claims"], 1):
+            print(f"   {i}. {claim.get('claim', 'N/A')}")
+            if "verdict" in claim:
+                print(f"      → Verdict: {claim['verdict']}")
+
+    # citations
+    if "citations" in response_data and response_data["citations"]:
+        print(f"\n📚 Citations ({len(response_data['citations'])} sources):")
+        for i, citation in enumerate(response_data["citations"], 1):
+            print(f"\n   [{i}] {citation.get('title', 'No title')}")
+            if "source" in citation:
+                print(f"       Source: {citation['source']}")
+            if "url" in citation:
+                print(f"       URL: {citation['url']}")
+            if "snippet" in citation and citation['snippet']:
+                snippet = citation['snippet'][:150] + "..." if len(citation['snippet']) > 150 else citation['snippet']
+                print(f"       Snippet: {snippet}")
+            if "published_at" in citation:
+                print(f"       Published: {citation['published_at']}")
+
+    # processing time
+    if "processing_time_ms" in response_data:
+        time_sec = response_data["processing_time_ms"] / 1000
+        print(f"\n⚡ Processing Time: {time_sec:.2f}s ({response_data['processing_time_ms']}ms)")
+
+    print("\n" + "=" * 80)
+
+
 def check_server_health() -> bool:
     """
     check if the server is up and running.
@@ -79,20 +149,19 @@ def test_simple_text_claim():
     elapsed_time = time.time() - start_time
 
     print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"\n📥 Response status: {response.status_code}")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    
+
     response_data = response.json()
-    print(f"\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     # verify response schema
     assert "message_id" in response_data, "Response missing 'message_id'"
     assert "verdict" in response_data, "Response missing 'verdict'"
     assert "rationale" in response_data, "Response missing 'rationale'"
     assert "responseWithoutLinks" in response_data, "Response missing 'responseWithoutLinks'"
     assert "processing_time_ms" in response_data, "Response missing 'processing_time_ms'"
-    
+
     print("\n✅ Test passed: Response schema is correct")
     return response_data
 
@@ -122,13 +191,12 @@ def test_multiple_text_claims():
     elapsed_time = time.time() - start_time
 
     print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"\n📥 Response status: {response.status_code}")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    
+
     response_data = response.json()
-    print(f"\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Multiple claims processed successfully")
     return response_data
 
@@ -158,13 +226,12 @@ def test_short_text():
     elapsed_time = time.time() - start_time
 
     print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"\n📥 Response status: {response.status_code}")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    
+
     response_data = response.json()
-    print(f"\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Short text processed successfully")
     return response_data
 
@@ -176,32 +243,34 @@ def test_long_text():
     print("\n" + "=" * 80)
     print("TEST 4: Long Text with Multiple Claims")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
                 "textContent": """
-A vacina contra COVID-19 foi desenvolvida em tempo recorde. Estudos mostram que ela é 95% eficaz na prevenção de casos graves. 
-O uso de máscaras reduziu a transmissão em 70% segundo pesquisas recentes. 
+A vacina contra COVID-19 foi desenvolvida em tempo recorde. Estudos mostram que ela é 95% eficaz na prevenção de casos graves.
+O uso de máscaras reduziu a transmissão em 70% segundo pesquisas recentes.
 Além disso, o distanciamento social foi fundamental para achatar a curva de contágio durante os picos da pandemia.
 """.strip(),
                 "type": "text"
             }
         ]
     }
-    
+
     print(f"\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    
+
     response_data = response.json()
-    print(f"\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Long text processed successfully")
     return response_data
 
@@ -213,7 +282,7 @@ def test_opinion_text():
     print("\n" + "=" * 80)
     print("TEST 5: Opinion Text (Less Verifiable)")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -222,19 +291,21 @@ def test_opinion_text():
             }
         ]
     }
-    
+
     print(f"\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    
+
     response_data = response.json()
-    print(f"\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Opinion text processed successfully")
     return response_data
 

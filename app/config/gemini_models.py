@@ -45,7 +45,7 @@ def get_gemini_default_pipeline_config() -> PipelineConfig:
                 model="gemini-2.5-flash",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
                # thinking_level="low",
-                temperature=1.0
+                temperature=0.0
             )
         ),
         # timeout configuration (same as default)

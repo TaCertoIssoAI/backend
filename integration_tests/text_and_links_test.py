@@ -18,12 +18,83 @@ or with pytest:
 import requests
 import json
 import sys
+import time
 
 
 # configuration
 BASE_URL = "http://localhost:8000"
 TEXT_ENDPOINT = f"{BASE_URL}/text"
 HEALTH_ENDPOINT = f"{BASE_URL}/health"
+
+
+def pretty_print_response(response_data: dict):
+    """
+    print API response in a human-readable format.
+    """
+    print("\n" + "=" * 80)
+    print("📋 RESPONSE SUMMARY")
+    print("=" * 80)
+
+    # message id
+    if "message_id" in response_data:
+        print(f"\n🆔 Message ID: {response_data['message_id']}")
+
+    # verdict
+    if "verdict" in response_data:
+        verdict_emoji = {
+            "true": "✅",
+            "false": "❌",
+            "misleading": "⚠️",
+            "unverifiable": "❓",
+        }
+        verdict = response_data["verdict"].lower()
+        emoji = verdict_emoji.get(verdict, "🔍")
+        print(f"\n{emoji} Verdict: {response_data['verdict'].upper()}")
+
+    # confidence
+    if "confidence" in response_data:
+        confidence = response_data["confidence"]
+        print(f"📊 Confidence: {confidence:.2%}")
+
+    # rationale
+    if "rationale" in response_data:
+        print(f"\n💡 Rationale:")
+        print(f"   {response_data['rationale']}")
+
+    # response without links
+    if "responseWithoutLinks" in response_data:
+        print(f"\n📝 Response (without links):")
+        print(f"   {response_data['responseWithoutLinks']}")
+
+    # claims
+    if "claims" in response_data and response_data["claims"]:
+        print(f"\n🔎 Extracted Claims ({len(response_data['claims'])} total):")
+        for i, claim in enumerate(response_data["claims"], 1):
+            print(f"   {i}. {claim.get('claim', 'N/A')}")
+            if "verdict" in claim:
+                print(f"      → Verdict: {claim['verdict']}")
+
+    # citations
+    if "citations" in response_data and response_data["citations"]:
+        print(f"\n📚 Citations ({len(response_data['citations'])} sources):")
+        for i, citation in enumerate(response_data["citations"], 1):
+            print(f"\n   [{i}] {citation.get('title', 'No title')}")
+            if "source" in citation:
+                print(f"       Source: {citation['source']}")
+            if "url" in citation:
+                print(f"       URL: {citation['url']}")
+            if "snippet" in citation and citation['snippet']:
+                snippet = citation['snippet'][:150] + "..." if len(citation['snippet']) > 150 else citation['snippet']
+                print(f"       Snippet: {snippet}")
+            if "published_at" in citation:
+                print(f"       Published: {citation['published_at']}")
+
+    # processing time
+    if "processing_time_ms" in response_data:
+        time_sec = response_data["processing_time_ms"] / 1000
+        print(f"\n⚡ Processing Time: {time_sec:.2f}s ({response_data['processing_time_ms']}ms)")
+
+    print("\n" + "=" * 80)
 
 
 def check_server_health() -> bool:
@@ -73,23 +144,25 @@ def test_text_with_single_link():
     
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request... (this may take a while due to link scraping)")
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
-    
+
     response_data = response.json()
-    print("\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     # verify response schema
     assert "message_id" in response_data
     assert "verdict" in response_data
     assert "rationale" in response_data
     assert "responseWithoutLinks" in response_data
-    
+
     print("\n✅ Test passed: Single link processed successfully")
     return response_data
 
@@ -113,17 +186,19 @@ def test_text_with_multiple_links():
     
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request... (this may take a while due to multiple link scraping)")
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=180)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
     response_data = response.json()
-    print("\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Multiple links processed successfully")
     return response_data
 
@@ -135,7 +210,7 @@ def test_link_only_no_surrounding_text():
     print("\n" + "=" * 80)
     print("TEST 3: Link Only (Minimal Text)")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -144,20 +219,22 @@ def test_link_only_no_surrounding_text():
             }
         ]
     }
-    
+
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request...")
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
     response_data = response.json()
-    print("\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Link-only content processed successfully")
     return response_data
 
@@ -169,7 +246,7 @@ def test_text_with_link_at_end():
     print("\n" + "=" * 80)
     print("TEST 4: Text with Link at End")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -178,20 +255,22 @@ def test_text_with_link_at_end():
             }
         ]
     }
-    
+
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request...")
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
     response_data = response.json()
-    print("\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Link with punctuation processed successfully")
     return response_data
 
@@ -203,7 +282,7 @@ def test_text_with_social_media_link():
     print("\n" + "=" * 80)
     print("TEST 5: Social Media Link (Facebook)")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -212,20 +291,22 @@ def test_text_with_social_media_link():
             }
         ]
     }
-    
+
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request... (scraping social media may take longer)")
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
     response_data = response.json()
-    print("\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Social media link processed successfully")
     return response_data
 
@@ -237,7 +318,7 @@ def test_text_with_broken_link():
     print("\n" + "=" * 80)
     print("TEST 6: Text with Potentially Broken Link")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -246,20 +327,22 @@ def test_text_with_broken_link():
             }
         ]
     }
-    
+
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request... (may fail gracefully for broken link)")
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
-    
-    print(f"\n📥 Response status: {response.status_code}")
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
     response_data = response.json()
-    print("\n📄 Response body:")
-    print(json.dumps(response_data, indent=2, ensure_ascii=False))
-    
+    pretty_print_response(response_data)
+
     print("\n✅ Test passed: Broken link handled gracefully")
     return response_data
 
