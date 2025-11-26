@@ -4,7 +4,9 @@
       "Bash(mkdir:*)",
       "Bash(source venv/bin/activate)",
       "Bash(python -m pytest:*)",
-      "Bash(source:*)"
+      "Bash(source:*)",
+      "Bash(python3:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

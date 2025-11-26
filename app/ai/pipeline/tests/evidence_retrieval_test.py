@@ -152,21 +152,21 @@ def test_filter_low_quality_citations_empty_list():
 
 
 # ===== INTEGRATION TESTS FOR WEB SEARCH GATHERER =====
-# these tests make REAL network calls to the Apify web search API
+# these tests make REAL network calls to the Google Custom Search API
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout
 async def test_web_search_gatherer_real_claim():
     """should search the web for a real claim and return citations"""
     import os
 
-    # check if APIFY_TOKEN is set
-    apify_token = os.getenv("APIFY_TOKEN")
-    print(f"\n[DEBUG] APIFY_TOKEN present: {apify_token is not None}")
-    if apify_token:
-        print(f"[DEBUG] APIFY_TOKEN length: {len(apify_token)} chars")
-    else:
-        print("[DEBUG] APIFY_TOKEN is NOT set")
+    # check if google search credentials are set
+    api_key = os.getenv("GOOGLE_SEARCH_API_KEY")
+    cse_cx = os.getenv("GOOGLE_CSE_CX")
+    print(f"\n[DEBUG] GOOGLE_SEARCH_API_KEY present: {api_key is not None}")
+    print(f"\n[DEBUG] GOOGLE_CSE_CX present: {cse_cx is not None}")
+    if not api_key or not cse_cx:
+        print("[DEBUG] Google Search credentials are NOT set")
 
     gatherer = WebSearchGatherer(max_results=3)
 
@@ -187,7 +187,7 @@ async def test_web_search_gatherer_real_claim():
     if len(citations) == 0:
         print("[DEBUG] No citations returned - checking search result...")
         # call the underlying search function directly to see the error
-        from app.ai.context.web.apify_utils import searchGoogleClaim
+        from app.ai.context.web import searchGoogleClaim
         search_result = await searchGoogleClaim(claim.text, maxResults=3)
         print(f"[DEBUG] Search result: {search_result}")
 
@@ -213,14 +213,14 @@ async def test_web_search_gatherer_real_claim():
 
         assert citation.url != "", "URL should not be empty"
         assert citation.title != "", "Title should not be empty"
-        assert citation.source == "apify_web_search", "Source should be apify_web_search"
+        assert citation.source == "google_web_search", "Source should be google_web_search"
         assert citation.rating is None, "Web search shouldn't provide ratings"
 
     print(f"{'=' * 80}\n")
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout
 async def test_web_search_gatherer_english_claim():
     """should handle English language claims"""
     gatherer = WebSearchGatherer(max_results=3)
@@ -258,13 +258,13 @@ async def test_web_search_gatherer_english_claim():
 async def test_web_search_gatherer_source_name():
     """should return correct source name"""
     gatherer = WebSearchGatherer(max_results=5)
-    assert gatherer.source_name == "apify_web_search"
+    assert gatherer.source_name == "google_web_search"
 
 
 # ===== INTEGRATION TESTS FOR MAIN EVIDENCE RETRIEVAL =====
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout
 async def test_gather_evidence_async_single_claim():
     """should gather evidence for a single claim"""
     claim = ExtractedClaim(
@@ -371,7 +371,7 @@ async def test_gather_evidence_async_empty_claims():
 # ===== INTEGRATION TESTS FOR CONVENIENCE FUNCTION =====
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout
 async def test_gather_and_filter_evidence_deduplicates():
     """should deduplicate and filter citations"""
     claim = ExtractedClaim(
@@ -411,7 +411,7 @@ async def test_gather_and_filter_evidence_deduplicates():
 
 
 @pytest.mark.asyncio
-@pytest.mark.timeout(45)  # 45 second timeout (Apify has 30s internal timeout)
+@pytest.mark.timeout(45)  # 45 second timeout
 async def test_gather_and_filter_evidence_no_filters():
     """should work without filters"""
     claim = ExtractedClaim(

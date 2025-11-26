@@ -10,8 +10,8 @@ these tests validate:
 - source attribution
 - time profiling via decorator
 
-IMPORTANT: these tests make REAL calls to the Apify web search API.
-set APIFY_API_KEY in your environment before running.
+IMPORTANT: these tests make REAL calls to the Google Custom Search API.
+set GOOGLE_SEARCH_API_KEY and GOOGLE_CSE_CX in your environment before running.
 
 run with:
     pytest app/ai/context/web/tests/web_search_gatherer_test.py -v -s
@@ -82,8 +82,8 @@ def validate_citation_structure(citation: Citation):
     assert isinstance(citation.citation_text, str), "citation text should be string"
     assert isinstance(citation.source, str), "source should be a string"
 
-    # source should always be apify_web_search
-    assert citation.source == "apify_web_search", "source should be apify_web_search"
+    # source should always be google_web_search
+    assert citation.source == "google_web_search", "source should be google_web_search"
 
     # URL should be valid
     assert citation.url.startswith("http"), "URL should start with http"
@@ -208,14 +208,14 @@ async def test_citation_metadata_fields():
         # verify metadata fields
         assert citation.rating is None, "web search should have None rating"
         assert citation.date is None, "web search should have None date"
-        assert citation.source == "apify_web_search", "source should be apify_web_search"
+        assert citation.source == "google_web_search", "source should be google_web_search"
 
     print("\n" + "=" * 80)
     print("TEST: Citation Metadata Fields")
     print("=" * 80)
     print("\n✓ rating field is None (web search doesn't provide ratings)")
     print("✓ date field is None (web search doesn't include publication date)")
-    print("✓ source field is 'apify_web_search'")
+    print("✓ source field is 'google_web_search'")
     print()
 
 
@@ -383,8 +383,8 @@ def test_gatherer_initialization():
 
     assert gatherer.max_results == 10, "max_results should be set correctly"
     assert gatherer.timeout == 60.0, "timeout should be set correctly"
-    assert gatherer.source_name == "apify_web_search", (
-        "source name should be apify_web_search"
+    assert gatherer.source_name == "google_web_search", (
+        "source name should be google_web_search"
     )
 
     # test with default parameters
@@ -405,14 +405,14 @@ def test_source_name_property():
     """test that source_name property returns correct value."""
     gatherer = WebSearchGatherer()
 
-    assert gatherer.source_name == "apify_web_search", (
-        "source_name should be apify_web_search"
+    assert gatherer.source_name == "google_web_search", (
+        "source_name should be google_web_search"
     )
 
     print("\n" + "=" * 80)
     print("TEST: Source Name Property")
     print("=" * 80)
-    print("\n✓ source_name property returns 'apify_web_search'")
+    print("\n✓ source_name property returns 'google_web_search'")
     print()
 
 

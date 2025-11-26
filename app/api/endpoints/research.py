@@ -5,7 +5,8 @@ from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.ai.context.web.apify_utils import searchGoogleClaim, scrapeGenericSimple
+from app.ai.context.web import searchGoogleClaim
+from app.ai.context.web.apify_utils import scrapeGenericSimple
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -135,20 +136,22 @@ async def search_claim(request: ClaimSearchRequest) -> ClaimSearchResponse:
 async def research_status():
     """check google search configuration and availability"""
     import os
-    apify_token = os.getenv("APIFY_TOKEN")
-    token_configured = bool(apify_token)
-    
+    api_key = os.getenv("GOOGLE_SEARCH_API_KEY")
+    cse_cx = os.getenv("GOOGLE_CSE_CX")
+    is_configured = bool(api_key and cse_cx)
+
     return {
-        "research_available": token_configured,
-        "apify_configured": token_configured,
-        "apify_token_status": "configured" if token_configured else "missing",
+        "research_available": is_configured,
+        "google_search_configured": is_configured,
+        "api_key_status": "configured" if api_key else "missing",
+        "cse_cx_status": "configured" if cse_cx else "missing",
         "search_engine": "google",
         "supported_features": {
             "claim_search": "✅ available",
             "fact_checking_support": "✅ provides search results for verification",
             "multi_language": "✅ supports portuguese (pt) and other languages"
         },
-        "actor": "apify/google-search-scraper",
-        "note": "set APIFY_TOKEN in environment" if not token_configured else "google search ready"
+        "api": "google-custom-search",
+        "note": "set GOOGLE_SEARCH_API_KEY and GOOGLE_CSE_CX in environment" if not is_configured else "google search ready"
     }
 
