@@ -101,19 +101,15 @@ class Request(BaseModel):
 class AnalysisResponse(BaseModel):
     """Response from fact-checking analysis"""
     message_id: str = Field(..., description="Unique identifier for this analysis")
-    verdict: str = Field(..., description="Fact-check verdict")
     rationale: str = Field(..., description="Complete analysis text with context, verdicts, and citations")
     responseWithoutLinks: str = Field(..., description="Analysis text before sources section (before 'Fontes de apoio:')")
-    processing_time_ms: int = Field(default=0, description="Processing time in milliseconds")
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "message_id": "analysis_123",
-                "verdict": "text_analysis",
                 "rationale": "O texto contém uma alegação sobre anúncio governamental. A informação foi verificada contra fontes oficiais.\n\nAnálise por alegação:\n• Governo anunciou novas políticas: VERDADEIRO\n\nFontes de apoio:\n- Portal Oficial: \"Novas políticas foram anunciadas ontem\" (https://gov.example.com/news)",
                 "responseWithoutLinks": "O texto contém uma alegação sobre anúncio governamental. A informação foi verificada contra fontes oficiais.\n\nAnálise por alegação:\n• Governo anunciou novas políticas: VERDADEIRO",
-                "processing_time_ms": 3500
             }
         }
     )

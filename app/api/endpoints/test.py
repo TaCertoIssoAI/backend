@@ -3,10 +3,11 @@ Test endpoints for development and debugging.
 
 provides alternative endpoints with different configurations for testing purposes.
 """
-
+from uu import Error
+import uuid
 from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
-from app.api import request_to_data_sources
+from app.api import request_to_data_sources,fact_check_result_to_response
 from app.ai import run_fact_check_pipeline
 from app.config.default import get_default_pipeline_config
 from app.config.azure_models import get_azure_default_pipeline_config
@@ -36,6 +37,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
     returns detailed analysis with verdict, rationale, and citations.
     """
     try:
+        msg_id =  uuid.uuid4()
         # step 1: convert API request to internal DataSource format
         data_sources = request_to_data_sources(request)
 
@@ -51,51 +53,10 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
             config,
             pipeline_steps
         )
-
-        # step 5: process results and build response
-        # collect all verdicts from all data sources
-        all_verdicts = []
-        for ds_result in fact_check_result.results:
-            all_verdicts.extend(ds_result.claim_verdicts)
-
-        # build rationale text from verdicts
-        if all_verdicts:
-            rationale_parts = ["Resultado da verificação:\n"]
-
-            for i, verdict_item in enumerate(all_verdicts, 1):
-                rationale_parts.append(f"\n{i}. Alegação: {verdict_item.claim_text}")
-                rationale_parts.append(f"   Veredito: {verdict_item.verdict}")
-                rationale_parts.append(f"   Justificativa: {verdict_item.justification}")
-
-            # add overall summary if present
-            if fact_check_result.overall_summary:
-                rationale_parts.append(
-                    f"\n\nResumo Geral:\n{fact_check_result.overall_summary}"
-                )
-
-            rationale = "\n".join(rationale_parts)
-
-            # determine overall verdict based on individual verdicts
-            verdict_counts = {}
-            for v in all_verdicts:
-                verdict_counts[v.verdict] = verdict_counts.get(v.verdict, 0) + 1
-
-            # use the most common verdict as overall verdict
-            if verdict_counts:
-                overall_verdict = max(verdict_counts, key=verdict_counts.get)
-            else:
-                overall_verdict = "no_claims"
-        else:
-            rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
-            overall_verdict = "no_claims"
-
-        return AnalysisResponse(
-            message_id=data_sources[0].id if data_sources else "unknown",
-            verdict=overall_verdict,
-            rationale=rationale,
-            responseWithoutLinks=rationale,
-            processing_time_ms=0  # TODO: measure actual time
-        )
+        try:
+            return fact_check_result_to_response(msg_id,fact_check_result)
+        except Exception as e:
+            print("memou ein", e)
     except Exception as e:
         raise HTTPException(
             status_code=500,

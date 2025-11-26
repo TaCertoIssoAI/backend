@@ -1,1 +1,1 @@
-from .mapper import request_to_data_sources
+from .mapper import request_to_data_sources,fact_check_result_to_response

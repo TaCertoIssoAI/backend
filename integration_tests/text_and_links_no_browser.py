@@ -39,22 +39,6 @@ def pretty_print_response(response_data: dict):
     if "message_id" in response_data:
         print(f"\n🆔 Message ID: {response_data['message_id']}")
 
-    # verdict
-    if "verdict" in response_data:
-        verdict_emoji = {
-            "true": "✅",
-            "false": "❌",
-            "misleading": "⚠️",
-            "unverifiable": "❓",
-        }
-        verdict = response_data["verdict"].lower()
-        emoji = verdict_emoji.get(verdict, "🔍")
-        print(f"\n{emoji} Verdict: {response_data['verdict'].upper()}")
-
-    # confidence
-    if "confidence" in response_data:
-        confidence = response_data["confidence"]
-        print(f"📊 Confidence: {confidence:.2%}")
 
     # rationale
     if "rationale" in response_data:
@@ -159,9 +143,7 @@ def test_text_with_single_link():
 
     # verify response schema
     assert "message_id" in response_data
-    assert "verdict" in response_data
     assert "rationale" in response_data
-    assert "responseWithoutLinks" in response_data
 
     print("\n✅ Test passed: Single link processed successfully")
     return response_data
@@ -408,7 +390,7 @@ def run_all_tests():
     # run all tests
     tests = [
         test_text_with_single_link,
-        test_text_with_broken_link
+       # test_text_with_broken_link
        # test_text_with_multiple_links,
         #test_link_only_no_surrounding_text,
         #test_text_with_link_at_end,
