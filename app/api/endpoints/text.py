@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
 from app.api import request_to_data_sources
 from app.ai import run_fact_check_pipeline
-from app.config.default import get_default_pipeline_config
+from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
 
 router = APIRouter()
@@ -26,7 +26,7 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         data_sources = request_to_data_sources(request)
 
         # step 2: get pipeline configuration
-        config = get_default_pipeline_config()
+        config = get_gemini_default_pipeline_config()
         pipeline_step = DefaultPipelineSteps()
 
         # step 3: run the async fact-checking pipeline

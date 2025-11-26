@@ -108,7 +108,9 @@ def log_adjudication_input(
 
     # handle both ChatOpenAI (has model_name) and AzureChatOpenAI (has azure_deployment)
     model_identifier = getattr(llm_config.llm, 'model_name', None) or \
-                      getattr(llm_config.llm, 'azure_deployment', 'unknown')
+                       getattr(llm_config.llm, 'azure_deployment', 'unknown') or \
+                       getattr(llm_config.llm, 'model', 'unknown')
+
     logger.debug(f"  model: {model_identifier}")
 
     # temperature might be None for o3 models

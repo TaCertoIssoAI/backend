@@ -17,6 +17,7 @@ or with pytest:
 import requests
 import json
 import sys
+import time
 
 
 # configuration
@@ -60,7 +61,7 @@ def test_simple_text_claim():
     print("\n" + "=" * 80)
     print("TEST 1: Simple Text Claim")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -69,12 +70,15 @@ def test_simple_text_claim():
             }
         ]
     }
-    
+
     print(f"\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
-    
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
     print(f"\n📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
@@ -100,7 +104,7 @@ def test_multiple_text_claims():
     print("\n" + "=" * 80)
     print("TEST 2: Multiple Claims in Text")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -109,12 +113,15 @@ def test_multiple_text_claims():
             }
         ]
     }
-    
+
     print(f"\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
-    
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
     print(f"\n📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     
@@ -133,7 +140,7 @@ def test_short_text():
     print("\n" + "=" * 80)
     print("TEST 3: Short Text")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -142,12 +149,15 @@ def test_short_text():
             }
         ]
     }
-    
+
     print(f"\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
+    start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
-    
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
     print(f"\n📥 Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     

@@ -40,7 +40,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
         data_sources = request_to_data_sources(request)
 
         # step 2: get pipeline configuration
-        config = get_default_pipeline_config()
+        config = get_gemini_default_pipeline_config()
 
         # step 3: use WithoutBrowsingPipelineSteps (hybrid mock/real)
         pipeline_steps = WithoutBrowsingPipelineSteps()
