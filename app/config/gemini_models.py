@@ -108,7 +108,8 @@ def get_gemini_fast_pipeline_config() -> PipelineConfig:
                 model="gemini-3-pro-preview",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
                 thinking_level="low",
-                temperature=0.0
+                temperature=0.0,
+                tools=[_create_google_search_grounding_tool()]
             )
         ),
         timeout_config=TimeoutConfig(
@@ -155,7 +156,8 @@ def get_gemini_thorough_pipeline_config() -> PipelineConfig:
                 model="gemini-3-pro-preview",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
                 thinking_level="high",  # higher thinking level for thorough analysis
-                temperature=0.0
+                temperature=0.0,
+                tools=[_create_google_search_grounding_tool()]
             )
         ),
         timeout_config=TimeoutConfig(
