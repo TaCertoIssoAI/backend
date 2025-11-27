@@ -28,7 +28,7 @@ from app.models import (
     ClaimSource,
     LLMConfig,
 )
-from .prompts import get_claim_extraction_prompt
+from .prompts import get_claim_extraction_prompt_for_source_type
 
 
 # ===== INTERNAL LLM SCHEMAS =====
@@ -52,7 +52,8 @@ class _LLMClaimOutput(BaseModel):
 # ===== CHAIN CONSTRUCTION =====
 
 def build_claim_extraction_chain(
-    llm_config: LLMConfig
+    llm_config: LLMConfig,
+    source_type: str
 ) -> Runnable:
     """
     builds the LCEL chain for claim extraction.
@@ -62,17 +63,19 @@ def build_claim_extraction_chain(
 
     args:
         llm_config: LLM configuration with BaseChatOpenAI instance.
+        source_type: type of data source to select appropriate prompt.
 
     returns:
         a Runnable chain that takes dict input and returns ClaimExtractionOutput
 
     best practices applied:
+    - source-type-specific prompts for optimized extraction
     - structured output binding for type safety
     - low temperature for consistent extractions
     - stateless design - no global state
     """
-    # get the prompt template
-    prompt = get_claim_extraction_prompt()
+    # get the appropriate prompt template for this source type
+    prompt = get_claim_extraction_prompt_for_source_type(source_type)
 
     # use the llm from config directly
     model = llm_config.llm
@@ -126,8 +129,12 @@ def extract_claims(
         >>> print(result.claims[0].source.source_type)
         "original_text"
     """
-    # Build the chain
-    chain = build_claim_extraction_chain(llm_config=llm_config)
+    # Build the chain with source-type-specific prompt
+    source_type = extraction_input.data_source.source_type
+    chain = build_claim_extraction_chain(
+        llm_config=llm_config,
+        source_type=source_type
+    )
 
     # Prepare input for the prompt template
     chain_input = {
@@ -181,8 +188,12 @@ async def extract_claims_async(
     Returns:
         ClaimExtractionOutput containing list of ExtractedClaim objects with unique IDs and source tracking
     """
-    # Build the chain
-    chain = build_claim_extraction_chain(llm_config=llm_config)
+    # Build the chain with source-type-specific prompt
+    source_type = extraction_input.data_source.source_type
+    chain = build_claim_extraction_chain(
+        llm_config=llm_config,
+        source_type=source_type
+    )
 
     # Prepare input for the prompt template
     chain_input = {

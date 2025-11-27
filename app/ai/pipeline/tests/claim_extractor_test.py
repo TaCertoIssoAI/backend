@@ -465,8 +465,11 @@ def test_chain_building():
         )
     )
 
-    # Build chain
-    chain = build_claim_extraction_chain(llm_config=llm_config)
+    # Build chain with default source type
+    chain = build_claim_extraction_chain(
+        llm_config=llm_config,
+        source_type="original_text"
+    )
 
     # Validate
     assert chain is not None, "Chain should be built successfully"
