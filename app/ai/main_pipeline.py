@@ -223,6 +223,11 @@ async def run_fact_check_pipeline(
 
         return fact_check_result
 
+    except Exception as e:
+        # log pipeline failure
+        pipeline_logger.error(f"pipeline failed: {type(e).__name__}: {str(e)}")
+        pipeline_logger.error("full traceback:", exc_info=True)
+        raise
     finally:
         # cleanup thread pool
         pipeline_logger.info("shutting down thread pool")
