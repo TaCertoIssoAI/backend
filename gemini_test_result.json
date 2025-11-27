@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-11-26T22:36:33.151033",
+  "test_claim": "Federal ganhou o Tusca 2025",
+  "model": "gemini-2.0-flash-exp",
+  "google_search_enabled": true,
+  "response": {
+    "text": "Com base nas informações disponíveis e nas buscas realizadas, não é possível verificar de forma conclusiva se a \"Federal\" ganhou o Tusca 2025.\n\n**Veredito:** Não foi possível verificar.\n\n**Justificativa:**\n\n*   As buscas por \"Tusca 2025 resultados\" e \"Campeão Tusca 2025\" não retornaram resultados que confirmem qual instituição venceu a competição geral.\n*   Os resultados da busca indicam que \"Federal\" está associada ao Tusca 2025, possivelmente como uma das instituições participantes [1, 4, 7]. No entanto, isso não significa que tenha sido a campeã geral.\n*   As notícias sobre o Tusca 2025 focam mais nos aspectos gerais do evento, como atrações, público e segurança [2, 3, 5, 6, 8, 9, 11, 12].\n*   A página da Wikipedia sobre a Tusca não traz informações sobre os campeões da edição de 2025 [13].\n*   Um artigo de 2024 menciona que a CAASO USP São Carlos conquistou o tricampeonato [10], mas não há informações sobre o ano de 2025.\n\nPortanto, sem informações mais específicas sobre os resultados da competição, não é possível confirmar se a alegação é verdadeira.\n",
+    "verdict": "Não foi possível verificar"
+  },
+  "grounding_metadata": {
+    "web_search_queries": [
+      "Tusca 2025 resultados",
+      "Campeão Tusca 2025",
+      "Tusca 2025 Federal"
+    ],
+    "grounding_chunks": [
+      {
+        "title": "saocarlosagora.com.br",
+        "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGDBFifl3VtETPk8dTpmZpXm3hae2z2VamOpwBx2lQGLkRJKi6UIZ2oKx-7go9T4XnTecMtKSNUAMLv_ZKDErjlKlwQFnFj185Vg6Vyzfe5gUKrjs_zngYGY0D73IY5gmm2pc7k_e55oAudlHtIEdbVOiaFIo2Sw0gL_I9DGYfp8TTjraztsIo5fzHR3ox25HqObtaSB5xaEk9WXewZum5R-h7tMnoyRN5teNs6hx5STI0OS0hu"
+      }
+    ],
+    "grounding_supports": [
+      {
+        "segment_text": "*   As notícias sobre o Tusca 2025 focam mais nos aspectos gerais do evento, como atrações, público e segurança [2, 3, 5, 6, 8, 9, 11, 12].",
+        "source_indices": [
+          0
+        ]
+      }
+    ]
+  }
+}
