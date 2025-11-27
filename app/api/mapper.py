@@ -28,6 +28,7 @@ def map_content_type_to_source_type(content_type: ContentType) -> ClaimSourceTyp
         ContentType.TEXT: cast(ClaimSourceType, "original_text"),
         ContentType.IMAGE: cast(ClaimSourceType, "image"),
         ContentType.AUDIO: cast(ClaimSourceType, "audio_transcript"),
+        ContentType.VIDEO: cast(ClaimSourceType, "video_transcript"),
     }
     
     return mapping[content_type]
