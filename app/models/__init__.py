@@ -26,6 +26,12 @@ from .config import (
 )
 
 from .commondata import DataSource
+from .analytics import (
+    PipelineAnalytics,
+    ClaimAnalytics,
+    ClaimResponseAnalytics,
+    MessageType,
+)
 
 # Rebuild models that have forward references now that DataSource is imported
 ClaimExtractionInput.model_rebuild()
@@ -48,6 +54,10 @@ __all__ = [
     "ClaimSource",
     "ClaimSourceType",
     "VerdictType",
+    "PipelineAnalytics",
+    "ClaimAnalytics",
+    "ClaimResponseAnalytics",
+    "MessageType",
     "DataSource",
     "DataSourceWithClaims",
     "ClaimVerdict",

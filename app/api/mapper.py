@@ -95,15 +95,15 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
         # build rationale text from verdicts
         if all_verdicts:
-            rationale_parts = ["Resultado da verificação:\n"]
+            rationale_parts = ["Resultado da verificação:"]
             for i, verdict_item in enumerate(all_verdicts, 1):
-                rationale_parts.append(f"\n{i}. Alegação: {verdict_item.claim_text}")
+                rationale_parts.append(f"\nAlegação {i}: {verdict_item.claim_text}")
                 rationale_parts.append(f"Veredito: {verdict_item.verdict}")
                 rationale_parts.append(f"Justificativa: {verdict_item.justification}")
 
             # add overall summary if present
             if result.overall_summary:
-                rationale_parts.append(f"\n\nResumo Geral:\n{result.overall_summary}")
+                rationale_parts.append(f"\nResumo Geral:\n\n{result.overall_summary}")
 
             rationale = "\n".join(rationale_parts)
         else:

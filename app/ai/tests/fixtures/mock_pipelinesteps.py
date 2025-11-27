@@ -11,6 +11,7 @@ from app.models import DataSource, PipelineConfig
 from app.ai.context import EvidenceGatherer
 from app.ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.ai.pipeline.steps import DefaultPipelineSteps
+from app.ai.context.web import WebSearchGatherer
 from app.ai.pipeline.tests.fixtures.mock_linkexpander import hybrid_expand_link_contexts
 
 
@@ -46,7 +47,7 @@ class WithoutBrowsingPipelineSteps(DefaultPipelineSteps):
             list with only GoogleFactCheckGatherer (no WebSearchGatherer)
         """
         return [
-            GoogleFactCheckGatherer(timeout=15.0)
+            GoogleFactCheckGatherer(timeout=15.0),WebSearchGatherer(max_results=5, timeout=15.0)
         ]
 
     def _expand_data_sources_with_links(
