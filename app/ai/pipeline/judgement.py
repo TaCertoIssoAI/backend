@@ -438,10 +438,11 @@ def adjudicate_claims(
             claim_verdicts=claim_verdicts
         )
         data_source_results.append(source_result)
-    
+
     return FactCheckResult(
         results=data_source_results,
-        overall_summary=result.overall_summary if result.overall_summary else None
+        overall_summary=result.overall_summary if result.overall_summary else None,
+        sources_with_claims=adjudication_input.sources_with_claims
     )
 
 
@@ -518,9 +519,10 @@ async def adjudicate_claims_async(
             claim_verdicts=claim_verdicts
         )
         data_source_results.append(source_result)
-    
+
     return FactCheckResult(
         results=data_source_results,
-        overall_summary=result.overall_summary if result.overall_summary else None
+        overall_summary=result.overall_summary if result.overall_summary else None,
+        sources_with_claims=adjudication_input.sources_with_claims
     )
 

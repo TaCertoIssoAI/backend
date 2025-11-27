@@ -467,4 +467,8 @@ class FactCheckResult(BaseModel):
         None,
         description="Optional high-level summary of all fact-check results"
     )
+    sources_with_claims: List[DataSourceWithClaims] = Field(
+        default_factory=list,
+        description="Original data sources with their enriched claims (includes all citations for lookup)"
+    )
 

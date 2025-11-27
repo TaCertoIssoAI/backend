@@ -96,14 +96,58 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
         # build rationale text from verdicts
         if all_verdicts:
             rationale_parts = ["Resultado da verificação:"]
+
+            # add each verdict with its justification
             for i, verdict_item in enumerate(all_verdicts, 1):
-                rationale_parts.append(f"\nAlegação {i}: {verdict_item.claim_text}")
+                rationale_parts.append(f"\n{i}. Alegação: {verdict_item.claim_text}")
                 rationale_parts.append(f"Veredito: {verdict_item.verdict}")
                 rationale_parts.append(f"Justificativa: {verdict_item.justification}")
 
             # add overall summary if present
             if result.overall_summary:
-                rationale_parts.append(f"\nResumo Geral:\n\n{result.overall_summary}")
+                rationale_parts.append(f"\n\nResumo Geral:\n{result.overall_summary}")
+
+            # DEBUG: Check sources_with_claims
+            print(f"\n[MAPPER DEBUG] Number of sources_with_claims: {len(result.sources_with_claims)}")
+            for idx, swc in enumerate(result.sources_with_claims):
+                print(f"[MAPPER DEBUG] Source {idx}: {swc.data_source.id}, {len(swc.enriched_claims)} claims")
+                for claim in swc.enriched_claims:
+                    print(f"[MAPPER DEBUG]   Claim {claim.id}: {len(claim.citations)} citations")
+
+            # build citation lookup map from sources_with_claims
+            claim_citations_map = {}
+            for source_with_claims in result.sources_with_claims:
+                for enriched_claim in source_with_claims.enriched_claims:
+                    claim_citations_map[enriched_claim.id] = enriched_claim.citations
+
+            print(f"[MAPPER DEBUG] Built citation map with {len(claim_citations_map)} entries")
+            print(f"[MAPPER DEBUG] Claim IDs in map: {list(claim_citations_map.keys())}")
+
+            # collect all unique citations from verdicts
+            all_citations = []
+            citation_urls_seen = set()
+            for verdict_item in all_verdicts:
+                print(f"[MAPPER DEBUG] Looking up citations for claim_id: {verdict_item.claim_id}")
+                # lookup citations by claim_id
+                citations = claim_citations_map.get(verdict_item.claim_id, [])
+                print(f"[MAPPER DEBUG]   Found {len(citations)} citations")
+                for citation in citations:
+                    # deduplicate by URL
+                    if citation.url not in citation_urls_seen:
+                        citation_urls_seen.add(citation.url)
+                        all_citations.append(citation)
+
+            print(f"[MAPPER DEBUG] Total unique citations collected: {len(all_citations)}")
+
+            # add sources section if we have citations
+            if all_citations:
+                rationale_parts.append("\n\nFontes:")
+                for i, citation in enumerate(all_citations, 1):
+                    rationale_parts.append(f"\n[{i}] {citation.title}")
+                    rationale_parts.append(f"    Fonte: {citation.publisher}")
+                    rationale_parts.append(f"    URL: {citation.url}")
+                    if citation.date:
+                        rationale_parts.append(f"    Data: {citation.date}")
 
             rationale = "\n".join(rationale_parts)
         else:
