@@ -32,9 +32,19 @@ async def analyze_text(request: Request) -> AnalysisResponse:
     logger.info(f"[{msg_id}] received /text request with {len(request.content)} content item(s)")
 
     try:
+        # log full request for debugging
+        logger.debug(f"[{msg_id}] request = {request}")
+        logger.debug(f"[{msg_id}] request.content = {request.content}")
+        logger.debug(f"[{msg_id}] Number of content items: {len(request.content)}")
+
         # log request details
         for idx, item in enumerate(request.content):
             content_preview = item.textContent[:100] if item.textContent else "None"
+            logger.debug(f"[{msg_id}] === Content Item {idx} ===")
+            logger.debug(f"[{msg_id}]   type: {item.type}")
+            logger.debug(f"[{msg_id}]   textContent length: {len(item.textContent or '')}")
+            logger.debug(f"[{msg_id}]   textContent preview: '{content_preview}...'")
+            logger.debug(f"[{msg_id}]   full textContent:\n{item.textContent}")
             logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
 
         # step 1: convert API request to internal DataSource format
@@ -43,10 +53,8 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get pipeline configuration
-        logger.info(f"[{msg_id}] initializing pipeline configuration")
         config = get_gemini_default_pipeline_config()
         pipeline_step = DefaultPipelineSteps()
-        logger.info(f"[{msg_id}] pipeline config ready")
 
         # step 3: run the async fact-checking pipeline
         logger.info(f"[{msg_id}] starting fact-check pipeline")

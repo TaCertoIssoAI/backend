@@ -12,6 +12,9 @@ from datetime import datetime
 from app.models.api import Request, ContentType,AnalysisResponse
 from app.models.commondata import DataSource
 from app.models.factchecking import ClaimSourceType,FactCheckResult
+from app.observability.logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def map_content_type_to_source_type(content_type: ContentType) -> ClaimSourceType:
@@ -107,12 +110,12 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             if result.overall_summary:
                 rationale_parts.append(f"\n\nResumo Geral:\n{result.overall_summary}")
 
-            # DEBUG: Check sources_with_claims
-            print(f"\n[MAPPER DEBUG] Number of sources_with_claims: {len(result.sources_with_claims)}")
+            # check sources_with_claims for debugging
+            logger.debug(f"Number of sources_with_claims: {len(result.sources_with_claims)}")
             for idx, swc in enumerate(result.sources_with_claims):
-                print(f"[MAPPER DEBUG] Source {idx}: {swc.data_source.id}, {len(swc.enriched_claims)} claims")
+                logger.debug(f"Source {idx}: {swc.data_source.id}, {len(swc.enriched_claims)} claims")
                 for claim in swc.enriched_claims:
-                    print(f"[MAPPER DEBUG]   Claim {claim.id}: {len(claim.citations)} citations")
+                    logger.debug(f"  Claim {claim.id}: {len(claim.citations)} citations")
 
             # build citation lookup map from sources_with_claims
             claim_citations_map = {}
@@ -120,24 +123,24 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
                 for enriched_claim in source_with_claims.enriched_claims:
                     claim_citations_map[enriched_claim.id] = enriched_claim.citations
 
-            print(f"[MAPPER DEBUG] Built citation map with {len(claim_citations_map)} entries")
-            print(f"[MAPPER DEBUG] Claim IDs in map: {list(claim_citations_map.keys())}")
+            logger.debug(f"Built citation map with {len(claim_citations_map)} entries")
+            logger.debug(f"Claim IDs in map: {list(claim_citations_map.keys())}")
 
             # collect all unique citations from verdicts
             all_citations = []
             citation_urls_seen = set()
             for verdict_item in all_verdicts:
-                print(f"[MAPPER DEBUG] Looking up citations for claim_id: {verdict_item.claim_id}")
+                logger.debug(f"Looking up citations for claim_id: {verdict_item.claim_id}")
                 # lookup citations by claim_id
                 citations = claim_citations_map.get(verdict_item.claim_id, [])
-                print(f"[MAPPER DEBUG]   Found {len(citations)} citations")
+                logger.debug(f"  Found {len(citations)} citations")
                 for citation in citations:
                     # deduplicate by URL
                     if citation.url not in citation_urls_seen:
                         citation_urls_seen.add(citation.url)
                         all_citations.append(citation)
 
-            print(f"[MAPPER DEBUG] Total unique citations collected: {len(all_citations)}")
+            logger.debug(f"Total unique citations collected: {len(all_citations)}")
 
             # add sources section if we have citations
             if all_citations:

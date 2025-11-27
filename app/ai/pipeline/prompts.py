@@ -124,13 +124,12 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
 
 IMPORTANTE: Considere verificáveis apenas alegações sobre a realidade fora do texto ou da imagem, que possam ser checadas com dados, documentos, notícias, registros oficiais, estudos etc.
 
-Não trate como verificáveis descrições neutras de cenas fictícias, ilustrações ou charges.
-
 ## O que Extrair:
 
 Extraia alegações que:
 - Podem ser verificadas como verdadeiras ou falsas com base em evidências
 - Fazem afirmações factuais específicas sobre o mundo real
+- Contém Figuras Famosas do mundo real, pessoas importantes e conhecidas (políticos, celebridades, artistas)
 - Contêm entidades nomeadas, eventos ou detalhes específicos
 
 Exemplos de boas alegações:
@@ -138,18 +137,13 @@ Exemplos de boas alegações:
 - "O presidente anunciou um imposto de carbono de R$50 por tonelada"
 - "O estudo examinou 50.000 participantes"
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
+- Famoso Christopher Nolan posou de tal forma em Paris
 
 ## O que NÃO Extrair:
 
 Não extraia:
 - Opiniões puras sem afirmações factuais ("Acho que vacinas são assustadoras")
 - Perguntas sem alegações implícitas ("O que você acha?")
-- Descrições puramente visuais de cenas, ilustrações, quadrinhos, charges ou memes, como:
-  - "A imagem mostra um homem de terno segurando uma mala de dinheiro"
-  - "Na cena há um político em cima de um monte de papéis"
-  - "Vemos um grupo de pessoas segurando cartazes"
-
-Essas descrições dizem apenas o que aparece na imagem, não fazem alegações sobre o mundo real.
 
 ## Casos especiais: descrições de imagens, memes, charges e quadrinhos
 
@@ -179,12 +173,13 @@ Quando o texto for uma descrição de imagem, charge, meme ou ilustração, tent
 Siga estes passos:
 
 1. Identifique o tema ou contexto geral sugerido pelo texto da descrição:
-   - Pode ser política, sociedade, economia, segurança pública, tecnologia, meio ambiente, relações de trabalho, saúde, educação, direitos humanos, etc.
+   - Pode ser política, celebridades, famosos, sociedade, economia, segurança pública, tecnologia, meio ambiente, relações de trabalho, saúde, educação, direitos humanos, etc.
    - Também pode ser sobre um fato específico, um grupo de pessoas, um objeto, uma instituição ou um conceito abstrato.
 
 2. Procure pistas na própria descrição que indiquem a intenção ou crítica:
    - Palavras ou expressões como "critica", "denuncia", "sugere que", "representa", "mostra como", "faz uma metáfora sobre", "mostra a relação entre".
    - Referências a grupos sociais, instituições, categorias de pessoas ou situações do mundo real.
+   - Nomes de pessoas famosas, celebridades, políticos
 
 3. A partir dessas pistas, formule uma ou mais alegações gerais sobre o mundo, mantendo o texto fiel ao que está sugerido:
    - Exemplos:
@@ -286,13 +281,13 @@ IMAGE_CLAIM_EXTRACTION_USER_PROMPT = """Extraia todas as alegações verificáve
 
 Lembre-se:
 - Extraia APENAS alegações autocontidas e verificáveis que podem ser compreendidas sozinhas
-- A alegação deve ser sobre a realidade fora do texto ou da imagem (mundo real), e não apenas sobre a composição visual de uma cena
-- Se for uma descrição de imagem, charge, meme ou ilustração, IGNORE frases que apenas descrevem o que aparece na cena (personagens, objetos, posições) e extraia somente afirmações sobre mundo, sociedade, fatos, grupos, instituições ou conceitos
+- A alegação deve ser sobre a realidade fora do texto ou da imagem (mundo real)
+- Se for uma descrição de imagem, charge, meme ou ilustração, IGNORE frases que apenas descrevem o que aparece na cena (objetos, posições cotidianos) e extraia somente afirmações sobre mundo, famosos, políticos, sociedade, fatos, grupos, instituições ou conceitos
 - Normalize alegações substituindo pronomes e referências vagas por sujeitos específicos
 - Se o texto perguntar "X é verdade?", extraia a alegação X
 - Identifique entidades em cada alegação
 - Forneça breve análise para cada alegação
-- Retorne array vazio se nenhuma alegação autocontida for encontrada
+- Retorne array vazio se nenhuma alegação autocontida for encontradaq
 
 Retorne as alegações como um objeto JSON estruturado."""
 
@@ -319,15 +314,14 @@ VIDEO_CLAIM_EXTRACTION_SYSTEM_PROMPT = """Você é um especialista em extração
 
 Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto fornecido.
 
-IMPORTANTE: Considere verificáveis apenas alegações sobre a realidade fora do vídeo, que possam ser checadas com dados, documentos, notícias, registros oficiais, estudos etc.
-
-Não trate como verificáveis descrições neutras de cenas de vídeos, filmagens ou animações.
+IMPORTANTE: Considere verificáveis apenas alegações sobre a realidade fora do texto ou da imagem, que possam ser checadas com dados, documentos, notícias, registros oficiais, estudos etc.
 
 ## O que Extrair:
 
 Extraia alegações que:
 - Podem ser verificadas como verdadeiras ou falsas com base em evidências
 - Fazem afirmações factuais específicas sobre o mundo real
+- Contém Figuras Famosas do mundo real, pessoas importantes e conhecidas (políticos, celebridades, artistas)
 - Contêm entidades nomeadas, eventos ou detalhes específicos
 
 Exemplos de boas alegações:
@@ -335,94 +329,65 @@ Exemplos de boas alegações:
 - "O presidente anunciou um imposto de carbono de R$50 por tonelada"
 - "O estudo examinou 50.000 participantes"
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
+- Famoso Christopher Nolan posou de tal forma em Paris
 
 ## O que NÃO Extrair:
 
 Não extraia:
 - Opiniões puras sem afirmações factuais ("Acho que vacinas são assustadoras")
 - Perguntas sem alegações implícitas ("O que você acha?")
-- Descrições puramente visuais ou sonoras de cenas de vídeo, como:
-  - "O vídeo mostra um homem caminhando em uma rua vazia"
-  - "A gravação exibe um político em um palanque acenando para o público"
-  - "Aparece um grupo de pessoas segurando cartazes em uma praça"
 
-Essas descrições dizem apenas o que aparece ou se ouve no vídeo, não fazem alegações sobre o mundo real.
+## Casos especiais: descrições de imagens, memes, charges e quadrinhos
 
-## Casos especiais: descrições de vídeos, clipes, gravações e animações
-
-O texto que você receber pode ser uma descrição de um vídeo, filmagem, clipe, gravação de celular, animação, montagem ou trecho de programa.
+O texto que você receber pode ser uma descrição de uma imagem, ilustração, meme ou charge.
 
 Nesses casos:
 
-1. Ignore alegações que falam apenas sobre a composição visual ou sonora da cena dentro do vídeo.
-   - Exemplo: "O vídeo mostra um trabalhador sendo esmagado por uma engrenagem gigante" -> não extrair.
+1. Ignore alegações que falam apenas sobre a composição visual da cena dentro da imagem.
+   - Exemplo: "A imagem mostra um trabalhador sendo esmagado por uma engrenagem gigante" -> não extrair.
 
-2. Só extraia alegações quando o texto fizer afirmações explícitas sobre a realidade fora do vídeo, por exemplo:
-   - "O vídeo denuncia a exploração de trabalhadores por grandes empresas"
-   - "A gravação representa como o governo aumenta impostos sobre a classe média"
-   - "O clipe sugere que a mídia mente com frequência sobre economia"
+2. Só extraia alegações quando o texto fizer afirmações explícitas sobre a realidade fora da imagem, por exemplo:
+   - "A charge critica a exploração de trabalhadores por grandes empresas"
+   - "A ilustração representa como o governo aumenta impostos sobre a classe média"
+   - "O meme sugere que a mídia mente com frequência sobre economia"
 
    Nestes casos você pode extrair:
    - "Grandes empresas exploram trabalhadores"
    - "O governo aumenta impostos sobre a classe média"
    - "A mídia mente com frequência sobre economia"
 
-3. Se o texto for apenas uma descrição visual ou sonora sem nenhuma afirmação sobre a realidade, retorne um array vazio em "claims".
+3. Se o texto for apenas uma descrição visual sem nenhuma afirmação sobre a realidade, retorne um array vazio em "claims".
 
-## Contexto geral e mensagem do vídeo
+## Contexto geral e mensagem da imagem
 
-Quando o texto for uma descrição de vídeo, clipe, gravação ou animação, tente identificar se ele sugere uma mensagem mais ampla sobre o mundo, a sociedade ou algum conceito.
+Quando o texto for uma descrição de imagem, charge, meme ou ilustração, tente identificar se ele sugere uma mensagem mais ampla sobre o mundo, a sociedade ou algum conceito.
 
 Siga estes passos:
 
 1. Identifique o tema ou contexto geral sugerido pelo texto da descrição:
-   - Pode ser política, sociedade, economia, segurança pública, tecnologia, meio ambiente, relações de trabalho, saúde, educação, direitos humanos, etc.
+   - Pode ser política, celebridades, famosos, sociedade, economia, segurança pública, tecnologia, meio ambiente, relações de trabalho, saúde, educação, direitos humanos, etc.
    - Também pode ser sobre um fato específico, um grupo de pessoas, um objeto, uma instituição ou um conceito abstrato.
 
 2. Procure pistas na própria descrição que indiquem a intenção ou crítica:
    - Palavras ou expressões como "critica", "denuncia", "sugere que", "representa", "mostra como", "faz uma metáfora sobre", "mostra a relação entre".
    - Referências a grupos sociais, instituições, categorias de pessoas ou situações do mundo real.
+   - Nomes de pessoas famosas, celebridades, políticos
 
 3. A partir dessas pistas, formule uma ou mais alegações gerais sobre o mundo, mantendo o texto fiel ao que está sugerido:
    - Exemplos:
-     - Se a descrição diz que o vídeo "critica como as empresas tratam os consumidores", você pode extrair:
+     - Se a descrição diz que a imagem "critica como as empresas tratam os consumidores", você pode extrair:
        - "Empresas tratam consumidores de forma desrespeitosa."
-     - Se a descrição diz que o vídeo "representa a vigilância constante das pessoas por empresas de tecnologia", você pode extrair:
+     - Se a descrição diz que a imagem "representa a vigilância constante das pessoas por empresas de tecnologia", você pode extrair:
        - "Empresas de tecnologia monitoram constantemente as pessoas."
-     - Se a descrição diz que o vídeo "mostra como grupos vulneráveis sofrem mais com crises econômicas", você pode extrair:
+     - Se a descrição diz que a imagem "mostra como grupos vulneráveis sofrem mais com crises econômicas", você pode extrair:
        - "Grupos vulneráveis sofrem mais impactos em épocas de crise econômica."
 
 4. Não invente mensagens que não estejam sugeridas de forma razoável pelo texto:
    - Não extrapole além do que o texto permite inferir de forma clara.
    - Se a descrição não der nenhuma pista de mensagem social, política, econômica ou conceitual, não crie alegações a partir de suposições.
 
-5. Sempre que gerar uma alegação a partir da mensagem geral do vídeo, escreva a alegação como uma afirmação factual sobre o mundo:
+5. Sempre que gerar uma alegação a partir da mensagem geral da imagem, escreva a alegação como uma afirmação factual sobre o mundo:
    - Ela deve poder ser checada com dados, relatos, estudos, documentos, registros históricos ou outras fontes de evidência.
-
-## Alegações sobre autenticidade, edição ou geração por IA em vídeo
-
-Se o texto mencionar, sugerir ou levantar dúvidas sobre:
-- edição digital de vídeo,
-- manipulação ou montagem,
-- cortes de contexto,
-- deepfake,
-- adulteração de áudio ou dublagem,
-- artificialidade,
-- incoerências visuais ou sonoras,
-- aparência de geração por IA,
-
-então você deve extrair alegações sobre a autenticidade, edição, contexto ou origem do vídeo, DESDE QUE tais alegações sejam explicitamente mencionadas ou claramente sugeridas pelo texto.
-
-Exemplos de alegações válidas para extrair (quando mencionadas no texto):
-- "O vídeo foi editado para parecer mais dramático."
-- "A cena mostrada no vídeo não aconteceu na vida real."
-- "O rosto da pessoa no vídeo foi trocado usando técnica de deepfake."
-- "O áudio do vídeo foi adulterado."
-- "O vídeo apresenta sinais típicos de geração por IA."
-- "O vídeo foi tirado de contexto para enganar o público."
-
-NÃO faça julgamento forense por conta própria.
-Apenas transforme em alegações verificáveis aquilo que o texto afirma ou sugere claramente.
 
 ## Diretrizes gerais:
 
@@ -462,18 +427,29 @@ Apenas transforme em alegações verificáveis aquilo que o texto afirma ou suge
    - Texto: "É verdade que a vacina X causa infertilidade?"
    - Extraia: "A vacina X causa infertilidade"
 
-## Exemplo genérico com descrição de vídeo:
+Se o texto mencionar, sugerir ou levantar dúvidas sobre:
+- edição digital,
+- manipulação,
+- montagem,
+- adulteração,
+- artificialidade,
+- incoerências visuais,
+- aparência de geração por IA,
+
+então você deve extrair alegações sobre a autenticidade ou origem da imagem, DESDE QUE tais alegações sejam explicitamente mencionadas ou claramente sugeridas pelo texto.
+
+## Exemplo genérico com descrição de imagem:
 
 Texto de entrada:
-"Descrição do vídeo: O clipe mostra uma bota gigante com a palavra 'IMPOSTOS' descendo sobre um grupo de pessoas. A narração diz que o vídeo critica como os impostos pesam sobre a população."
+"Descrição da imagem: A figura mostra uma charge. Um grupo de pessoas está embaixo de uma grande bota com a palavra 'IMPOSTOS'. A legenda diz que a charge critica como os impostos pesam sobre a população."
 
 Saída esperada:
 - Extraia apenas:
   - "Os impostos pesam sobre a população."
 
 Não extraia:
-- "Uma bota gigante desce sobre um grupo de pessoas"
-- "Há uma bota com a palavra 'IMPOSTOS' no vídeo"
+- "Um grupo de pessoas está embaixo de uma grande bota"
+- "Há uma bota com a palavra 'IMPOSTOS'"
 
 ## Formato de Saída:
 
@@ -492,20 +468,21 @@ Nota: Não inclua os campos "id" ou "source" - eles serão adicionados automatic
 
 VIDEO_CLAIM_EXTRACTION_USER_PROMPT = """Extraia todas as alegações verificáveis do seguinte texto extraído de um vídeo.
 
-====Texto Extraído (transcrito) do Vídeo ====
+====Texto Extraído (transcrito) da Imagem ====
 {text}
 
 Lembre-se:
 - Extraia APENAS alegações autocontidas e verificáveis que podem ser compreendidas sozinhas
-- A alegação deve ser sobre a realidade fora do vídeo (mundo real), e não apenas sobre a composição visual ou sonora de uma cena
-- Se for uma descrição de vídeo, clipe, gravação ou animação, IGNORE frases que apenas descrevem o que aparece ou se ouve na cena (personagens, objetos, ações, sons) e extraia somente afirmações sobre mundo, sociedade, fatos, grupos, instituições, conceitos ou autenticidade do vídeo
+- A alegação deve ser sobre a realidade fora do texto ou da imagem (mundo real)
+- Se for uma descrição de vídeo, curta, meme, IGNORE frases que apenas descrevem o que aparece na cena (objetos, posições cotidianos) e extraia somente afirmações sobre mundo, famosos, políticos, sociedade, fatos, grupos, instituições ou conceitos
 - Normalize alegações substituindo pronomes e referências vagas por sujeitos específicos
 - Se o texto perguntar "X é verdade?", extraia a alegação X
 - Identifique entidades em cada alegação
 - Forneça breve análise para cada alegação
-- Retorne array vazio se nenhuma alegação autocontida for encontrada
+- Retorne array vazio se nenhuma alegação autocontida for encontradaq
 
 Retorne as alegações como um objeto JSON estruturado."""
+
 
 
 def get_video_claim_extraction_prompt() -> ChatPromptTemplate:
