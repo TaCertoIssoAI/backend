@@ -372,81 +372,49 @@ def adjudicate_claims(
     logger.debug("starting adjudicate_claims function")
 
     # Build the chain
-    print("[ADJUDICATOR DEBUG] Building LangChain...")
     try:
         chain = build_adjudication_chain(llm_config=llm_config)
-        print("[ADJUDICATOR DEBUG] Chain built successfully")
     except Exception as e:
         print(f"[ADJUDICATOR ERROR] Failed to build chain: {e}")
         raise
 
     # Format the input for the LLM
-    print("[ADJUDICATOR DEBUG] Formatting adjudication input...")
     try:
         formatted_sources = format_adjudication_input(adjudication_input)
-        print(f"[ADJUDICATOR DEBUG] Formatted input length: {len(formatted_sources)} chars")
-        print(f"[ADJUDICATOR DEBUG] Formatted input preview (first 500 chars):")
-        print(formatted_sources[:500])
     except Exception as e:
         print(f"[ADJUDICATOR ERROR] Failed to format input: {e}")
         import traceback
         traceback.print_exc()
         raise
-    
+
     # Prepare additional context
-    print("[ADJUDICATOR DEBUG] Preparing additional context...")
     additional_context_str = ""
     if adjudication_input.additional_context:
         additional_context_str = f"\n**Contexto Adicional**: {adjudication_input.additional_context}\n"
-        print(f"[ADJUDICATOR DEBUG] Additional context added: {len(additional_context_str)} chars")
-    else:
-        print("[ADJUDICATOR DEBUG] No additional context")
 
     # Prepare input for the prompt template
-    print("[ADJUDICATOR DEBUG] Preparing chain input...")
     chain_input = {
         "formatted_sources_and_claims": formatted_sources,
         "additional_context": additional_context_str
     }
-    print(f"[ADJUDICATOR DEBUG] Chain input keys: {list(chain_input.keys())}")
 
     # Log input metrics for performance analysis
     _log_input_metrics(adjudication_input, formatted_sources, additional_context_str)
 
     # Invoke the chain - gets LLM output
-    print("[ADJUDICATOR DEBUG] Invoking LLM chain...")
     try:
         result: _LLMAdjudicationOutput = chain.invoke(chain_input)
-        print("[ADJUDICATOR DEBUG] LLM invocation completed successfully")
     except Exception as e:
         print(f"[ADJUDICATOR ERROR] LLM invocation failed: {e}")
         import traceback
         traceback.print_exc()
         raise
-    
-    # Debug: Print what LLM returned
-    print("\n[DEBUG] LLM returned:")
-    print(f"  - Number of data source results: {len(result.results)}")
-    print(f"  - Overall summary present: {bool(result.overall_summary)}")
-    if result.results:
-        print(f"  - First result has {len(result.results[0].claim_verdicts)} verdict(s)")
-        for idx, res in enumerate(result.results):
-            print(f"  - Result {idx+1}: data_source_id={res.data_source_id}, verdicts={len(res.claim_verdicts)}")
-    else:
-        print("  - WARNING: results list is empty!")
-        print(f"  - Raw result object: {result}")
 
     # Convert LLM output to FactCheckResult using helper functions
     data_source_results: List[DataSourceResult] = []
 
-    print(f"\n[ADJUDICATOR DEBUG] Processing {len(result.results)} LLM results...")
-
     # Process each LLM result
     for idx, llm_source_result in enumerate(result.results):
-        print(f"\n[ADJUDICATOR DEBUG] Processing LLM result {idx+1}/{len(result.results)}:")
-        print(f"  - data_source_id from LLM: {llm_source_result.data_source_id}")
-        print(f"  - claim_verdicts count from LLM: {len(llm_source_result.claim_verdicts)}")
-
         # Match LLM result to original input data source
         source_with_claims = get_data_source_with_claims(
             llm_source_result=llm_source_result,
@@ -456,9 +424,6 @@ def adjudicate_claims(
         if not source_with_claims:
             print(f"[ADJUDICATOR WARNING] No source_with_claims match found for result {idx}")
             continue  # Skip if no match found
-
-        print(f"[ADJUDICATOR DEBUG] Matched to source: {source_with_claims.data_source.id}")
-        print(f"[ADJUDICATOR DEBUG] Source has {len(source_with_claims.enriched_claims)} enriched claims")
         
         # Convert LLM verdicts to ClaimVerdict objects with proper IDs
         claim_verdicts = get_claim_verdicts(

@@ -190,8 +190,6 @@ class GoogleFactCheckGatherer:
 
                 # log response metadata
                 print(f"\n[GOOGLE API] response status: {response.status_code}")
-                print(f"[GOOGLE API] response headers: {dict(response.headers)}")
-
                 response.raise_for_status()
 
             # parse JSON response

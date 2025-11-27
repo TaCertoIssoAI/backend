@@ -29,11 +29,6 @@ def log_adjudication_input(
         llm_config: LLM configuration for adjudication
     """
     logger = get_logger(__name__, PipelineStep.ADJUDICATION)
-
-    logger.info("=" * 80)
-    logger.info("building adjudication input")
-    logger.info("=" * 80)
-
     logger.info(
         f"adjudication input created successfully: "
         f"{len(adjudication_input.sources_with_claims)} data sources"

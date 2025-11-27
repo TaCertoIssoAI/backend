@@ -164,10 +164,6 @@ class ThreadPoolManager:
             self.dispatcher_thread.start()
 
             self._initialized = True
-            logger.info(
-                f"thread pool manager initialized with {self.max_workers} workers",
-                extra={"max_workers": self.max_workers}
-            )
 
     def shutdown(self, wait: bool = True, timeout: Optional[float] = None):
         """
@@ -179,8 +175,6 @@ class ThreadPoolManager:
         """
         if not self._initialized:
             return
-
-        logger.info("shutting down thread pool manager")
 
         # stop dispatcher
         self.dispatcher_running = False
@@ -196,7 +190,6 @@ class ThreadPoolManager:
             self.executor = None
 
         self._initialized = False
-        logger.info("thread pool manager shut down")
 
     def submit(
         self,
@@ -242,16 +235,6 @@ class ThreadPoolManager:
         # add to priority queue
         self.job_queue.put(job)
 
-        logger.info(
-            f"job queued: {job.id}",
-            extra={
-                "job_id": job.id,
-                "operation": operation_type.name,
-                "status": "QUEUED",
-                "queue_size": self.job_queue.qsize()
-            }
-        )
-
         return job.future
 
     async def submit_async(
@@ -295,8 +278,6 @@ class ThreadPoolManager:
         continuously pulls jobs from priority queue and submits them to thread pool.
         runs in dedicated dispatcher thread.
         """
-        logger.info("dispatcher started")
-
         while self.dispatcher_running or not self.job_queue.empty():
             try:
                 # get next job from priority queue (1 second timeout)
@@ -318,8 +299,6 @@ class ThreadPoolManager:
             except Exception as e:
                 logger.error(f"dispatcher error: {e}", exc_info=True)
 
-        logger.info("dispatcher stopped")
-
     def _execute_job(self, job: Job):
         """
         execute a job and set result/exception on future.
@@ -327,21 +306,11 @@ class ThreadPoolManager:
         args:
             job: job to execute
         """
-        thread_name = threading.current_thread().name
-
-        print(f"[THREAD] Job {job.id} ({job.operation_type.name}) STARTED in {thread_name}")
-
-        # NOTE: logger.info/error calls removed from _execute_job to avoid deadlock
-        # Standard Python logger uses locks that can block worker threads
-        # Use print statements for thread pool debugging instead
-
         start_time = time.time()
 
         try:
             # execute function
-            print(f"[THREAD] Job {job.id} calling {job.func.__name__}...")
             result = job.func(*job.args, **job.kwargs)
-            print(f"[THREAD] Job {job.id} returned {type(result).__name__}")
 
             # set result on future
             job.future.set_result(result)
@@ -349,9 +318,6 @@ class ThreadPoolManager:
             # put result in completion queues for consumer pattern
             self.completion_queues[job.operation_type].put((job.id, result))
             self.global_completion_queue.put((job.operation_type, job.id, result))
-
-            elapsed = time.time() - start_time
-            print(f"[THREAD] Job {job.id} COMPLETED in {elapsed:.2f}s")
 
         except Exception as e:
             # set exception on future
@@ -361,8 +327,9 @@ class ThreadPoolManager:
             self.completion_queues[job.operation_type].put((job.id, e))
             self.global_completion_queue.put((job.operation_type, job.id, e))
 
+            # only print on error for debugging
             elapsed = time.time() - start_time
-            print(f"[THREAD] Job {job.id} FAILED in {elapsed:.2f}s: {type(e).__name__}: {e}")
+            print(f"[THREAD ERROR] Job {job.id} ({job.operation_type.name}) FAILED in {elapsed:.2f}s: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
 
