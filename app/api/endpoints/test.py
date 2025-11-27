@@ -3,8 +3,9 @@ Test endpoints for development and debugging.
 
 provides alternative endpoints with different configurations for testing purposes.
 """
-from uu import Error
 import uuid
+import time
+import traceback
 from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
 from app.api import request_to_data_sources,fact_check_result_to_response
@@ -13,8 +14,10 @@ from app.config.default import get_default_pipeline_config
 from app.config.azure_models import get_azure_default_pipeline_config
 from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.tests.fixtures.mock_pipelinesteps import WithoutBrowsingPipelineSteps
+from app.observability.logger.logger import get_logger
 
 router = APIRouter()
+logger = get_logger(__name__)
 
 
 @router.post("/text-without-browser", response_model=AnalysisResponse)
@@ -36,28 +39,59 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
     accepts an array of content items, each with textContent and type.
     returns detailed analysis with verdict, rationale, and citations.
     """
+    start_time = time.time()
+    msg_id = uuid.uuid4()
+
+    logger.info(f"[{msg_id}] received /text-without-browser request with {len(request.content)} content item(s)")
+
     try:
-        msg_id =  uuid.uuid4()
+        # log request details
+        for idx, item in enumerate(request.content):
+            content_preview = item.textContent[:100] if item.textContent else "None"
+            logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
+
         # step 1: convert API request to internal DataSource format
+        logger.info(f"[{msg_id}] converting request to data sources")
         data_sources = request_to_data_sources(request)
+        logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get pipeline configuration
+        logger.info(f"[{msg_id}] initializing gemini pipeline config (no-browser mode)")
         config = get_gemini_default_pipeline_config()
 
         # step 3: use WithoutBrowsingPipelineSteps (hybrid mock/real)
         pipeline_steps = WithoutBrowsingPipelineSteps()
+        logger.info(f"[{msg_id}] using WithoutBrowsingPipelineSteps (mocks social media, real simple scraping)")
 
         # step 4: run the async fact-checking pipeline
+        logger.info(f"[{msg_id}] starting fact-check pipeline")
+        pipeline_start = time.time()
         fact_check_result = await run_fact_check_pipeline(
             data_sources,
             config,
             pipeline_steps
         )
-        try:
-            return fact_check_result_to_response(msg_id,fact_check_result)
-        except Exception as e:
-            print("memou ein", e)
+        pipeline_duration = (time.time() - pipeline_start) * 1000
+        logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
+
+        # log pipeline results
+        total_claims = sum(len(ds_result.claim_verdicts) for ds_result in fact_check_result.results)
+        logger.info(f"[{msg_id}] extracted {total_claims} claim(s) from {len(fact_check_result.results)} data source(s)")
+
+        # build response
+        logger.info(f"[{msg_id}] building response")
+        response = fact_check_result_to_response(msg_id, fact_check_result)
+
+        total_duration = (time.time() - start_time) * 1000
+        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms")
+
+        return response
+
     except Exception as e:
+        total_duration = (time.time() - start_time) * 1000
+        error_type = type(e).__name__
+        logger.error(f"[{msg_id}] request failed after {total_duration:.0f}ms: {error_type}: {str(e)}")
+        logger.error(f"[{msg_id}] traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Error processing request: {str(e)}"
@@ -93,28 +127,49 @@ async def analyze_text_no_browser_azure(request: Request) -> AnalysisResponse:
     accepts an array of content items, each with textContent and type.
     returns detailed analysis with verdict, rationale, and citations.
     """
+    start_time = time.time()
+    msg_id = uuid.uuid4()
+
+    logger.info(f"[{msg_id}] received /text-no-browser-azure request with {len(request.content)} content item(s)")
+
     try:
+        # log request details
+        for idx, item in enumerate(request.content):
+            content_preview = item.textContent[:100] if item.textContent else "None"
+            logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
+
         # step 1: convert API request to internal DataSource format
+        logger.info(f"[{msg_id}] converting request to data sources")
         data_sources = request_to_data_sources(request)
+        logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get azure pipeline configuration
+        logger.info(f"[{msg_id}] initializing azure openai pipeline config")
         config = get_azure_default_pipeline_config()
 
         # step 3: use WithoutBrowsingPipelineSteps (hybrid mock/real)
         pipeline_steps = WithoutBrowsingPipelineSteps()
+        logger.info(f"[{msg_id}] using WithoutBrowsingPipelineSteps (mocks social media, real simple scraping)")
 
         # step 4: run the async fact-checking pipeline
+        logger.info(f"[{msg_id}] starting fact-check pipeline with azure models")
+        pipeline_start = time.time()
         fact_check_result = await run_fact_check_pipeline(
             data_sources,
             config,
             pipeline_steps
         )
+        pipeline_duration = (time.time() - pipeline_start) * 1000
+        logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
 
         # step 5: process results and build response
         # collect all verdicts from all data sources
         all_verdicts = []
         for ds_result in fact_check_result.results:
             all_verdicts.extend(ds_result.claim_verdicts)
+
+        total_claims = len(all_verdicts)
+        logger.info(f"[{msg_id}] extracted {total_claims} claim(s) from {len(fact_check_result.results)} data source(s)")
 
         # build rationale text from verdicts
         if all_verdicts:
@@ -147,14 +202,22 @@ async def analyze_text_no_browser_azure(request: Request) -> AnalysisResponse:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
             overall_verdict = "no_claims"
 
+        total_duration = (time.time() - start_time) * 1000
+        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms, verdict={overall_verdict}")
+
         return AnalysisResponse(
-            message_id=data_sources[0].id if data_sources else "unknown",
+            message_id=str(msg_id),
             verdict=overall_verdict,
             rationale=rationale,
             responseWithoutLinks=rationale,
-            processing_time_ms=0  # TODO: measure actual time
+            processing_time_ms=int(total_duration)
         )
+
     except Exception as e:
+        total_duration = (time.time() - start_time) * 1000
+        error_type = type(e).__name__
+        logger.error(f"[{msg_id}] request failed after {total_duration:.0f}ms: {error_type}: {str(e)}")
+        logger.error(f"[{msg_id}] traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Error processing request with Azure OpenAI: {str(e)}"
@@ -186,28 +249,49 @@ async def analyze_text_no_browser_gemini(request: Request) -> AnalysisResponse:
     accepts an array of content items, each with textContent and type.
     returns detailed analysis with verdict, rationale, and citations.
     """
+    start_time = time.time()
+    msg_id = uuid.uuid4()
+
+    logger.info(f"[{msg_id}] received /text-no-browser-gemini request with {len(request.content)} content item(s)")
+
     try:
+        # log request details
+        for idx, item in enumerate(request.content):
+            content_preview = item.textContent[:100] if item.textContent else "None"
+            logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
+
         # step 1: convert API request to internal DataSource format
+        logger.info(f"[{msg_id}] converting request to data sources")
         data_sources = request_to_data_sources(request)
+        logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get gemini pipeline configuration
+        logger.info(f"[{msg_id}] initializing gemini pipeline config with thinking mode")
         config = get_gemini_default_pipeline_config()
 
         # step 3: use WithoutBrowsingPipelineSteps (hybrid mock/real)
         pipeline_steps = WithoutBrowsingPipelineSteps()
+        logger.info(f"[{msg_id}] using WithoutBrowsingPipelineSteps (mocks social media, real simple scraping)")
 
         # step 4: run the async fact-checking pipeline
+        logger.info(f"[{msg_id}] starting fact-check pipeline with gemini models")
+        pipeline_start = time.time()
         fact_check_result = await run_fact_check_pipeline(
             data_sources,
             config,
             pipeline_steps
         )
+        pipeline_duration = (time.time() - pipeline_start) * 1000
+        logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
 
         # step 5: process results and build response
         # collect all verdicts from all data sources
         all_verdicts = []
         for ds_result in fact_check_result.results:
             all_verdicts.extend(ds_result.claim_verdicts)
+
+        total_claims = len(all_verdicts)
+        logger.info(f"[{msg_id}] extracted {total_claims} claim(s) from {len(fact_check_result.results)} data source(s)")
 
         # build rationale text from verdicts
         if all_verdicts:
@@ -240,14 +324,22 @@ async def analyze_text_no_browser_gemini(request: Request) -> AnalysisResponse:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
             overall_verdict = "no_claims"
 
+        total_duration = (time.time() - start_time) * 1000
+        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms, verdict={overall_verdict}")
+
         return AnalysisResponse(
-            message_id=data_sources[0].id if data_sources else "unknown",
+            message_id=str(msg_id),
             verdict=overall_verdict,
             rationale=rationale,
             responseWithoutLinks=rationale,
-            processing_time_ms=0  # TODO: measure actual time
+            processing_time_ms=int(total_duration)
         )
+
     except Exception as e:
+        total_duration = (time.time() - start_time) * 1000
+        error_type = type(e).__name__
+        logger.error(f"[{msg_id}] request failed after {total_duration:.0f}ms: {error_type}: {str(e)}")
+        logger.error(f"[{msg_id}] traceback:\n{traceback.format_exc()}")
         raise HTTPException(
             status_code=500,
             detail=f"Error processing request with Google Gemini: {str(e)}"
