@@ -33,6 +33,9 @@ from app.ai.context import (
 from app.ai.context.web import (
     WebSearchGatherer
 )
+from app.observability.logger.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 
@@ -78,7 +81,7 @@ async def gather_evidence_async(
 
     # process each claim
     for claim in retrieval_input.claims:
-        print(f"\n[EVIDENCE GATHERING] processing claim: {claim.text[:80]}...")
+        logger.info(f"processing claim: {claim.text[:80]}...")
 
         # gather citations from all sources
         all_citations: List[Citation] = []
@@ -87,22 +90,22 @@ async def gather_evidence_async(
             gatherer_name = gatherer.source_name if hasattr(gatherer, 'source_name') else type(gatherer).__name__
 
             try:
-                print(f"[EVIDENCE GATHERING]   - querying {gatherer_name}...")
+                logger.debug(f"querying {gatherer_name}...")
                 citations = await gatherer.gather(claim)
 
                 if citations:
-                    print(f"[EVIDENCE GATHERING]     ✓ {gatherer_name}: {len(citations)} citation(s) found")
+                    logger.info(f"{gatherer_name}: {len(citations)} citation(s) found")
                 else:
-                    print(f"[EVIDENCE GATHERING]     ⚠ {gatherer_name}: no citations found")
+                    logger.warning(f"{gatherer_name}: no citations found")
 
                 all_citations.extend(citations)
 
             except asyncio.TimeoutError:
-                print(f"[EVIDENCE GATHERING]     ✗ {gatherer_name}: TIMEOUT - operation exceeded time limit")
+                logger.error(f"{gatherer_name}: TIMEOUT - operation exceeded time limit")
             except Exception as e:
-                print(f"[EVIDENCE GATHERING]     ✗ {gatherer_name}: ERROR - {type(e).__name__}: {str(e)[:100]}")
+                logger.error(f"{gatherer_name}: ERROR - {type(e).__name__}: {str(e)[:100]}")
 
-        print(f"[EVIDENCE GATHERING]   total citations for this claim: {len(all_citations)}")
+        logger.info(f"total citations for this claim: {len(all_citations)}")
 
         # create enriched claim with citations
         # EnrichedClaim extends ExtractedClaim, so we copy all fields

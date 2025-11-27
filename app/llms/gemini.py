@@ -27,6 +27,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from google import genai
 from google.genai import types
+from google.genai.errors import ServerError
 
 from app.observability.logger.logger import get_logger
 
@@ -244,21 +245,24 @@ class GeminiChatModel(BaseChatModel):
 
                 return ChatResult(generations=[generation])
 
-            except (httpx.ConnectError, httpx.RemoteProtocolError, ssl.SSLError) as e:
+            except (httpx.ConnectError, httpx.RemoteProtocolError, ssl.SSLError, ServerError) as e:
                 last_exception = e
                 http_client.close()
 
                 if attempt < max_retries - 1:
                     # exponential backoff
                     delay = base_delay * (2 ** attempt)
+
+                    # check if it's a 503 rate limit error
+                    error_type = "rate limit/overload" if isinstance(e, ServerError) else "connection"
                     logger.warning(
-                        f"gemini API connection error (attempt {attempt + 1}/{max_retries}): {str(e)}. "
+                        f"gemini API {error_type} error (attempt {attempt + 1}/{max_retries}): {str(e)}. "
                         f"retrying in {delay}s..."
                     )
                     time.sleep(delay)
                 else:
                     logger.error(
-                        f"gemini API connection failed after {max_retries} attempts: {str(e)}"
+                        f"gemini API failed after {max_retries} attempts: {str(e)}"
                     )
 
             except Exception as e:
@@ -279,7 +283,7 @@ class GeminiChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """
-        async version of _generate.
+        async version of _generate with retry logic.
 
         args:
             messages: list of langchain messages
@@ -290,37 +294,73 @@ class GeminiChatModel(BaseChatModel):
         returns:
             ChatResult with generated response
         """
-        # initialize async client with api key if provided
-        client_kwargs = {}
-        if self.google_api_key:
-            client_kwargs["api_key"] = self.google_api_key
-        client = genai.Client(**client_kwargs)
+        import asyncio
 
-        # convert messages
-        system_instruction, user_content = self._convert_messages_to_gemini_format(messages)
+        # retry configuration
+        max_retries = 3
+        base_delay = 1.0
+        last_exception = None
 
-        # build config
-        gen_config = self._build_generation_config()
+        for attempt in range(max_retries):
+            try:
+                # initialize async client with api key if provided
+                client_kwargs = {}
+                if self.google_api_key:
+                    client_kwargs["api_key"] = self.google_api_key
+                client = genai.Client(**client_kwargs)
 
-        # add system instruction if present
-        if system_instruction:
-            config_dict = gen_config.to_dict() if hasattr(gen_config, 'to_dict') else {}
-            config_dict["system_instruction"] = system_instruction
-            gen_config = types.GenerateContentConfig(**config_dict)
+                # convert messages
+                system_instruction, user_content = self._convert_messages_to_gemini_format(messages)
 
-        # call gemini api asynchronously
-        # note: using aio client for true async support
-        response = await client.aio.models.generate_content(
-            model=self.model,
-            contents=user_content,
-            config=gen_config
-        )
+                # build config
+                gen_config = self._build_generation_config()
 
-        # convert response to langchain format
-        message = AIMessage(content=response.text)
-        generation = ChatGeneration(message=message)
+                # add system instruction if present
+                if system_instruction:
+                    config_dict = gen_config.to_dict() if hasattr(gen_config, 'to_dict') else {}
+                    config_dict["system_instruction"] = system_instruction
+                    gen_config = types.GenerateContentConfig(**config_dict)
 
-        return ChatResult(generations=[generation])
+                # call gemini api asynchronously
+                # note: using aio client for true async support
+                response = await client.aio.models.generate_content(
+                    model=self.model,
+                    contents=user_content,
+                    config=gen_config
+                )
+
+                # convert response to langchain format
+                message = AIMessage(content=response.text)
+                generation = ChatGeneration(message=message)
+
+                return ChatResult(generations=[generation])
+
+            except (ServerError, httpx.ConnectError, httpx.RemoteProtocolError) as e:
+                last_exception = e
+
+                if attempt < max_retries - 1:
+                    # exponential backoff
+                    delay = base_delay * (2 ** attempt)
+
+                    # check if it's a 503 rate limit error
+                    error_type = "rate limit/overload" if isinstance(e, ServerError) else "connection"
+                    logger.warning(
+                        f"gemini API {error_type} error (async, attempt {attempt + 1}/{max_retries}): {str(e)}. "
+                        f"retrying in {delay}s..."
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        f"gemini API failed after {max_retries} async attempts: {str(e)}"
+                    )
+
+            except Exception as e:
+                # for non-retryable errors, fail immediately
+                logger.error(f"gemini API non-retryable error: {str(e)}")
+                raise
+
+        # if we get here, all retries failed
+        raise last_exception
 
     def with_structured_output(
         self,

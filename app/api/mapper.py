@@ -102,7 +102,7 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
             # add each verdict with its justification
             for i, verdict_item in enumerate(all_verdicts, 1):
-                rationale_parts.append(f"\n{i}. Alegação: {verdict_item.claim_text}")
+                rationale_parts.append(f"\nAlegação {i}: {verdict_item.claim_text}")
                 rationale_parts.append(f"Veredito: {verdict_item.verdict}")
                 rationale_parts.append(f"Justificativa: {verdict_item.justification}")
 
@@ -142,16 +142,7 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
             logger.debug(f"Total unique citations collected: {len(all_citations)}")
 
-            # add sources section if we have citations
-            if all_citations:
-                rationale_parts.append("\n\nFontes:")
-                for i, citation in enumerate(all_citations, 1):
-                    rationale_parts.append(f"\n[{i}] {citation.title}")
-                    rationale_parts.append(f"    Fonte: {citation.publisher}")
-                    rationale_parts.append(f"    URL: {citation.url}")
-                    if citation.date:
-                        rationale_parts.append(f"    Data: {citation.date}")
-
+            #TODO see if we can embed links into the citations for whatsapp rendering
             rationale = "\n".join(rationale_parts)
         else:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
@@ -161,3 +152,17 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             rationale=rationale,
             responseWithoutLinks=rationale,
         )
+
+def _add_citations_to_final_msg(all_citations:list)->list:
+    # add sources section if we have citations
+    citation_parts = []
+    if all_citations:
+        citation_parts.append("\n\nFontes:")
+        for i, citation in enumerate(all_citations, 1):
+            citation_parts.append(f"\n[{i}] {citation.title}")
+            citation_parts.append(f"    Fonte: {citation.publisher}")
+            citation_parts.append(f"    URL: {citation.url}")
+            if citation.date:
+                citation_parts.append(f"    Data: {citation.date}")
+    
+    return citation_parts
