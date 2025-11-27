@@ -16,6 +16,7 @@ class ContentType(str, Enum):
     TEXT = "text"
     IMAGE = "image"
     AUDIO = "audio"
+    VIDEO = "video"
 
 
 
