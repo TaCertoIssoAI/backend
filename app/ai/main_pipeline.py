@@ -182,6 +182,7 @@ async def run_fact_check_pipeline(
 
         # build final evidence retrieval result
         result = EvidenceRetrievalResult(claim_evidence_map=enriched_claims)
+        analytics.populate_claims_from_evidence(result)
 
         # build adjudication input by grouping enriched claims with data sources
         adjudication_input = build_adjudication_input(claim_outputs, result)
@@ -224,6 +225,7 @@ async def run_fact_check_pipeline(
 
         pipeline_logger.clear_prefix()
 
+        analytics.populate_from_adjudication(fact_check_result)
         return fact_check_result
 
     except Exception as e:

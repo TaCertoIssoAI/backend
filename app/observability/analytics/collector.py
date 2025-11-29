@@ -14,13 +14,16 @@ from app.models.analytics import (
     PipelineAnalytics,
     ClaimAnalytics,
     ClaimResponseAnalytics,
+    CitationAnalytics,
     ScrapedLink,
-    MessageType
+    MessageType,
+    DataSourceResponseAnalytics
 )
 from app.models import (
     ClaimExtractionOutput,
     DataSource,
-    FactCheckResult
+    FactCheckResult,
+    EvidenceRetrievalResult
 )
 
 
@@ -36,12 +39,11 @@ class AnalyticsCollector:
         >>> analytics = AnalyticsCollector(msg_id)
         >>> # populate from data sources (recommended)
         >>> analytics.populate_from_data_sources(data_sources)
-        >>> # OR set fields manually
-        >>> analytics.set_input_text("Check this claim about vaccines")
-        >>> analytics.add_scraped_link("https://example.com", success=True, text="content")
         >>> # ... pipeline runs ...
-        >>> analytics.add_claims_from_extraction(claim_outputs)
-        >>> analytics.add_verdicts_from_adjudication(fact_check_result)
+        >>> # populate claims with enriched evidence
+        >>> analytics.populate_claims_from_evidence(evidence_result)
+        >>> # populate verdicts and overall summary
+        >>> analytics.populate_from_fact_check_result(fact_check_result)
         >>> analytics.finalize()
         >>> data = analytics.get_analytics()
         >>> print(data.model_dump_json(indent=2))
@@ -56,7 +58,7 @@ class AnalyticsCollector:
         args:
             message_type: type of message source
         """
-        self.analytics = PipelineAnalytics(MessageType=message_type)
+        self.analytics = PipelineAnalytics(message_type=message_type)
         self.start_time = time.time()
         self.id = msg_id
         self.analytics.Date = datetime.now(timezone.utc)
@@ -175,13 +177,13 @@ class AnalyticsCollector:
                 )
                 claim_index += 1
 
-    def add_claim(self, claim_text: str, links: Optional[List[str]] = None):
+    def add_claim(self, claim_text: str, links: Optional[List[CitationAnalytics]] = None):
         """
         manually add a single claim.
 
         args:
             claim_text: the claim text
-            links: optional list of links in the claim
+            links: optional list of citation analytics objects
         """
         claim_index = len(self.analytics.Claims) + 1
         self.analytics.Claims[str(claim_index)] = ClaimAnalytics(
@@ -189,29 +191,121 @@ class AnalyticsCollector:
             links=links or []
         )
 
+    def populate_claims_from_evidence(self, evidence_result: EvidenceRetrievalResult):
+        """
+        populate claims from evidence retrieval result.
+
+        extracts enriched claims with their evidence (citations) and populates
+        the Claims dict with claim text and full citation details.
+
+        args:
+            evidence_result: EvidenceRetrievalResult with enriched claims and citations
+        """
+        for _claim_id, enriched_claim in evidence_result.claim_evidence_map.items():
+            # convert Citations to CitationAnalytics
+            citation_analytics = [
+                CitationAnalytics(
+                    url=citation.url,
+                    title=citation.title,
+                    publisher=citation.publisher,
+                    citation_text=citation.citation_text
+                )
+                for citation in enriched_claim.citations
+            ]
+
+            self.analytics.Claims[enriched_claim.id] = ClaimAnalytics(
+                text=enriched_claim.text,
+                links=citation_analytics
+            )
+
     # ===== ADJUDICATION =====
 
-    def add_verdicts_from_adjudication(self, fact_check_result: FactCheckResult):
+    def populate_from_fact_check_result(self, fact_check_result: FactCheckResult):
+        """
+        populate analytics from complete fact check result.
+
+        extracts verdicts for all claims across all data sources and populates
+        the ResponseByClaim dict with verdict, reasoning, and full citation details.
+        Also sets the overall summary.
+
+        args:
+            fact_check_result: FactCheckResult with verdicts and overall summary
+        """
+        verdict_index = 1
+
+        # iterate through all data source results
+        for data_source_result in fact_check_result.results:
+            # iterate through all claim verdicts in this data source
+            for claim_verdict in data_source_result.claim_verdicts:
+                # convert Citations to CitationAnalytics with full details
+                reasoning_sources = [
+                    CitationAnalytics(
+                        url=citation.url,
+                        title=citation.title,
+                        publisher=citation.publisher,
+                        citation_text=citation.citation_text
+                    )
+                    for citation in claim_verdict.citations_used
+                ]
+
+                # add to ResponseByClaim dict with all fields
+                self.analytics.ResponseByClaim[str(verdict_index)] = ClaimResponseAnalytics(
+                    claim_id=claim_verdict.claim_id,
+                    claim_text=claim_verdict.claim_text,
+                    Result=claim_verdict.verdict,
+                    reasoningText=claim_verdict.justification,
+                    reasoningSources=reasoning_sources
+                )
+                verdict_index += 1
+
+        # set overall summary
+        if fact_check_result.overall_summary:
+            self.analytics.CommentAboutCompleteContext = fact_check_result.overall_summary
+
+    def populate_from_adjudication(self, fact_check_result: FactCheckResult):
         """
         populate verdicts from adjudication result.
 
         args:
             fact_check_result: FactCheckResult from adjudication step
         """
-        verdict_index = 1
+        #aggregate responses for all data sources
+        responses_for_data_sources:list[DataSourceResponseAnalytics] = []
 
-        for result in fact_check_result.results:
-            for claim_verdict in result.claim_verdicts:
-                # extract source URLs from justification if needed
-                sources = self._extract_urls_from_text(claim_verdict.justification)
+        for data_source_result in fact_check_result.results:
+            responses_by_claim:list[ClaimResponseAnalytics] = []
 
-                self.analytics.ResponseByClaim[str(verdict_index)] = ClaimResponseAnalytics(
+            #for each data source, collect the claim veredicts
+            for claim_verdict in data_source_result.claim_verdicts:
+                # convert Citations to CitationAnalytics from citations_used field
+                reasoning_sources = [
+                    CitationAnalytics(
+                        url=citation.url,
+                        title=citation.title,
+                        publisher=citation.publisher,
+                        citation_text=citation.citation_text
+                    )
+                    for citation in claim_verdict.citations_used
+                ]
+
+                claim_response = ClaimResponseAnalytics(
+                    claim_id=claim_verdict.claim_id,
+                    claim_text=claim_verdict.claim_text,
                     Result=claim_verdict.verdict,
                     reasoningText=claim_verdict.justification,
-                    reasoningSources=sources
+                    reasoningSources=reasoning_sources,
                 )
-                verdict_index += 1
+                responses_by_claim.append(claim_response)
+            
+            data_source = DataSourceResponseAnalytics(
+                data_source_id=data_source_result.data_source_id,
+                data_source_type=data_source_result.source_type,
+                claim_verdicts= responses_by_claim,
+            )
+            responses_for_data_sources.append(data_source)
 
+        
+        self.analytics.ResponseByDataSource = responses_for_data_sources
         # set overall summary
         if fact_check_result.overall_summary:
             self.analytics.CommentAboutCompleteContext = fact_check_result.overall_summary

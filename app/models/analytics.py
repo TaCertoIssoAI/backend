@@ -5,13 +5,11 @@ provides comprehensive observability of the fact-checking pipeline,
 capturing inputs, intermediate steps, and final outputs.
 """
 
-from typing import Optional
+from typing import Optional,List
 from enum import Enum
 from datetime import datetime, timezone
 from uuid import uuid4
-
 from pydantic import BaseModel, Field, ConfigDict
-
 
 class MessageType(str, Enum):
     """type of message source."""
@@ -27,21 +25,39 @@ class ScrapedLink(BaseModel):
     text: Optional[str] = Field(default=None, description="extracted content from the page")
 
 
+class CitationAnalytics(BaseModel):
+    """citation data for claim analytics."""
+    url: str = Field(..., description="url of the citation")
+    title: str = Field(..., description="title of the cited source")
+    publisher: str = Field(..., description="publisher of the cited source")
+    citation_text: str = Field(..., description="relevant text excerpt from the citation")
+
+
 class ClaimAnalytics(BaseModel):
     """analytics for a single extracted claim."""
     text: str = Field(..., description="the claim text")
-    links: list[str] = Field(default_factory=list, description="links mentioned in the claim")
+    links: list[CitationAnalytics] = Field(default_factory=list, description="citations for the claim")
 
 
 class ClaimResponseAnalytics(BaseModel):
     """analytics for adjudication response for a single claim."""
+    claim_id: str = Field(..., description="ID of the claim being judged")
+    claim_text: str = Field(..., description="text of the claim")
     Result: str = Field(..., description="verdict: Fake, True, Misleading, Unverifiable")
     reasoningText: str = Field(..., description="detailed reasoning for the verdict")
-    reasoningSources: list[str] = Field(
+    reasoningSources: list[CitationAnalytics] = Field(
         default_factory=list,
-        description="source URLs used in reasoning"
+        description="full citation details of sources used in reasoning"
     )
 
+class DataSourceResponseAnalytics(BaseModel):
+    """Analytics for the Adjundication output separated by Data source"""
+    data_source_id: str = Field(...,description="id of the data source")
+    data_source_type: str = Field(...,description="data source type")
+    claim_verdicts: List[ClaimResponseAnalytics] = Field(
+        default_factory=list,
+        description="Verdicts for all claims extracted from this source"
+    )
 
 class PipelineAnalytics(BaseModel):
     """
@@ -109,6 +125,7 @@ class PipelineAnalytics(BaseModel):
         default_factory=dict,
         description="adjudication responses indexed by claim number (string keys: '1', '2', etc.)"
     )
+    ResponseByDataSource: list[DataSourceResponseAnalytics] = Field(default_factory=list,description="Judgment response by Data Source")
 
     model_config = ConfigDict(
         json_encoders={
