@@ -5,12 +5,12 @@ provides comprehensive observability of the fact-checking pipeline,
 capturing inputs, intermediate steps, and final outputs.
 """
 
-from typing import Dict, List, Optional
+from typing import Optional
 from enum import Enum
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class MessageType(str, Enum):
@@ -30,14 +30,14 @@ class ScrapedLink(BaseModel):
 class ClaimAnalytics(BaseModel):
     """analytics for a single extracted claim."""
     text: str = Field(..., description="the claim text")
-    links: List[str] = Field(default_factory=list, description="links mentioned in the claim")
+    links: list[str] = Field(default_factory=list, description="links mentioned in the claim")
 
 
 class ClaimResponseAnalytics(BaseModel):
     """analytics for adjudication response for a single claim."""
     Result: str = Field(..., description="verdict: Fake, True, Misleading, Unverifiable")
     reasoningText: str = Field(..., description="detailed reasoning for the verdict")
-    reasoningSources: List[str] = Field(
+    reasoningSources: list[str] = Field(
         default_factory=list,
         description="source URLs used in reasoning"
     )
@@ -54,9 +54,10 @@ class PipelineAnalytics(BaseModel):
     # document identification
     DocumentId: str = Field(default_factory=lambda: str(uuid4()), description="unique document identifier")
     Date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="pipeline execution timestamp")
-    MessageType: MessageType = Field(
+    message_type: MessageType = Field(
         default=MessageType.FROM_DIRECT_MESSAGE,
-        description="source type of the message"
+        description="source type of the message",
+        serialization_alias="MessageType"
     )
 
     # input content breakdown
@@ -77,7 +78,7 @@ class PipelineAnalytics(BaseModel):
     )
 
     # scraped links
-    ScrapedLinks: List[ScrapedLink] = Field(
+    ScrapedLinks: list[ScrapedLink] = Field(
         default_factory=list,
         description="all scraped links with their content"
     )
@@ -98,19 +99,19 @@ class PipelineAnalytics(BaseModel):
     VideoText: Optional[str] = Field(default=None, description="transcribed text from video")
 
     # pipeline step: claim extraction
-    Claims: Dict[str, ClaimAnalytics] = Field(
+    Claims: dict[str, ClaimAnalytics] = Field(
         default_factory=dict,
         description="extracted claims indexed by claim number (string keys: '1', '2', etc.)"
     )
 
     # pipeline step: adjudication
-    ResponseByClaim: Dict[str, ClaimResponseAnalytics] = Field(
+    ResponseByClaim: dict[str, ClaimResponseAnalytics] = Field(
         default_factory=dict,
         description="adjudication responses indexed by claim number (string keys: '1', '2', etc.)"
     )
 
-    class Config:
-        """pydantic config."""
-        json_encoders = {
+    model_config = ConfigDict(
+        json_encoders={
             datetime: lambda v: v.isoformat()
         }
+    )
