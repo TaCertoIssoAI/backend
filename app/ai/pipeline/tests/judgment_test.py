@@ -2,13 +2,13 @@
 """
 Tests for the adjudication/judgment pipeline step.
 
-These tests make REAL calls to the LLM (OpenAI API) to validate:
+These tests make REAL calls to the LLM (Google Gemini API) to validate:
 - The structure of outputs
 - The LangChain chain works correctly
 - The prompt produces valid results
 - Verdict generation works properly
 
-IMPORTANT: Set OPENAI_API_KEY in your environment before running.
+IMPORTANT: Set GOOGLE_API_KEY in your environment before running.
 
 Run with:
     pytest app/ai/pipeline/tests/judgment_test.py -v -s
@@ -17,7 +17,6 @@ The -s flag shows stdout so you can see the LLM responses for debugging.
 """
 
 import pytest
-from langchain_openai import ChatOpenAI
 
 from app.models import (
     AdjudicationInput,
@@ -28,12 +27,12 @@ from app.models import (
     DataSource,
     EnrichedClaim,
     Citation,
-    LLMConfig,
 )
 from app.ai.pipeline import (
     adjudicate_claims,
     build_adjudication_chain,
 )
+from app.config.gemini_models import get_gemini_default_pipeline_config
 
 
 # ===== HELPER FUNCTIONS =====
@@ -185,12 +184,10 @@ def test_basic_adjudication_single_claim():
         additional_context="Usuário demonstra preocupação com segurança de vacinas"
     )
     
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
-    
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
+
     # Print input for debugging
     print_adjudication_input(adjudication_input, "Basic Adjudication Single Claim")
     
@@ -259,11 +256,9 @@ def test_adjudication_multiple_claims_same_source():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
     
     # Print input for debugging
     print_adjudication_input(adjudication_input, "Multiple Claims Same Source")
@@ -351,11 +346,9 @@ def test_adjudication_multiple_data_sources():
         sources_with_claims=sources_with_claims
     )
     
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
     
     # Print input for debugging
     print_adjudication_input(adjudication_input, "Multiple Data Sources")
@@ -409,11 +402,9 @@ def test_adjudication_no_evidence():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
     
     # Print input for debugging
     print_adjudication_input(adjudication_input, "No Evidence Available")
@@ -481,11 +472,9 @@ def test_adjudication_with_contradictory_sources():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
     
     # Print input for debugging
     print_adjudication_input(adjudication_input, "Contradictory Sources")
@@ -507,12 +496,10 @@ def test_adjudication_with_contradictory_sources():
 
 def test_chain_building():
     """Test that the adjudication chain can be built without errors."""
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=30.0)
-    )
-    
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
+
     # Build chain
     chain = build_adjudication_chain(llm_config=llm_config)
     
@@ -553,11 +540,9 @@ def test_return_type_is_fact_check_result():
         sources_with_claims=[source_with_claims]
     )
     
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
     
     # Execute
     result = adjudicate_claims(
@@ -633,11 +618,9 @@ def test_citations_used_field_in_verdict():
         sources_with_claims=[source_with_claims]
     )
 
-    llm_config = LLMConfig(llm=ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0.0,
-        timeout=60.0)
-    )
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
 
     # Print input for debugging
     print_adjudication_input(adjudication_input, "Citations Used Field Test")
