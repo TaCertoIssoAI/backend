@@ -7,6 +7,7 @@ with support for streaming results and progress tracking.
 
 import logging
 from typing import List, Callable, TypeVar, Dict, Any, Optional
+from app.observability.analytics import AnalyticsCollector
 
 from app.ai.threads.thread_utils import (
     ThreadPoolManager,
@@ -211,6 +212,7 @@ def fire_and_forget_streaming_pipeline(
     data_sources: List[DataSource],
     extract_fn: Callable[[ClaimExtractionInput], ClaimExtractionOutput],
     evidence_gatherers: List[Any],
+    analytics: AnalyticsCollector,
     link_expansion_fn: Optional[Callable[[List[DataSource]], List[DataSource]]] = None,
     manager: Optional[ThreadPoolManager] = None,
 ) -> tuple[List[ClaimExtractionOutput], Dict[str, EnrichedClaim]]:
@@ -341,6 +343,9 @@ def fire_and_forget_streaming_pipeline(
                     expanded_sources = []
 
                 logger.info(f"link expansion pipeline completed: {len(expanded_sources)} sources expanded")
+                #add new link data sources to Analytics
+                analytics.populate_from_data_sources(expanded_sources)
+
 
                 # fire claim extraction jobs for each expanded source
                 for source in expanded_sources:

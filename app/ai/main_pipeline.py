@@ -33,6 +33,7 @@ from app.ai.threads.thread_utils import ThreadPoolManager
 from app.ai.async_code import fire_and_forget_streaming_pipeline
 from app.ai.pipeline.claim_extractor import extract_claims
 from app.ai.pipeline.judgement import adjudicate_claims
+from app.observability.analytics import AnalyticsCollector
 from app.observability.logger import get_logger, PipelineStep
 from app.ai.log_utils import log_adjudication_input, log_adjudication_output
 
@@ -94,6 +95,7 @@ async def run_fact_check_pipeline(
     data_sources: List[DataSource],
     config: PipelineConfig,
     steps: PipelineSteps,
+    analytics: AnalyticsCollector
 ) -> FactCheckResult:
     """
     run the complete fact-checking pipeline on a list of data sources.
@@ -173,6 +175,7 @@ async def run_fact_check_pipeline(
             data_sources,
             extract_claims_with_config,
             evidence_gatherers,
+            analytics,
             link_expansion_fn=expand_links_with_config,
             manager=manager,
         )

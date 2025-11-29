@@ -3,6 +3,7 @@ import uuid
 import time
 import traceback
 from app.models.api import Request, AnalysisResponse
+from app.observability.analytics import AnalyticsCollector
 from app.api import request_to_data_sources,fact_check_result_to_response
 from app.ai import run_fact_check_pipeline
 from app.config.gemini_models import get_gemini_default_pipeline_config
@@ -11,6 +12,28 @@ from app.observability.logger.logger import get_logger
 
 router = APIRouter()
 logger = get_logger(__name__)
+
+
+def _log_request_details(msg_id: uuid.UUID, request: Request) -> None:
+    """
+    log detailed request information for debugging.
+
+    args:
+        msg_id: unique message identifier for correlation
+        request: the incoming API request to log
+    """
+    logger.debug(f"[{msg_id}] request = {request}")
+    logger.debug(f"[{msg_id}] request.content = {request.content}")
+    logger.debug(f"[{msg_id}] Number of content items: {len(request.content)}")
+
+    for idx, item in enumerate(request.content):
+        content_preview = item.textContent[:100] if item.textContent else "None"
+        logger.debug(f"[{msg_id}] === Content Item {idx} ===")
+        logger.debug(f"[{msg_id}]   type: {item.type}")
+        logger.debug(f"[{msg_id}]   textContent length: {len(item.textContent or '')}")
+        logger.debug(f"[{msg_id}]   textContent preview: '{content_preview}...'")
+        logger.debug(f"[{msg_id}]   full textContent:\n{item.textContent}")
+        logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...')")
 
 
 @router.post("/text", response_model=AnalysisResponse)
@@ -28,28 +51,18 @@ async def analyze_text(request: Request) -> AnalysisResponse:
     """
     start_time = time.time()
     msg_id = uuid.uuid4()
-
     logger.info(f"[{msg_id}] received /text request with {len(request.content)} content item(s)")
 
     try:
         # log full request for debugging
-        logger.debug(f"[{msg_id}] request = {request}")
-        logger.debug(f"[{msg_id}] request.content = {request.content}")
-        logger.debug(f"[{msg_id}] Number of content items: {len(request.content)}")
+        _log_request_details(msg_id, request)
 
-        # log request details
-        for idx, item in enumerate(request.content):
-            content_preview = item.textContent[:100] if item.textContent else "None"
-            logger.debug(f"[{msg_id}] === Content Item {idx} ===")
-            logger.debug(f"[{msg_id}]   type: {item.type}")
-            logger.debug(f"[{msg_id}]   textContent length: {len(item.textContent or '')}")
-            logger.debug(f"[{msg_id}]   textContent preview: '{content_preview}...'")
-            logger.debug(f"[{msg_id}]   full textContent:\n{item.textContent}")
-            logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
-
+        #init analytics for the pipeline
+        analytics = AnalyticsCollector(msg_id)
         # step 1: convert API request to internal DataSource format
-        logger.info(f"[{msg_id}] converting request to data sources")
         data_sources = request_to_data_sources(request)
+        analytics.populate_from_data_sources(data_sources)
+
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get pipeline configuration
@@ -59,7 +72,7 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 3: run the async fact-checking pipeline
         logger.info(f"[{msg_id}] starting fact-check pipeline")
         pipeline_start = time.time()
-        fact_check_result = await run_fact_check_pipeline(data_sources, config, pipeline_step)
+        fact_check_result = await run_fact_check_pipeline(data_sources, config, pipeline_step,analytics)
         pipeline_duration = (time.time() - pipeline_start) * 1000
         logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
 
