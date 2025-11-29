@@ -248,7 +248,7 @@ class Citation(BaseModel):
     title: str
     publisher: str
     citation_text: str
-    source: CitationSource
+    source: Optional[CitationSource] = None  # source API: google_fact_checking_api or google_web_search
     rating: Optional[VerdictType] = None  # Google fact-check rating: "Falso", "Enganoso", "Verdadeiro", etc.
     rating_comment: Optional[str] = None #optional comment about the rating
     date: Optional[str] = None  # When the fact-check was published
@@ -410,6 +410,10 @@ class ClaimVerdict(BaseModel):
     claim_text: str = Field(..., description="The claim text")
     verdict: VerdictType = Field(..., description="The verdict for this claim")
     justification: str = Field(..., description="Detailed justification citing evidence sources")
+    citations_used: List[Citation] = Field(
+        default_factory=list,
+        description="List of citations that were actually used to make this verdict decision"
+    )
 
 
 class DataSourceResult(BaseModel):

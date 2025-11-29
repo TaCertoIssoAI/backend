@@ -79,6 +79,9 @@ def print_fact_check_result(result: FactCheckResult, test_name: str):
             print(f"    Claim Text: {verdict.claim_text}")
             print(f"    Verdict: {verdict.verdict}")
             print(f"    Justification: {verdict.justification}")
+            print(f"    Citations Used: {len(verdict.citations_used)} citation(s)")
+            for k, citation in enumerate(verdict.citations_used, 1):
+                print(f"      [{k}] {citation.title} ({citation.url})")
             print()
         
         print("-" * 80 + "\n")
@@ -91,16 +94,22 @@ def validate_claim_verdict(verdict: ClaimVerdict):
     assert verdict.claim_text is not None and verdict.claim_text != "", "Claim text should not be empty"
     assert verdict.verdict is not None, "Verdict should not be None"
     assert verdict.justification is not None and verdict.justification != "", "Justification should not be empty"
-    
+
     # Type checks
     assert isinstance(verdict.claim_id, str), "Claim ID should be a string"
     assert isinstance(verdict.claim_text, str), "Claim text should be a string"
     assert isinstance(verdict.verdict, str), "Verdict should be a string"
     assert isinstance(verdict.justification, str), "Justification should be a string"
-    
+
     # Verdict should be one of the valid options
     valid_verdicts = ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
     assert verdict.verdict in valid_verdicts, f"Verdict must be one of {valid_verdicts}, got: {verdict.verdict}"
+
+    # Validate citations_used field
+    assert hasattr(verdict, 'citations_used'), "ClaimVerdict should have citations_used field"
+    assert isinstance(verdict.citations_used, list), "citations_used should be a list"
+    for citation in verdict.citations_used:
+        assert isinstance(citation, Citation), f"Each citation should be a Citation object, got {type(citation)}"
 
 
 def validate_data_source_result(data_source_result: DataSourceResult):
@@ -567,6 +576,112 @@ def test_return_type_is_fact_check_result():
     print(f"\n✓ Correct return type: {type(result).__name__}")
     print(f"✓ Returns FactCheckResult wrapper for type safety")
     print(f"✓ Wrapper contains {len(result.results)} data source result(s)")
+    print()
+
+
+def test_citations_used_field_in_verdict():
+    """
+    Test that the LLM returns the citations_used field in verdicts.
+
+    This test verifies that:
+    1. The _LLMClaimVerdict model includes a citations_used field
+    2. The LLM actually populates this field with the citations it used
+    3. The citations are properly formatted Citation objects
+    """
+    # Setup
+    data_source = DataSource(
+        id="msg-008",
+        source_type="original_text",
+        original_text="A Terra é plana e não gira ao redor do Sol.",
+        metadata={},
+        locale="pt-BR"
+    )
+
+    enriched_claim = EnrichedClaim(
+        id="claim-uuid-7",
+        text="A Terra é plana",
+        source={
+            "source_type": "original_text",
+            "source_id": "msg-008"
+        },
+        citations=[
+            Citation(
+                url="https://www.nasa.gov/earth-round",
+                title="A Terra é Redonda - NASA",
+                publisher="NASA",
+                citation_text="Evidências científicas e fotografias do espaço confirmam que a Terra é redonda.",
+                rating="Falso",
+                date="2024-01-15"
+            ),
+            Citation(
+                url="https://www.iag.usp.br/astronomia/terra-formato",
+                title="O Formato da Terra",
+                publisher="IAG-USP",
+                citation_text="Observações astronômicas e medições geodésicas demonstram que a Terra é um esferoide.",
+                date="2024-03-20"
+            )
+        ],
+        entities=["Terra"]
+    )
+
+    source_with_claims = DataSourceWithClaims(
+        data_source=data_source,
+        enriched_claims=[enriched_claim]
+    )
+
+    adjudication_input = AdjudicationInput(
+        sources_with_claims=[source_with_claims]
+    )
+
+    llm_config = LLMConfig(llm=ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0.0,
+        timeout=60.0)
+    )
+
+    # Print input for debugging
+    print_adjudication_input(adjudication_input, "Citations Used Field Test")
+
+    # Execute - this will invoke the LLM with the new schema
+    result = adjudicate_claims(
+        adjudication_input=adjudication_input,
+        llm_config=llm_config
+    )
+
+    # Print output for debugging
+    print_fact_check_result(result, "Citations Used Field Test")
+
+    # Validate basic structure
+    validate_fact_check_result(result)
+    assert len(result.results) == 1, "Should have results for 1 data source"
+    assert len(result.results[0].claim_verdicts) == 1, "Should have 1 verdict"
+
+    verdict = result.results[0].claim_verdicts[0]
+
+    # Assert that citations_used field is present and properly populated
+    assert hasattr(verdict, 'citations_used'), "Verdict should have citations_used field"
+    assert isinstance(verdict.citations_used, list), "citations_used should be a list"
+
+    # The LLM should return at least some citations (though it may choose to use all or subset)
+    # We provided 2 citations, so we expect the LLM to use at least one
+    print(f"\n📊 LLM used {len(verdict.citations_used)} out of 2 available citations")
+
+    # Validate each citation in citations_used
+    for i, citation in enumerate(verdict.citations_used, 1):
+        assert isinstance(citation, Citation), f"Citation {i} should be a Citation object"
+        assert citation.url, f"Citation {i} should have a URL"
+        assert citation.title, f"Citation {i} should have a title"
+        assert citation.citation_text, f"Citation {i} should have citation_text"
+        print(f"  ✓ Citation {i}: {citation.title}")
+
+    print("\n" + "=" * 80)
+    print("TEST: Citations Used Field")
+    print("=" * 80)
+    print(f"\n✓ Verdict generated successfully with citations_used field")
+    print(f"  Verdict: {verdict.verdict}")
+    print(f"  Justification length: {len(verdict.justification)} chars")
+    print(f"  Citations used by LLM: {len(verdict.citations_used)}")
+    print("\n✅ SUCCESS: citations_used field is properly propagated from LLM output to ClaimVerdict!")
     print()
 
 

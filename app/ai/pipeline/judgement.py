@@ -27,6 +27,7 @@ from app.models import (
     LLMConfig,
     DataSourceWithClaims,
     EnrichedClaim,
+    Citation,
 )
 from .prompts import get_adjudication_prompt
 from app.observability.logger import time_profile, PipelineStep, get_logger
@@ -45,6 +46,10 @@ class _LLMClaimVerdict(BaseModel):
     claim_text: str = Field(..., description="The claim text (for fallback matching)")
     verdict: VerdictType = Field(..., description="The verdict for this claim")
     justification: str = Field(..., description="Detailed justification citing evidence sources")
+    citations_used: List[Citation] = Field(
+        default_factory=list,
+        description="List of citations that were used to make this verdict decision"
+    )
 
 
 class _LLMDataSourceResult(BaseModel):
@@ -243,7 +248,8 @@ def get_claim_verdicts(
             claim_id=claim_id,
             claim_text=llm_verdict.claim_text,
             verdict=llm_verdict.verdict,
-            justification=llm_verdict.justification
+            justification=llm_verdict.justification,
+            citations_used=llm_verdict.citations_used
         )
         claim_verdicts.append(verdict)
     
