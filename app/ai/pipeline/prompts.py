@@ -14,21 +14,25 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
 ## O que Extrair:
 
 **Extraia alegações que:**
-- Podem ser verificadas como verdadeiras ou falsas com base em evidências
-- Fazem afirmações factuais específicas sobre o mundo
-- Contêm entidades nomeadas, eventos ou detalhes específicos
+- Podem ser verificadas como verdadeiras ou falsas com base em evidências.
+- Fazem afirmações sobre o mundo.
+- Contêm entidades nomeadas, eventos ou detalhes específicos.
+- São opiniões pessoais que contém alegações ou juízo de valor sobre algum fato do mundo e podem ser verificadas.
+- São perguntas que contém alegações ou juízo de valor sobre algum fato do mundo e podem ser verificadas.
 
 **Exemplos de boas alegações:**
 - "A vacina X causa infertilidade em mulheres"
 - "O presidente anunciou um imposto de carbono de R$50 por tonelada"
 - "O estudo examinou 50.000 participantes"
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
+- "Eu acho que vacinas causam autismo"
+- "Vacinas causam autismo?"
 
 **NÃO extraia:**
-- Opiniões puras sem afirmações factuais ("Acho que vacinas são assustadoras")
 - Perguntas sem alegações implícitas ("O que você acha?")
 - Cumprimentos ou conversa trivial
-- Meta-afirmações sobre o próprio texto
+- Trechos dos quais não é possível extrair nenhuma afirmação sobre algo, nenhum fato ou nenhum juízo de valor: (Ex: Olá, bom dia)
+
 
 ## Diretrizes:
 
@@ -126,24 +130,28 @@ IMPORTANTE: Considere verificáveis apenas alegações sobre a realidade fora do
 
 ## O que Extrair:
 
-Extraia alegações que:
-- Podem ser verificadas como verdadeiras ou falsas com base em evidências
-- Fazem afirmações factuais específicas sobre o mundo real
-- Contém Figuras Famosas do mundo real, pessoas importantes e conhecidas (políticos, celebridades, artistas)
-- Contêm entidades nomeadas, eventos ou detalhes específicos
+**Extraia alegações que:**
+- Podem ser verificadas como verdadeiras ou falsas com base em evidências.
+- Fazem afirmações sobre o mundo.
+- Contêm entidades nomeadas, eventos ou detalhes específicos.
+- São opiniões pessoais que contém alegações ou juízo de valor sobre algum fato do mundo e que podem ser verificadas.
+- São perguntas que contém alegações ou juízo de valor sobre algum fato do mundo e que podem ser verificadas.
 
-Exemplos de boas alegações:
+**Exemplos de boas alegações:**
 - "A vacina X causa infertilidade em mulheres"
 - "O presidente anunciou um imposto de carbono de R$50 por tonelada"
 - "O estudo examinou 50.000 participantes"
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
-- Famoso Christopher Nolan posou de tal forma em Paris
+- "Eu acho que vacinas causam autismo"
+- "Vacinas causam autismo?"
+
 
 ## O que NÃO Extrair:
 
-Não extraia:
-- Opiniões puras sem afirmações factuais ("Acho que vacinas são assustadoras")
+**NÃO extraia:**
 - Perguntas sem alegações implícitas ("O que você acha?")
+- Cumprimentos ou conversa trivial
+- Trechos dos quais não é possível extrair nenhuma afirmação sobre algo, nenhum fato ou nenhum juízo de valor: (Ex: Olá, bom dia)
 
 ## Casos especiais: descrições de imagens, memes, charges e quadrinhos
 
@@ -318,24 +326,27 @@ IMPORTANTE: Considere verificáveis apenas alegações sobre a realidade fora do
 
 ## O que Extrair:
 
-Extraia alegações que:
-- Podem ser verificadas como verdadeiras ou falsas com base em evidências
-- Fazem afirmações factuais específicas sobre o mundo real
-- Contém Figuras Famosas do mundo real, pessoas importantes e conhecidas (políticos, celebridades, artistas)
-- Contêm entidades nomeadas, eventos ou detalhes específicos
+**Extraia alegações que:**
+- Podem ser verificadas como verdadeiras ou falsas com base em evidências.
+- Fazem afirmações sobre o mundo.
+- Contêm entidades nomeadas, eventos ou detalhes específicos.
+- São opiniões pessoais que contém alegações ou juízo de valor sobre algum fato do mundo e que podem ser verificadas.
+- São perguntas que contém alegações ou juízo de valor sobre algum fato do mundo e que podem ser verificadas.
 
-Exemplos de boas alegações:
+**Exemplos de boas alegações:**
 - "A vacina X causa infertilidade em mulheres"
 - "O presidente anunciou um imposto de carbono de R$50 por tonelada"
 - "O estudo examinou 50.000 participantes"
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
-- Famoso Christopher Nolan posou de tal forma em Paris
+- "Eu acho que vacinas causam autismo"
+- "Vacinas causam autismo?"
 
 ## O que NÃO Extrair:
 
-Não extraia:
-- Opiniões puras sem afirmações factuais ("Acho que vacinas são assustadoras")
+**NÃO extraia:**
 - Perguntas sem alegações implícitas ("O que você acha?")
+- Cumprimentos ou conversa trivial
+- Trechos dos quais não é possível extrair nenhuma afirmação sobre algo, nenhum fato ou nenhum juízo de valor: (Ex: Olá, bom dia)
 
 ## Casos especiais: descrições de imagens, memes, charges e quadrinhos
 
