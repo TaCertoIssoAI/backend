@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 import uuid
 import time
 import traceback
+import asyncio
 from app.models.api import Request, AnalysisResponse
+from app.clients import send_analytics_payload
 from app.observability.analytics import AnalyticsCollector
 from app.api import request_to_data_sources,fact_check_result_to_response
 from app.ai import run_fact_check_pipeline
@@ -83,6 +85,8 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 4: build response
         logger.info(f"[{msg_id}] building response")
         response = fact_check_result_to_response(msg_id, fact_check_result)
+        analytics.set_final_response(response)
+        asyncio.create_task(send_analytics_payload(analytics))
 
         total_duration = (time.time() - start_time) * 1000
         logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms")

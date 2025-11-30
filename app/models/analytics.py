@@ -69,7 +69,7 @@ class PipelineAnalytics(BaseModel):
 
     # document identification
     DocumentId: str = Field(default_factory=lambda: str(uuid4()), description="unique document identifier")
-    Date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="pipeline execution timestamp")
+    Date: str = Field(..., description="pipeline execution timestamp")
     message_type: MessageType = Field(
         default=MessageType.FROM_DIRECT_MESSAGE,
         description="source type of the message",

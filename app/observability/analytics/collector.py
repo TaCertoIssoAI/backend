@@ -8,7 +8,7 @@ import re
 import time
 import uuid
 from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 
 from app.models.analytics import (
     PipelineAnalytics,
@@ -58,10 +58,14 @@ class AnalyticsCollector:
         args:
             message_type: type of message source
         """
-        self.analytics = PipelineAnalytics(message_type=message_type)
+        tz = timezone(timedelta(hours=-3))  # GMT-3
+        now_str = datetime.now(tz).isoformat(timespec="seconds")
+        self.analytics = PipelineAnalytics(message_type=message_type, Date=now_str)
         self.start_time = time.time()
         self.id = msg_id
-        self.analytics.Date = datetime.now(timezone.utc)
+
+      
+        self.analytics.Date = now_str
 
     # ===== INPUT POPULATION =====
 

@@ -5,9 +5,11 @@ provides alternative endpoints with different configurations for testing purpose
 """
 import uuid
 import time
+import asyncio
 import traceback
 from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
+from app.clients import send_analytics_payload
 from app.api import request_to_data_sources,fact_check_result_to_response
 from app.ai import run_fact_check_pipeline
 from app.config.default import get_default_pipeline_config
@@ -15,6 +17,8 @@ from app.config.azure_models import get_azure_default_pipeline_config
 from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.tests.fixtures.mock_pipelinesteps import WithoutBrowsingPipelineSteps
 from app.observability.logger.logger import get_logger
+from app.observability.analytics import AnalyticsCollector
+
 
 router = APIRouter()
 logger = get_logger(__name__)
@@ -45,6 +49,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
     logger.info(f"[{msg_id}] received /text-without-browser request with {len(request.content)} content item(s)")
 
     try:
+        analytics = AnalyticsCollector(msg_id)
         # log request details
         for idx, item in enumerate(request.content):
             content_preview = item.textContent[:100] if item.textContent else "None"
@@ -53,6 +58,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
         # step 1: convert API request to internal DataSource format
         logger.info(f"[{msg_id}] converting request to data sources")
         data_sources = request_to_data_sources(request)
+        analytics.populate_from_data_sources(data_sources)
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get pipeline configuration
@@ -69,7 +75,8 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
         fact_check_result = await run_fact_check_pipeline(
             data_sources,
             config,
-            pipeline_steps
+            pipeline_steps,
+            analytics,
         )
         pipeline_duration = (time.time() - pipeline_start) * 1000
         logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
@@ -81,6 +88,8 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
         # build response
         logger.info(f"[{msg_id}] building response")
         response = fact_check_result_to_response(msg_id, fact_check_result)
+        analytics.set_final_response(response.rationale)
+        asyncio.create_task(send_analytics_payload(analytics))
 
         total_duration = (time.time() - start_time) * 1000
         logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms")

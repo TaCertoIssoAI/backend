@@ -222,7 +222,6 @@ async def run_fact_check_pipeline(
             f"evidence gathering results: {len(result.claim_evidence_map)} claims with evidence"
         )
         pipeline_logger.info(f"final verdicts: {total_verdicts} verdicts")
-
         pipeline_logger.clear_prefix()
 
         analytics.populate_from_adjudication(fact_check_result)
