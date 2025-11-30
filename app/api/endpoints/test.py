@@ -10,7 +10,8 @@ import traceback
 from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
 from app.clients import send_analytics_payload
-from app.api import request_to_data_sources,fact_check_result_to_response
+from app.api import request_to_data_sources
+from app.api.mapper import request_to_data_sources,fact_check_result_to_response
 from app.ai import run_fact_check_pipeline
 from app.config.default import get_default_pipeline_config
 from app.config.azure_models import get_azure_default_pipeline_config

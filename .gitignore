@@ -130,6 +130,11 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+#misc
+json_dump_analytics.json
+
+
+
 # Pyre type checker
 .pyre/
 

@@ -14,6 +14,8 @@ from app.models.commondata import DataSource
 from app.models.factchecking import ClaimSourceType,FactCheckResult
 from app.observability.logger.logger import get_logger
 
+from .formating import VEREDICT_SUBSTR,JUSTIFICATION_SUBSTR,CLAIM_SUBSTR, remove_link_like_substrings
+
 logger = get_logger(__name__)
 
 
@@ -102,9 +104,9 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
             # add each verdict with its justification
             for i, verdict_item in enumerate(all_verdicts, 1):
-                rationale_parts.append(f"\nAlegação {i}: {verdict_item.claim_text}")
-                rationale_parts.append(f"Veredito: {verdict_item.verdict}")
-                rationale_parts.append(f"Justificativa: {verdict_item.justification}")
+                rationale_parts.append(f"\n*{CLAIM_SUBSTR} {i}*: {verdict_item.claim_text}")
+                rationale_parts.append(f"*{VEREDICT_SUBSTR}* {verdict_item.verdict}")
+                rationale_parts.append(f"*{JUSTIFICATION_SUBSTR}* {verdict_item.justification}")
 
             # add overall summary if present
             if result.overall_summary:
@@ -142,15 +144,16 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
             logger.debug(f"Total unique citations collected: {len(all_citations)}")
 
-            #TODO see if we can embed links into the citations for whatsapp rendering
             rationale = "\n".join(rationale_parts)
         else:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
 
+
+        resp_without_links = remove_link_like_substrings(rationale)
         return AnalysisResponse(
             message_id=str(msg_id),
             rationale=rationale,
-            responseWithoutLinks=rationale,
+            responseWithoutLinks=resp_without_links,
         )
 
 def _add_citations_to_final_msg(all_citations:list)->list:
