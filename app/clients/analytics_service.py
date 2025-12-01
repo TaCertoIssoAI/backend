@@ -1,6 +1,6 @@
 import httpx
 import os
-import logging
+import logging,json
 from app.observability.analytics import AnalyticsCollector
 
 _URL_ENV_VAR  = os.getenv("ANALYTICS_SERVICE_URL") 
@@ -21,7 +21,11 @@ async def send_analytics_payload(collector: AnalyticsCollector)->None:
     try:
         full_path = ANALYTICS_SERVICE_URL + ANALYTICS_SERVICE_ENDPOINT
         json_val = collector.to_dict()
-        logger.info("Analytics output %s",json_val)
+
+        with open("meme.json", "w")  as f:
+            f.write(json.dumps(json_val))
+
+        logger.info("Analytics output keys %s",json_val.keys())
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(
                 full_path,
