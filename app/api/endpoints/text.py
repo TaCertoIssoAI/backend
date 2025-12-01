@@ -85,7 +85,7 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 4: build response
         logger.info(f"[{msg_id}] building response")
         response = fact_check_result_to_response(msg_id, fact_check_result)
-        analytics.set_final_response(response)
+        analytics.set_final_response(response.rationale)
         asyncio.create_task(send_analytics_payload(analytics))
 
         total_duration = (time.time() - start_time) * 1000

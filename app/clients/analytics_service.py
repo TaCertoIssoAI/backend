@@ -20,10 +20,12 @@ async def send_analytics_payload(collector: AnalyticsCollector)->None:
     """
     try:
         full_path = ANALYTICS_SERVICE_URL + ANALYTICS_SERVICE_ENDPOINT
+        json_val = collector.to_dict()
+        logger.info("Analytics output %s",json_val)
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(
                 full_path,
-                json=collector.to_dict(),
+                json=json_val,
             )
             logger.info("Analytics status: %s", resp.status_code)
     except Exception:
