@@ -110,7 +110,7 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
             # add overall summary if present
             if result.overall_summary:
-                rationale_parts.append(f"\n\nResumo Geral:\n{result.overall_summary}")
+                rationale_parts.append(f"\n\n*Resumo Geral*:\n{result.overall_summary}")
 
             # check sources_with_claims for debugging
             logger.debug(f"Number of sources_with_claims: {len(result.sources_with_claims)}")
