@@ -27,6 +27,8 @@ from app.ai.context.factcheckapi import (
     GoogleFactCheckGatherer
 )
 
+from app.config import get_trusted_domains
+
 
 class PipelineSteps(Protocol):
     """
@@ -145,10 +147,10 @@ class DefaultPipelineSteps:
             List of EvidenceGatherer instances (WebSearchGatherer, GoogleFactCheckGatherer)
         """
         from app.ai.context.web import WebSearchGatherer
-
+        allowed_domains = get_trusted_domains()
         return [
             GoogleFactCheckGatherer(timeout=15.0),
-            WebSearchGatherer(max_results=5, timeout=15.0)
+            WebSearchGatherer(max_results=5, timeout=15.0,allowed_domains=allowed_domains)
         ]
 
     def expand_links_from_sources(

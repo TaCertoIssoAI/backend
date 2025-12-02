@@ -439,6 +439,407 @@ async def test_time_profiling_decorator():
     print()
 
 
+# ===== DOMAIN FILTERING TESTS =====
+
+def test_build_search_query_no_domains():
+    """test query building without domain filtering."""
+    # setup
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=None)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("vaccines cause autism")
+
+    # validate
+    assert query == "vaccines cause autism", "should return original query when no domains"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - No Domains")
+    print("=" * 80)
+    print(f"\nInput:  'vaccines cause autism'")
+    print(f"Output: '{query}'")
+    print("✓ No domain filtering applied (fail-open)")
+    print()
+
+
+def test_build_search_query_empty_domains():
+    """test query building with empty domains list."""
+    # setup
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=[])
+
+    # execute
+    query = gatherer._build_search_query_with_domains("climate change")
+
+    # validate
+    assert query == "climate change", "should return original query when domains list is empty"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Empty Domains List")
+    print("=" * 80)
+    print(f"\nInput:  'climate change'")
+    print(f"Output: '{query}'")
+    print("✓ No domain filtering applied for empty list")
+    print()
+
+
+def test_build_search_query_single_domain():
+    """test query building with single domain."""
+    # setup
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=["who.int"])
+
+    # execute
+    query = gatherer._build_search_query_with_domains("COVID-19 vaccines")
+
+    # validate
+    expected = "COVID-19 vaccines (site:who.int)"
+    assert query == expected, f"should add single domain filter: expected '{expected}', got '{query}'"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Single Domain")
+    print("=" * 80)
+    print(f"\nInput:  'COVID-19 vaccines'")
+    print(f"Domains: ['who.int']")
+    print(f"Output: '{query}'")
+    print("✓ Single domain filter applied correctly")
+    print()
+
+
+def test_build_search_query_multiple_domains():
+    """test query building with multiple domains."""
+    # setup
+    domains = ["who.int", "cdc.gov", "gov.br"]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("vaccine safety")
+
+    # validate
+    expected = "vaccine safety (site:who.int OR site:cdc.gov OR site:gov.br)"
+    assert query == expected, f"should add multiple domain filters: expected '{expected}', got '{query}'"
+
+    # verify structure
+    assert "site:who.int" in query, "should contain who.int"
+    assert "site:cdc.gov" in query, "should contain cdc.gov"
+    assert "site:gov.br" in query, "should contain gov.br"
+    assert " OR " in query, "should use OR operator"
+    assert query.startswith("vaccine safety ("), "should start with original query"
+    assert query.endswith(")"), "should end with closing parenthesis"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Multiple Domains")
+    print("=" * 80)
+    print(f"\nInput:  'vaccine safety'")
+    print(f"Domains: {domains}")
+    print(f"Output: '{query}'")
+    print("✓ Multiple domain filters with OR operator")
+    print()
+
+
+def test_build_search_query_domains_with_whitespace():
+    """test query building handles domains with whitespace."""
+    # setup
+    domains = ["  who.int  ", "cdc.gov", "  gov.br"]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("test claim")
+
+    # validate - whitespace should be stripped
+    assert "site:who.int" in query, "should contain trimmed who.int"
+    assert "site:  who.int  " not in query, "should not contain whitespace around domain"
+
+    expected = "test claim (site:who.int OR site:cdc.gov OR site:gov.br)"
+    assert query == expected, f"should strip whitespace: expected '{expected}', got '{query}'"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Domains with Whitespace")
+    print("=" * 80)
+    print(f"\nInput:  'test claim'")
+    print(f"Domains: {domains}")
+    print(f"Output: '{query}'")
+    print("✓ Whitespace stripped from domains")
+    print()
+
+
+def test_build_search_query_domains_with_empty_strings():
+    """test query building filters out empty domain strings."""
+    # setup
+    domains = ["who.int", "", "  ", "cdc.gov"]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("health data")
+
+    # validate - empty strings should be filtered out
+    expected = "health data (site:who.int OR site:cdc.gov)"
+    assert query == expected, f"should filter empty strings: expected '{expected}', got '{query}'"
+    assert query.count("site:") == 2, "should only have 2 site: operators"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Filter Empty Strings")
+    print("=" * 80)
+    print(f"\nInput:  'health data'")
+    print(f"Domains: {domains}")
+    print(f"Output: '{query}'")
+    print("✓ Empty strings filtered out")
+    print()
+
+
+def test_build_search_query_all_empty_domains():
+    """test query building when all domains are empty/whitespace."""
+    # setup
+    domains = ["", "  ", "   "]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("test query")
+
+    # validate - should fail-open and return original query
+    assert query == "test query", "should return original query when all domains are empty"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - All Empty Domains")
+    print("=" * 80)
+    print(f"\nInput:  'test query'")
+    print(f"Domains: {domains}")
+    print(f"Output: '{query}'")
+    print("✓ Fail-open behavior when all domains empty")
+    print()
+
+
+def test_build_search_query_special_characters_in_claim():
+    """test query building with special characters in claim text."""
+    # setup
+    domains = ["who.int", "cdc.gov"]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute - claim with quotes and special chars
+    claim_text = 'vaccines "mRNA technology" & safety (2024)'
+    query = gatherer._build_search_query_with_domains(claim_text)
+
+    # validate
+    expected = 'vaccines "mRNA technology" & safety (2024) (site:who.int OR site:cdc.gov)'
+    assert query == expected, f"should preserve special chars: expected '{expected}', got '{query}'"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Special Characters")
+    print("=" * 80)
+    print(f"\nInput:  '{claim_text}'")
+    print(f"Domains: {domains}")
+    print(f"Output: '{query}'")
+    print("✓ Special characters preserved in query")
+    print()
+
+
+def test_build_search_query_subdomain_support():
+    """test that root domains will match subdomains."""
+    # setup
+    domains = ["gov.br"]  # should match saude.gov.br, anvisa.gov.br, etc.
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("Brazilian health policy")
+
+    # validate
+    expected = "Brazilian health policy (site:gov.br)"
+    assert query == expected, f"should use root domain: expected '{expected}', got '{query}'"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Subdomain Support")
+    print("=" * 80)
+    print(f"\nInput:  'Brazilian health policy'")
+    print(f"Domains: {domains}")
+    print(f"Output: '{query}'")
+    print("✓ Root domain 'gov.br' will match all *.gov.br subdomains")
+    print("  (e.g., saude.gov.br, anvisa.gov.br, planalto.gov.br)")
+    print()
+
+
+def test_build_search_query_many_domains():
+    """test query building with many domains."""
+    # setup
+    domains = [
+        "who.int",
+        "cdc.gov",
+        "gov.br",
+        "fiocruz.br",
+        "fapesp.br",
+        "scielo.br",
+        "ebc.com.br"
+    ]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+
+    # execute
+    query = gatherer._build_search_query_with_domains("health research")
+
+    # validate
+    assert query.startswith("health research ("), "should start with original query"
+    assert query.count("site:") == len(domains), f"should have {len(domains)} site: operators"
+    assert query.count(" OR ") == len(domains) - 1, f"should have {len(domains) - 1} OR operators"
+
+    for domain in domains:
+        assert f"site:{domain}" in query, f"should contain site:{domain}"
+
+    print("\n" + "=" * 80)
+    print("TEST: Build Search Query - Many Domains")
+    print("=" * 80)
+    print(f"\nInput:  'health research'")
+    print(f"Domains: {len(domains)} domains")
+    print(f"Output length: {len(query)} characters")
+    print(f"✓ All {len(domains)} domains included with OR operators")
+    print()
+
+
+@pytest.mark.asyncio
+async def test_gather_with_domain_filtering():
+    """test actual gather with domain filtering (integration test)."""
+    # setup - limit to trusted health domains
+    domains = ["who.int", "cdc.gov"]
+    gatherer = WebSearchGatherer(max_results=3, timeout=45.0, allowed_domains=domains)
+    claim = create_test_claim("COVID-19 vaccine effectiveness")
+
+    # execute - real API call with domain filtering
+    citations = await gatherer.gather(claim)
+
+    # validate
+    print_citations(citations, "Gather with Domain Filtering")
+
+    # assert we got results
+    assert len(citations) > 0, "should return at least one citation with domain filtering"
+
+    # verify all results are from allowed domains
+    for citation in citations:
+        url = citation.url.lower()
+        url_domain = citation.publisher.lower()
+
+        # check if citation matches any allowed domain
+        is_allowed = any(
+            allowed_domain in url or allowed_domain in url_domain
+            for allowed_domain in domains
+        )
+
+        print(f"  URL: {citation.url}")
+        print(f"  Publisher: {citation.publisher}")
+        print(f"  Matches allowed domains: {is_allowed}")
+        print()
+
+        # assert each citation is from an allowed domain
+        assert is_allowed, (
+            f"citation from {citation.publisher} ({citation.url}) "
+            f"should match one of the allowed domains: {domains}"
+        )
+
+    print("✓ Domain filtering applied to search query")
+    print(f"✓ Allowed domains: {domains}")
+    print(f"✓ All {len(citations)} citation(s) are from allowed domains")
+    print()
+
+
+@pytest.mark.asyncio
+async def test_gather_with_gov_br_domain_filtering():
+    """test gather with gov.br domain to verify subdomain matching (integration test)."""
+    # setup - restrict to Brazilian government sites
+    domains = ["gov.br"]
+    gatherer = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=domains)
+    claim = create_test_claim("vacinas COVID-19 Brasil")
+
+    # execute - real API call
+    citations = await gatherer.gather(claim)
+
+    # validate
+    print_citations(citations, "Gather with gov.br Domain Filtering")
+
+    # assert we got results
+    assert len(citations) > 0, "should return citations from gov.br domains"
+
+    # verify all results are from gov.br or subdomains
+    gov_br_count = 0
+    for citation in citations:
+        url = citation.url.lower()
+        publisher = citation.publisher.lower()
+
+        # check if it's a gov.br domain or subdomain
+        is_gov_br = "gov.br" in url or "gov.br" in publisher
+
+        print(f"  Publisher: {citation.publisher}")
+        print(f"  URL: {citation.url}")
+        print(f"  Is gov.br domain: {is_gov_br}")
+
+        if is_gov_br:
+            gov_br_count += 1
+            # extract subdomain for informational purposes
+            if "gov.br" in publisher:
+                subdomain = publisher.split(".gov.br")[0].split(".")[-1] if "." in publisher else "root"
+                print(f"  Subdomain detected: {subdomain}")
+        print()
+
+        # assert it matches gov.br
+        assert is_gov_br, (
+            f"citation from {citation.publisher} should be from gov.br or its subdomains"
+        )
+
+    print(f"✓ All {len(citations)} citation(s) are from gov.br or subdomains")
+    print(f"✓ Examples: saude.gov.br, anvisa.gov.br, planalto.gov.br, etc.")
+    print()
+
+
+@pytest.mark.asyncio
+async def test_gather_without_vs_with_domain_filtering():
+    """test comparing results with and without domain filtering (integration test)."""
+    claim = create_test_claim("climate change global warming")
+
+    # first: gather without filtering (open web)
+    gatherer_no_filter = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=None)
+    citations_no_filter = await gatherer_no_filter.gather(claim)
+
+    # second: gather with strict domain filtering
+    trusted_domains = ["who.int", "nasa.gov", "noaa.gov"]
+    gatherer_with_filter = WebSearchGatherer(max_results=5, timeout=45.0, allowed_domains=trusted_domains)
+    citations_with_filter = await gatherer_with_filter.gather(claim)
+
+    print("\n" + "=" * 80)
+    print("TEST: Gather Without vs With Domain Filtering")
+    print("=" * 80)
+
+    # validate both returned results
+    print(f"\nResults without filtering: {len(citations_no_filter)} citation(s)")
+    print(f"Results with filtering: {len(citations_with_filter)} citation(s)")
+
+    # assert we got results from both
+    assert len(citations_no_filter) > 0, "should get results without filtering"
+    assert len(citations_with_filter) > 0, "should get results with filtering"
+
+    # show domains from unfiltered results
+    print("\nDomains from UNFILTERED search:")
+    unfiltered_domains = set()
+    for citation in citations_no_filter[:5]:
+        domain = citation.publisher
+        unfiltered_domains.add(domain)
+        print(f"  - {domain}")
+
+    # show domains from filtered results
+    print(f"\nDomains from FILTERED search (allowed: {trusted_domains}):")
+    filtered_domains = set()
+    for citation in citations_with_filter:
+        domain = citation.publisher
+        filtered_domains.add(domain)
+        print(f"  - {domain}")
+
+        # assert each result matches allowed domains
+        is_allowed = any(
+            allowed in citation.url.lower() or allowed in domain.lower()
+            for allowed in trusted_domains
+        )
+        assert is_allowed, (
+            f"filtered result {domain} should match one of {trusted_domains}"
+        )
+
+    # compare diversity
+    print(f"\n✓ Unfiltered search returned {len(unfiltered_domains)} unique domains")
+    print(f"✓ Filtered search returned {len(filtered_domains)} unique domains")
+    print(f"✓ All filtered results match allowed domains: {trusted_domains}")
+    print()
+
+
 # ===== PYTEST CONFIGURATION =====
 
 if __name__ == "__main__":

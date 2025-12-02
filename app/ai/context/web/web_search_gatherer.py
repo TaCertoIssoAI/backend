@@ -20,7 +20,7 @@ class WebSearchGatherer:
     Searches Google for the claim text and converts top results into citations.
     """
 
-    def __init__(self, max_results: int = 5, timeout: float = 45.0):
+    def __init__(self, max_results: int = 5, timeout: float = 45.0, allowed_domains:list[str] | None = None):
         """
         Initialize web search gatherer.
 
@@ -33,6 +33,10 @@ class WebSearchGatherer:
         self.api_key = os.environ.get("GOOGLE_SEARCH_API_KEY", "")
         self.cse_cx = os.environ.get("GOOGLE_CSE_CX", "")
         self.base_url = "https://www.googleapis.com/customsearch/v1"
+        if allowed_domains is not None:
+            self.allowed_domains = allowed_domains
+        else:
+            self.allowed_domains = []
 
     @property
     def source_name(self) -> str:
@@ -58,11 +62,12 @@ class WebSearchGatherer:
                 print("[WEB SEARCH ERROR] missing GOOGLE_SEARCH_API_KEY or GOOGLE_CSE_CX")
                 return []
 
+            query_with_domains = self._build_search_query_with_domains(claim.text)
             # build request parameters
             params: Dict[str, Any] = {
                 "key": self.api_key,
                 "cx": self.cse_cx,
-                "q": claim.text,
+                "q": query_with_domains,
                 "num": self.max_results,
             }
 
@@ -125,3 +130,14 @@ class WebSearchGatherer:
         finally:
             loop.close()
             asyncio.set_event_loop(None)
+    
+    def _build_search_query_with_domains(self,original_query:str)->str:
+        if not self.allowed_domains:
+            return original_query
+        
+        valid_domains = [d.strip() for d in self.allowed_domains if d and d.strip()]
+        if not valid_domains:
+            return original_query
+
+        domain_filters = " OR ".join([f"site:{domain}" for domain in valid_domains])
+        return  f"{original_query} ({domain_filters})"

@@ -597,7 +597,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 2. **Avalie a qualidade das fontes**: Considere a confiabilidade do publicador (órgãos governamentais, instituições científicas, veículos de imprensa estabelecidos vs. sites desconhecidos).
 
-3. **Cite suas fontes**: Sempre mencione explicitamente as URLs e trechos das fontes que fundamentam seu veredito. Use aspas para citações diretas.
+3. **Cite suas fontes**: Sempre mencione explicitamente as URLs e trechos das fontes que fundamentam seu veredito. Use aspas para citações diretas. Não mencione apenas o número das fontes
 
 4. **Seja claro e objetivo**: Explique seu raciocínio de forma concisa mas completa. O usuário precisa entender POR QUE você chegou àquela conclusão.
 
@@ -628,8 +628,9 @@ IMPORTANTE:
 - Inclua o data_source_id e claim_id quando possível para identificar cada grupo de vereditos, mas não mencione essa fonte de dados no resumo final/justificativa
 - mantenha os resultados NA MESMA ORDEM das fontes apresentadas
 - Menciona na justificativa se todas as afirmações contem uma mesma narrativa/contexto ou se existe alguma afirmação que é um outlier. Não mencione IDs nessa parte
+- Não cite apenas o número da fonte, mas sim coloque todo o seu URL na citação
 
-## Exemplo de Justificação:
+## Exemplos de Justificação:
 
 BOM:
 "Segundo o Ministério da Saúde (https://saude.gov.br/estudo-vacinas), um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade. A alegação é contradita por múltiplas fontes científicas confiáveis."
@@ -637,12 +638,18 @@ BOM:
 RUIM:
 "Esta alegação é falsa." (Falta fundamentação e citação de fontes)
 
+BOM:
+"Segundo o jornal globo (https://globo.com) tal afirmação é verdadeira"
+
+RUIM:
+"Segundo o jornal globo [1] tal afirmação é verdadeira"
+
 ## Importante:
 
 - Seja rigoroso mas justo
 - Prefira "Não foi possível verificar" a fazer suposições
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
-- Sempre cite URLs completas nas justificativas
+- Sempre cite URLs completas nas justificativas e não apenas os números
 - Mantenha um tom profissional e imparcial"""
 
 ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredito fundamentado para cada uma.

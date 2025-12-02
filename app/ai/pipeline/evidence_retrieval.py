@@ -34,6 +34,7 @@ from app.ai.context.web import (
     WebSearchGatherer
 )
 from app.observability.logger.logger import get_logger
+from app.config import get_trusted_domains
 
 logger = get_logger(__name__)
 
@@ -74,7 +75,8 @@ async def gather_evidence_async(
     """
     # use default gatherers if none provided
     if gatherers is None:
-        gatherers = [WebSearchGatherer(max_results=5)]
+        allowed_domains = get_trusted_domains()
+        gatherers = [WebSearchGatherer(max_results=5,allowed_domains=allowed_domains)]
 
     # initialize result map (maps claim id to its enriched claim)
     claim_evidence_map: Dict[str, EnrichedClaim] = {}
