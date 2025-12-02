@@ -605,7 +605,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Não foi possível verificar".
 
-7. **Atenção a datas**: Verifique se as informações nas fontes são recentes e relevantes para a alegação sendo analisada.
+7. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
 
 ## Formato de Resposta:
 
