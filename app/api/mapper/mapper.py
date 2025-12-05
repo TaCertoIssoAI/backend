@@ -100,17 +100,20 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
         # build rationale text from verdicts
         if all_verdicts:
-            rationale_parts = ["Resultado da verificação:"]
+            rationale_parts = []
+
+            # add overall summary first if present
+            if result.overall_summary:
+                rationale_parts.append(f"*Resumo Geral*:\n{result.overall_summary}")
+
+            # add claims section header
+            rationale_parts.append("\n\n*Análise por afirmação*:")
 
             # add each verdict with its justification
             for i, verdict_item in enumerate(all_verdicts, 1):
                 rationale_parts.append(f"\n*{CLAIM_SUBSTR} {i}*: {verdict_item.claim_text}")
                 rationale_parts.append(f"*{VEREDICT_SUBSTR}* {verdict_item.verdict}")
                 rationale_parts.append(f"*{JUSTIFICATION_SUBSTR}* {verdict_item.justification}")
-
-            # add overall summary if present
-            if result.overall_summary:
-                rationale_parts.append(f"\n\n*Resumo Geral*:\n{result.overall_summary}")
 
             # check sources_with_claims for debugging
             logger.debug(f"Number of sources_with_claims: {len(result.sources_with_claims)}")
