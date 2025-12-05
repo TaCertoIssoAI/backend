@@ -597,7 +597,11 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 2. **Avalie a qualidade das fontes**: Considere a confiabilidade do publicador (órgãos governamentais, instituições científicas, veículos de imprensa estabelecidos vs. sites desconhecidos).
 
-3. **Cite suas fontes**: Sempre mencione explicitamente as URLs e trechos das fontes que fundamentam seu veredito. Use aspas para citações diretas. Não mencione apenas o número das fontes
+3. **Como referenciar fontes**:
+   - No resumo geral e nas justificativas de cada alegação, use APENAS números entre colchetes para referenciar fontes (exemplo: [1], [2], [3])
+   - NÃO inclua URLs diretamente no texto do resumo geral ou das justificativas
+   - NÃO escreva links como "https://..." ou "www..." no resumo ou justificativas
+   - As fontes serão listadas separadamente ao final, então basta numerá-las
 
 4. **Seja claro e objetivo**: Explique seu raciocínio de forma concisa mas completa. O usuário precisa entender POR QUE você chegou àquela conclusão.
 
@@ -624,32 +628,36 @@ Você deve retornar um objeto JSON estruturado contendo:
   - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar")
   - justification: sua explicação detalhada, citando as fontes
 
-IMPORTANTE: 
+IMPORTANTE:
 - Inclua o data_source_id e claim_id quando possível para identificar cada grupo de vereditos, mas não mencione essa fonte de dados no resumo final/justificativa
-- mantenha os resultados NA MESMA ORDEM das fontes apresentadas
-- Menciona na justificativa se todas as afirmações contem uma mesma narrativa/contexto ou se existe alguma afirmação que é um outlier. Não mencione IDs nessa parte
-- Não cite apenas o número da fonte, mas sim coloque todo o seu URL na citação
+- Mantenha os resultados NA MESMA ORDEM das fontes apresentadas
+- Mencione na justificativa se todas as afirmações contêm uma mesma narrativa/contexto ou se existe alguma afirmação que é um outlier. Não mencione IDs nessa parte
+- Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
+- NÃO inclua URLs (https://...) diretamente no resumo geral ou nas justificativas
 
 ## Exemplos de Justificação:
 
 BOM:
-"Segundo o Ministério da Saúde (https://saude.gov.br/estudo-vacinas), um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade. A alegação é contradita por múltiplas fontes científicas confiáveis."
+"Segundo o Ministério da Saúde [1], um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade. A alegação é contradita por múltiplas fontes científicas confiáveis [2][3]."
+
+RUIM:
+"Segundo o Ministério da Saúde (https://saude.gov.br/estudo-vacinas), um estudo com 50.000 participantes..." (NÃO inclua URLs no texto)
+
+BOM:
+"Segundo o jornal Globo [1], tal afirmação é verdadeira e foi confirmada por dados oficiais [2]."
 
 RUIM:
 "Esta alegação é falsa." (Falta fundamentação e citação de fontes)
 
-BOM:
-"Segundo o jornal globo (https://globo.com) tal afirmação é verdadeira"
-
 RUIM:
-"Segundo o jornal globo [1] tal afirmação é verdadeira"
+"Segundo https://globo.com, a informação é verdadeira" (NÃO use URLs diretamente, use números)
 
 ## Importante:
 
 - Seja rigoroso mas justo
 - Prefira "Não foi possível verificar" a fazer suposições
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
-- Sempre cite URLs completas nas justificativas e não apenas os números
+- Use SEMPRE números entre colchetes [1], [2], [3] para referenciar fontes, NUNCA URLs diretamente
 - Mantenha um tom profissional e imparcial"""
 
 ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredito fundamentado para cada uma.
@@ -660,7 +668,7 @@ ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredi
 
 Para cada alegação, forneça:
 1. O veredito (Verdadeiro, Falso, Fora de Contexto, ou Não foi possível verificar)
-2. Uma justificativa detalhada citando as fontes fornecidas
+2. Uma justificativa detalhada citando as fontes fornecidas com números referentes à fonte. Ex: [1]
 
 Retorne sua análise como um objeto JSON estruturado conforme especificado."""
 

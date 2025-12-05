@@ -147,7 +147,13 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
             logger.debug(f"Total unique citations collected: {len(all_citations)}")
 
+            # build main rationale text first
             rationale = "\n".join(rationale_parts)
+
+            # add only citations that were actually referenced in the text
+            citation_text = _add_citations_to_final_msg(rationale, all_citations)
+            if citation_text:
+                rationale = rationale + citation_text
         else:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
 
@@ -159,16 +165,47 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             responseWithoutLinks=resp_without_links,
         )
 
-def _add_citations_to_final_msg(all_citations:list)->list:
-    # add sources section if we have citations
-    citation_parts = []
-    if all_citations:
-        citation_parts.append("\n\nFontes:")
-        for i, citation in enumerate(all_citations, 1):
-            citation_parts.append(f"\n[{i}] {citation.title}")
+def _add_citations_to_final_msg(rationale_text: str, all_citations: list) -> str:
+    """
+    extract citation references from text and add only referenced citations.
+
+    finds all [number] patterns in the rationale text and includes only those
+    citations in the final sources list.
+
+    args:
+        rationale_text: the complete rationale text with [1], [2], etc. references
+        all_citations: list of all available citations
+
+    returns:
+        formatted string with only referenced sources, or empty string if none
+    """
+    import re
+
+    if not all_citations:
+        return ""
+
+    # find all [number] patterns in the text
+    pattern = r'\[(\d+)\]'
+    matches = re.findall(pattern, rationale_text)
+
+    # convert to set of unique numbers and sort
+    referenced_numbers = sorted(set(int(num) for num in matches))
+
+    if not referenced_numbers:
+        return ""
+
+    # build citation parts for only referenced sources
+    citation_parts = ["\n\n*Fontes*:"]
+
+    for num in referenced_numbers:
+        # citations are 1-indexed in text, but 0-indexed in list
+        idx = num - 1
+        if 0 <= idx < len(all_citations):
+            citation = all_citations[idx]
+            citation_parts.append(f"\n[{num}] {citation.title}")
             citation_parts.append(f"    Fonte: {citation.publisher}")
             citation_parts.append(f"    URL: {citation.url}")
             if citation.date:
                 citation_parts.append(f"    Data: {citation.date}")
-    
-    return citation_parts
+
+    return "\n".join(citation_parts)
