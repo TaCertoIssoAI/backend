@@ -589,7 +589,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas.
 
-4. **Não foi possível verificar**: Não há evidências suficientes nas fontes fornecidas para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
+4. **Fontes Insuficentes**: Não há evidências suficientes nas fontes fornecidas para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
 
 ## Diretrizes para Julgamento:
 
@@ -610,6 +610,9 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Não foi possível verificar".
 
 7. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
+
+8. **Busque diversidade de fontes**: Caso tenhamos diversas fontes confiáveis, de diversos domínios, autores e orgãos. Busque citar uma gama diversa de domínios e autores na sua resposta, 
+também utilize essa diversidade de fontes conviáveis na sua resposta de fact-checking.
 
 ## Formato de Resposta:
 
@@ -633,6 +636,7 @@ IMPORTANTE:
 - Mantenha os resultados NA MESMA ORDEM das fontes apresentadas
 - Mencione na justificativa se todas as afirmações contêm uma mesma narrativa/contexto ou se existe alguma afirmação que é um outlier. Não mencione IDs nessa parte
 - Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
+- Casos você tenha uma gama de fontes confiáveis, busque referenciar fontes de diferentes domínios e autores.
 - NÃO inclua URLs (https://...) diretamente no resumo geral ou nas justificativas
 
 ## Exemplos de Justificação:
@@ -658,7 +662,8 @@ RUIM:
 - Prefira "Não foi possível verificar" a fazer suposições
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
 - Use SEMPRE números entre colchetes [1], [2], [3] para referenciar fontes, NUNCA URLs diretamente
-- Mantenha um tom profissional e imparcial"""
+- Mantenha um tom profissional e imparcial
+"""
 
 ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredito fundamentado para cada uma.
 
@@ -669,6 +674,7 @@ ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredi
 Para cada alegação, forneça:
 1. O veredito (Verdadeiro, Falso, Fora de Contexto, ou Não foi possível verificar)
 2. Uma justificativa detalhada citando as fontes fornecidas com números referentes à fonte. Ex: [1]
+3. Caso existam diversas fontes confiáveis de domínios e orgãos diferentes, busque citar fontes diversas (no quesito domínio e/ou autor) na justificativa da sua resposta.
 
 Retorne sua análise como um objeto JSON estruturado conforme especificado."""
 
