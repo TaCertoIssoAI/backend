@@ -6,7 +6,7 @@ import asyncio
 from app.models.api import Request, AnalysisResponse
 from app.clients import send_analytics_payload
 from app.observability.analytics import AnalyticsCollector
-from app.api.mapper import request_to_data_sources,fact_check_result_to_response
+from app.api.mapper import request_to_data_sources,fact_check_result_to_response, sanitize_request, sanitize_response
 from app.ai import run_fact_check_pipeline
 from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
@@ -56,13 +56,16 @@ async def analyze_text(request: Request) -> AnalysisResponse:
     logger.info(f"[{msg_id}] received /text request with {len(request.content)} content item(s)")
 
     try:
+        # step 0: sanitize request to remove PII
+        sanitized_request = sanitize_request(request)
+
         # log full request for debugging
-        _log_request_details(msg_id, request)
+        _log_request_details(msg_id, sanitized_request)
 
         #init analytics for the pipeline
         analytics = AnalyticsCollector(msg_id)
         # step 1: convert API request to internal DataSource format
-        data_sources = request_to_data_sources(request)
+        data_sources = request_to_data_sources(sanitized_request)
         analytics.populate_from_data_sources(data_sources)
 
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
@@ -85,7 +88,11 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 4: build response
         logger.info(f"[{msg_id}] building response")
         response = fact_check_result_to_response(msg_id, fact_check_result)
-        analytics.set_final_response(response.rationale)
+
+        # step 5: sanitize response to remove PII
+        sanitized_response = sanitize_response(response)
+
+        analytics.set_final_response(sanitized_response.rationale)
 
         # only send analytics if claims were extracted
         if analytics.has_extracted_claims():
@@ -97,7 +104,7 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         total_duration = (time.time() - start_time) * 1000
         logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms")
 
-        return response
+        return sanitized_response
 
     except Exception as e:
         total_duration = (time.time() - start_time) * 1000

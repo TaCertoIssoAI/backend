@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException
 from app.models.api import Request, AnalysisResponse
 from app.clients import send_analytics_payload
 from app.api import request_to_data_sources
-from app.api.mapper import request_to_data_sources,fact_check_result_to_response
+from app.api.mapper import request_to_data_sources,fact_check_result_to_response, sanitize_request, sanitize_response
 from app.ai import run_fact_check_pipeline
 from app.config.default import get_default_pipeline_config
 from app.config.azure_models import get_azure_default_pipeline_config
@@ -50,15 +50,19 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
     logger.info(f"[{msg_id}] received /text-without-browser request with {len(request.content)} content item(s)")
 
     try:
+        # step 0: sanitize request to remove PII
+        logger.info(f"[{msg_id}] sanitizing request to remove PII")
+        sanitized_request = sanitize_request(request)
+
         analytics = AnalyticsCollector(msg_id)
         # log request details
-        for idx, item in enumerate(request.content):
+        for idx, item in enumerate(sanitized_request.content):
             content_preview = item.textContent[:100] if item.textContent else "None"
             logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
 
         # step 1: convert API request to internal DataSource format
         logger.info(f"[{msg_id}] converting request to data sources")
-        data_sources = request_to_data_sources(request)
+        data_sources = request_to_data_sources(sanitized_request)
         analytics.populate_from_data_sources(data_sources)
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
@@ -89,7 +93,12 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
         # build response
         logger.info(f"[{msg_id}] building response")
         response = fact_check_result_to_response(msg_id, fact_check_result)
-        analytics.set_final_response(response.rationale)
+
+        # sanitize response to remove PII
+        logger.info(f"[{msg_id}] sanitizing response to remove PII")
+        sanitized_response = sanitize_response(response)
+
+        analytics.set_final_response(sanitized_response.rationale)
         # only send analytics if claims were extracted
         if analytics.has_extracted_claims():
             logger.info(f"[{msg_id}] sending analytics payload (claims found)")
@@ -100,7 +109,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
         total_duration = (time.time() - start_time) * 1000
         logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms")
 
-        return response
+        return sanitized_response
 
     except Exception as e:
         total_duration = (time.time() - start_time) * 1000
@@ -148,14 +157,18 @@ async def analyze_text_no_browser_azure(request: Request) -> AnalysisResponse:
     logger.info(f"[{msg_id}] received /text-no-browser-azure request with {len(request.content)} content item(s)")
 
     try:
+        # step 0: sanitize request to remove PII
+        logger.info(f"[{msg_id}] sanitizing request to remove PII")
+        sanitized_request = sanitize_request(request)
+
         # log request details
-        for idx, item in enumerate(request.content):
+        for idx, item in enumerate(sanitized_request.content):
             content_preview = item.textContent[:100] if item.textContent else "None"
             logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
 
         # step 1: convert API request to internal DataSource format
         logger.info(f"[{msg_id}] converting request to data sources")
-        data_sources = request_to_data_sources(request)
+        data_sources = request_to_data_sources(sanitized_request)
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get azure pipeline configuration
@@ -217,16 +230,22 @@ async def analyze_text_no_browser_azure(request: Request) -> AnalysisResponse:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
             overall_verdict = "no_claims"
 
-        total_duration = (time.time() - start_time) * 1000
-        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms, verdict={overall_verdict}")
-
-        return AnalysisResponse(
+        # create response and sanitize to remove PII
+        response = AnalysisResponse(
             message_id=str(msg_id),
             verdict=overall_verdict,
             rationale=rationale,
             responseWithoutLinks=rationale,
             processing_time_ms=int(total_duration)
         )
+
+        logger.info(f"[{msg_id}] sanitizing response to remove PII")
+        sanitized_response = sanitize_response(response)
+
+        total_duration = (time.time() - start_time) * 1000
+        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms, verdict={overall_verdict}")
+
+        return sanitized_response
 
     except Exception as e:
         total_duration = (time.time() - start_time) * 1000
@@ -270,14 +289,18 @@ async def analyze_text_no_browser_gemini(request: Request) -> AnalysisResponse:
     logger.info(f"[{msg_id}] received /text-no-browser-gemini request with {len(request.content)} content item(s)")
 
     try:
+        # step 0: sanitize request to remove PII
+        logger.info(f"[{msg_id}] sanitizing request to remove PII")
+        sanitized_request = sanitize_request(request)
+
         # log request details
-        for idx, item in enumerate(request.content):
+        for idx, item in enumerate(sanitized_request.content):
             content_preview = item.textContent[:100] if item.textContent else "None"
             logger.info(f"[{msg_id}] content[{idx}]: type={item.type}, text_length={len(item.textContent or '')}, preview='{content_preview}...'")
 
         # step 1: convert API request to internal DataSource format
         logger.info(f"[{msg_id}] converting request to data sources")
-        data_sources = request_to_data_sources(request)
+        data_sources = request_to_data_sources(sanitized_request)
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
         # step 2: get gemini pipeline configuration
@@ -339,16 +362,22 @@ async def analyze_text_no_browser_gemini(request: Request) -> AnalysisResponse:
             rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
             overall_verdict = "no_claims"
 
-        total_duration = (time.time() - start_time) * 1000
-        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms, verdict={overall_verdict}")
-
-        return AnalysisResponse(
+        # create response and sanitize to remove PII
+        response = AnalysisResponse(
             message_id=str(msg_id),
             verdict=overall_verdict,
             rationale=rationale,
             responseWithoutLinks=rationale,
             processing_time_ms=int(total_duration)
         )
+
+        logger.info(f"[{msg_id}] sanitizing response to remove PII")
+        sanitized_response = sanitize_response(response)
+
+        total_duration = (time.time() - start_time) * 1000
+        logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms, verdict={overall_verdict}")
+
+        return sanitized_response
 
     except Exception as e:
         total_duration = (time.time() - start_time) * 1000
