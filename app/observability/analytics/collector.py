@@ -349,6 +349,17 @@ class AnalyticsCollector:
 
     # ===== HELPER METHODS =====
 
+    def has_extracted_claims(self) -> bool:
+        """
+        check if any claims were extracted during the pipeline.
+
+        returns:
+            True if at least one claim exists in Claims dict or ResponseByDataSource, False otherwise
+        """
+        has_claims_dict = len(self.analytics.Claims) > 0
+        has_response_data = len(self.analytics.ResponseByDataSource) > 0
+        return has_claims_dict or has_response_data
+
     def _extract_urls_from_text(self, text: str) -> List[str]:
         """
         extract URLs from text.

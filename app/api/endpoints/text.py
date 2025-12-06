@@ -86,7 +86,13 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         logger.info(f"[{msg_id}] building response")
         response = fact_check_result_to_response(msg_id, fact_check_result)
         analytics.set_final_response(response.rationale)
-        asyncio.create_task(send_analytics_payload(analytics))
+
+        # only send analytics if claims were extracted
+        if analytics.has_extracted_claims():
+            logger.info(f"[{msg_id}] sending analytics payload (claims found)")
+            asyncio.create_task(send_analytics_payload(analytics))
+        else:
+            logger.info(f"[{msg_id}] skipping analytics payload (no claims extracted)")
 
         total_duration = (time.time() - start_time) * 1000
         logger.info(f"[{msg_id}] request completed successfully in {total_duration:.0f}ms")
