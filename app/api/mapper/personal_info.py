@@ -142,7 +142,7 @@ def remove_all_pii(text: str) -> str:
 
     # remove in order of specificity
     # (more specific patterns first to avoid conflicts)
-    text = remove_credit_cards(text)
+    #text = remove_credit_cards(text) we will be removing this check due to issues found with false-positives
     text = remove_cnpj(text)  # before CPF as CNPJ is longer
     text = remove_cpf(text)
     text = remove_cep(text)
