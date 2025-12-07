@@ -9,9 +9,18 @@ ANALYTICS_SERVICE_URL = _URL_ENV_VAR if _URL_ENV_VAR is not None else ""
 _ENDPOINT_ENV_VAR = os.getenv("ANALYTICS_SERVICE_ENDPOINT")
 ANALYTICS_SERVICE_ENDPOINT  = _ENDPOINT_ENV_VAR if _ENDPOINT_ENV_VAR is not None else "/analises"
 
+_ANALYTICS_WEBSITE_VAR = os.getenv("ANALYTICS_WEBSITE_VAR")
+ANALYTICS_WEBSITE_URL = _ANALYTICS_WEBSITE_VAR if _ANALYTICS_WEBSITE_VAR is not None else "https://tacertoissoai.com.br"
+
 _TIMEOUT = 20
 logger = logging.getLogger(__name__)
 
+
+def get_analytics_url_for_fact_check(msg_id:str)->str:
+    """
+    Returns the full URL where the fact-checking report will be hosted at in the analytics web page
+    """
+    return f"{ANALYTICS_WEBSITE_URL}/verificacao/{msg_id}"
 
 async def send_analytics_payload(collector: AnalyticsCollector)->None:
     """

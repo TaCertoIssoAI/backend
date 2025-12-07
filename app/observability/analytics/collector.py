@@ -49,8 +49,6 @@ class AnalyticsCollector:
         >>> print(data.model_dump_json(indent=2))
     """
 
-    id: uuid.UUID #id for the anaytics message
-
     def __init__(self, msg_id: uuid.UUID, message_type: MessageType = MessageType.FROM_DIRECT_MESSAGE):
         """
         initialize analytics collector.
@@ -60,9 +58,8 @@ class AnalyticsCollector:
         """
         tz = timezone(timedelta(hours=-3))  # GMT-3
         now_str = datetime.now(tz).isoformat(timespec="seconds")
-        self.analytics = PipelineAnalytics(message_type=message_type, Date=now_str)
+        self.analytics = PipelineAnalytics(DocumentId=str(msg_id), message_type=message_type, Date=now_str)
         self.start_time = time.time()
-        self.id = msg_id
 
       
         self.analytics.Date = now_str

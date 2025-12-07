@@ -1,1 +1,1 @@
-from .analytics_service import send_analytics_payload
+from .analytics_service import send_analytics_payload,get_analytics_url_for_fact_check

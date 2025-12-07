@@ -13,6 +13,7 @@ from app.models.api import Request, ContentType,AnalysisResponse
 from app.models.commondata import DataSource
 from app.models.factchecking import ClaimSourceType,FactCheckResult
 from app.observability.logger.logger import get_logger
+from app.clients import get_analytics_url_for_fact_check
 
 from .formating import VEREDICT_SUBSTR,JUSTIFICATION_SUBSTR,CLAIM_SUBSTR, remove_link_like_substrings
 
@@ -106,11 +107,12 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             if result.overall_summary:
                 rationale_parts.append(f"*Resumo Geral*:\n{result.overall_summary}")
 
-            
-
+            analytics_url = get_analytics_url_for_fact_check(str(msg_id))
+            rationale_parts.append("Saiba mais sobre esse julgamento no nosso website: \n")
+            rationale_parts.append(f"{analytics_url}\n")
 
             # add claims section header
-            rationale_parts.append("\n\n*Análise por afirmação*:")
+            rationale_parts.append("\n*Análise por afirmação*:")
 
             # add each verdict with its justification
             for i, verdict_item in enumerate(all_verdicts, 1):
