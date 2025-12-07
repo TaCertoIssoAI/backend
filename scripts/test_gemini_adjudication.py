@@ -24,7 +24,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas.
 
-4. **Não foi possível verificar**: Não há evidências suficientes nas fontes fornecidas para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
+4. **Fontes insuficientes para verificar**: Não há evidências suficientes nas fontes fornecidas para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
 
 ## Diretrizes para Julgamento:
 
@@ -38,7 +38,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 5. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
 
-6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Não foi possível verificar".
+6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
 
 7. **Atenção a datas**: Verifique se as informações nas fontes são recentes e relevantes para a alegação sendo analisada.
 
@@ -56,7 +56,7 @@ Você deve retornar um objeto JSON estruturado contendo:
 - Cada veredito contém:
   - claim_id: o ID da alegação (você verá em "Afirmação ID: xxx")
   - claim_text: o texto da alegação (exatamente como foi apresentado)
-  - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar")
+  - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar")
   - justification: sua explicação detalhada, citando as fontes
 
 IMPORTANTE:
@@ -74,7 +74,7 @@ RUIM:
 ## Importante:
 
 - Seja rigoroso mas justo
-- Prefira "Não foi possível verificar" a fazer suposições
+- Prefira "Fontes insuficientes para verificar" a fazer suposições
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
 - Sempre cite URLs completas nas justificativas
 - Mantenha um tom profissional e imparcial"""
@@ -219,7 +219,7 @@ USER_PROMPT = f"""Analise as alegações abaixo e forneça um veredito fundament
 {ADDITIONAL_CONTEXT}
 
 Para cada alegação, forneça:
-1. O veredito (Verdadeiro, Falso, Fora de Contexto, ou Não foi possível verificar)
+1. O veredito (Verdadeiro, Falso, Fora de Contexto, ou Fontes insuficientes para verificar)
 2. Uma justificativa detalhada citando as fontes fornecidas
 
 Retorne sua análise como um objeto JSON estruturado conforme especificado."""

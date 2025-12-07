@@ -27,7 +27,7 @@ CitationSource = Literal[
 ]
 
 
-VerdictType = Literal["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+VerdictType = Literal["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
 
 
 

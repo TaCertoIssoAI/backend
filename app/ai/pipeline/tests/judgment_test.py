@@ -27,6 +27,7 @@ from app.models import (
     DataSource,
     EnrichedClaim,
     Citation,
+    ClaimSource,
 )
 from app.ai.pipeline import (
     adjudicate_claims,
@@ -101,7 +102,7 @@ def validate_claim_verdict(verdict: ClaimVerdict):
     assert isinstance(verdict.justification, str), "Justification should be a string"
 
     # Verdict should be one of the valid options
-    valid_verdicts = ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+    valid_verdicts = ["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
     assert verdict.verdict in valid_verdicts, f"Verdict must be one of {valid_verdicts}, got: {verdict.verdict}"
 
     # Validate citations_used field
@@ -159,19 +160,18 @@ def test_basic_adjudication_single_claim():
     # Create enriched claim with evidence
     enriched_claim = EnrichedClaim(
         id="claim-uuid-1",
-        claim_text="A vacina X causa infertilidade em mulheres",
+        text="A vacina X causa infertilidade em mulheres",
+        source=ClaimSource(source_type="original_text", source_id="msg-001"),
         citations=[
             Citation(
                 url="https://saude.gov.br/estudo-vacinas",
                 title="Estudo de Segurança de Vacinas",
                 publisher="Ministério da Saúde",
-                quoted="Um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade.",
+                citation_text="Um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade.",
                 rating="Falso",
-                review_date="2024-11-05"
+                date="2024-11-05"
             )
-        ],
-        search_queries=["vacina X infertilidade", "vacina X fertilidade mulheres"],
-        retrieval_notes="Encontradas múltiplas fontes confiáveis contradizendo a alegação"
+        ]
     )
     
     source_with_claims = DataSourceWithClaims(
@@ -224,26 +224,24 @@ def test_adjudication_multiple_claims_same_source():
     enriched_claims = [
         EnrichedClaim(
             id="claim-uuid-2a",
-            claim_text="O presidente anunciou um imposto sobre carbono de R$250 por tonelada",
+            text="O presidente anunciou um imposto sobre carbono de R$250 por tonelada",
+            source=ClaimSource(source_type="original_text", source_id="msg-002"),
             citations=[
                 Citation(
                     url="https://g1.globo.com/politica",
                     title="Presidente anuncia imposto sobre carbono",
                     publisher="G1",
-                    quoted="O presidente confirmou o novo imposto sobre carbono no valor de R$250 por tonelada.",
+                    citation_text="O presidente confirmou o novo imposto sobre carbono no valor de R$250 por tonelada.",
                     rating="Verdadeiro",
-                    review_date="2024-11-10"
+                    date="2024-11-10"
                 )
-            ],
-            search_queries=["presidente imposto carbono"],
-            retrieval_notes="Confirmado por múltiplas fontes jornalísticas"
+            ]
         ),
         EnrichedClaim(
             id="claim-uuid-2b",
-            claim_text="O governo vai investir R$500 bilhões em energia renovável",
-            citations=[],
-            search_queries=["governo investimento energia renovável"],
-            retrieval_notes="Nenhuma fonte confiável encontrada para confirmar este valor"
+            text="O governo vai investir R$500 bilhões em energia renovável",
+            source=ClaimSource(source_type="original_text", source_id="msg-002"),
+            citations=[]
         )
     ]
     
@@ -296,21 +294,20 @@ def test_adjudication_multiple_data_sources():
     
     enriched_claim_1 = EnrichedClaim(
         id="claim-uuid-3a",
-        claim_text="A vacina da COVID causa problemas no coração",
+        text="A vacina da COVID causa problemas no coração",
+        source=ClaimSource(source_type="original_text", source_id="msg-003"),
         citations=[
             Citation(
                 url="https://www.fiocruz.br/covid-vacinas",
                 title="Segurança das Vacinas COVID-19",
                 publisher="Fiocruz",
-                quoted="Estudos mostram que casos de miocardite são raros e geralmente leves, com benefícios da vacinação superando riscos.",
+                citation_text="Estudos mostram que casos de miocardite são raros e geralmente leves, com benefícios da vacinação superando riscos.",
                 rating="Fora de Contexto",
-                review_date="2024-10-20"
+                date="2024-10-20"
             )
-        ],
-        search_queries=["vacina covid coração"],
-        retrieval_notes="Há casos raros de miocardite, mas a alegação omite contexto importante"
+        ]
     )
-    
+
     # Setup - Second data source (link context)
     data_source_2 = DataSource(
         id="link-004",
@@ -322,13 +319,12 @@ def test_adjudication_multiple_data_sources():
         },
         locale="pt-BR"
     )
-    
+
     enriched_claim_2 = EnrichedClaim(
         id="claim-uuid-3b",
-        claim_text="O uso de máscaras reduziu a transmissão de COVID em 70%",
-        citations=[],
-        search_queries=["máscaras eficácia covid"],
-        retrieval_notes="Não foram encontradas fontes para verificar este percentual específico"
+        text="O uso de máscaras reduziu a transmissão de COVID em 70%",
+        source=ClaimSource(source_type="link_context", source_id="link-004"),
+        citations=[]
     )
     
     sources_with_claims = [
@@ -387,10 +383,9 @@ def test_adjudication_no_evidence():
     
     enriched_claim = EnrichedClaim(
         id="claim-uuid-4",
-        claim_text="Existe uma nova tecnologia que permite carros voarem a 500 km/h",
-        citations=[],
-        search_queries=["carros voadores tecnologia"],
-        retrieval_notes="Nenhuma fonte encontrada sobre esta tecnologia específica"
+        text="Existe uma nova tecnologia que permite carros voarem a 500 km/h",
+        source=ClaimSource(source_type="original_text", source_id="msg-005"),
+        citations=[]
     )
     
     source_with_claims = DataSourceWithClaims(
@@ -423,7 +418,7 @@ def test_adjudication_no_evidence():
     assert len(result.results) == 1, "Should have results for 1 data source"
     assert len(result.results[0].claim_verdicts) == 1, "Should have 1 verdict"
     
-    # With no evidence, verdict should be "Não foi possível verificar"
+    # With no evidence, verdict should be "Fontes insuficientes para verificar"
     # Note: We don't assert this because LLM behavior may vary, but it's expected
 
 
@@ -440,27 +435,26 @@ def test_adjudication_with_contradictory_sources():
     
     enriched_claim = EnrichedClaim(
         id="claim-uuid-5",
-        claim_text="O café aumenta o risco de doenças cardíacas",
+        text="O café aumenta o risco de doenças cardíacas",
+        source=ClaimSource(source_type="original_text", source_id="msg-006"),
         citations=[
             Citation(
                 url="https://example.com/estudo1",
                 title="Café e Saúde Cardíaca - Estudo A",
                 publisher="Instituto de Pesquisa A",
-                quoted="Consumo moderado de café não está associado a aumento de risco cardíaco.",
+                citation_text="Consumo moderado de café não está associado a aumento de risco cardíaco.",
                 rating=None,
-                review_date="2024-09-15"
+                date="2024-09-15"
             ),
             Citation(
                 url="https://example.com/estudo2",
                 title="Riscos do Café - Estudo B",
                 publisher="Instituto de Pesquisa B",
-                quoted="Consumo excessivo de café pode aumentar pressão arterial temporariamente.",
+                citation_text="Consumo excessivo de café pode aumentar pressão arterial temporariamente.",
                 rating=None,
-                review_date="2024-10-01"
+                date="2024-10-01"
             )
-        ],
-        search_queries=["café doenças cardíacas"],
-        retrieval_notes="Fontes apresentam informações parcialmente contraditórias"
+        ]
     )
     
     source_with_claims = DataSourceWithClaims(
@@ -525,10 +519,9 @@ def test_return_type_is_fact_check_result():
     
     enriched_claim = EnrichedClaim(
         id="claim-uuid-6",
-        claim_text="Esta é uma afirmação de teste",
-        citations=[],
-        search_queries=["teste"],
-        retrieval_notes="Teste"
+        text="Esta é uma afirmação de teste",
+        source=ClaimSource(source_type="original_text", source_id="msg-007"),
+        citations=[]
     )
     
     source_with_claims = DataSourceWithClaims(
@@ -665,6 +658,155 @@ def test_citations_used_field_in_verdict():
     print(f"  Justification length: {len(verdict.justification)} chars")
     print(f"  Citations used by LLM: {len(verdict.citations_used)}")
     print("\n✅ SUCCESS: citations_used field is properly propagated from LLM output to ClaimVerdict!")
+    print()
+
+
+def test_insufficient_sources_no_citations():
+    """
+    Test that verdict is 'Fontes insuficientes para verificar' when no citations exist.
+
+    This tests the case where evidence gathering found absolutely nothing -
+    no fact-check results, no web search results, nothing.
+    """
+    # Setup
+    data_source = DataSource(
+        id="msg-insufficient-1",
+        source_type="original_text",
+        original_text="Dizem que existe um novo mineral chamado Unobtanium que pode curar todas as doenças.",
+        metadata={},
+        locale="pt-BR"
+    )
+
+    # Claim with absolutely no citations
+    enriched_claim = EnrichedClaim(
+        id="claim-insufficient-1",
+        text="Existe um novo mineral chamado Unobtanium que pode curar todas as doenças",
+        source=ClaimSource(source_type="original_text", source_id="msg-insufficient-1"),
+        citations=[]  # No evidence at all
+    )
+
+    source_with_claims = DataSourceWithClaims(
+        data_source=data_source,
+        enriched_claims=[enriched_claim]
+    )
+
+    adjudication_input = AdjudicationInput(
+        sources_with_claims=[source_with_claims]
+    )
+
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
+
+    # Print input for debugging
+    print_adjudication_input(adjudication_input, "No Citations Available")
+
+    # Execute
+    result = adjudicate_claims(
+        adjudication_input=adjudication_input,
+        llm_config=llm_config
+    )
+
+    # Print output for debugging
+    print_fact_check_result(result, "No Citations Available")
+
+    # Validate structure
+    validate_fact_check_result(result)
+    assert len(result.results) == 1, "Should have results for 1 data source"
+    assert len(result.results[0].claim_verdicts) == 1, "Should have 1 verdict"
+
+    # Assert the verdict is "Fontes insuficientes para verificar"
+    verdict = result.results[0].claim_verdicts[0]
+    assert verdict.verdict == "Fontes insuficientes para verificar", (
+        f"Expected verdict 'Fontes insuficientes para verificar' when no citations exist, "
+        f"got '{verdict.verdict}'"
+    )
+
+    print("\n" + "=" * 80)
+    print("TEST: Insufficient Sources - No Citations")
+    print("=" * 80)
+    print(f"✓ Verdict correctly set to: {verdict.verdict}")
+    print(f"✓ Justification: {verdict.justification[:100]}...")
+    print()
+
+
+def test_insufficient_sources_unverifiable_claim():
+    """
+    Test that verdict is 'Fontes insuficientes para verificar' for highly specific/unverifiable claims.
+
+    This tests claims that are too specific, obscure, or recent to have reliable evidence,
+    even if some weak sources exist.
+    """
+    # Setup
+    data_source = DataSource(
+        id="msg-insufficient-2",
+        source_type="original_text",
+        original_text="Um estudo secreto realizado em laboratório privado provou que comer 47 gramas de chocolate por dia aumenta QI em 15 pontos.",
+        metadata={},
+        locale="pt-BR"
+    )
+
+    # Claim with weak/unreliable citations
+    enriched_claim = EnrichedClaim(
+        id="claim-insufficient-2",
+        text="Um estudo secreto provou que comer 47 gramas de chocolate por dia aumenta QI em 15 pontos",
+        source=ClaimSource(source_type="original_text", source_id="msg-insufficient-2"),
+        citations=[
+            # Only vague or unreliable sources
+            Citation(
+                url="https://example.com/blog-post",
+                title="10 Fatos Surpreendentes Sobre Chocolate",
+                publisher="Blog Pessoal",
+                citation_text="Alguns especialistas acreditam que chocolate pode ter benefícios cognitivos.",
+                source=None,
+                rating=None,
+                date=None
+            )
+        ]
+    )
+
+    source_with_claims = DataSourceWithClaims(
+        data_source=data_source,
+        enriched_claims=[enriched_claim]
+    )
+
+    adjudication_input = AdjudicationInput(
+        sources_with_claims=[source_with_claims]
+    )
+
+    # Get Gemini config
+    pipeline_config = get_gemini_default_pipeline_config()
+    llm_config = pipeline_config.adjudication_llm_config
+
+    # Print input for debugging
+    print_adjudication_input(adjudication_input, "Weak/Unreliable Citations")
+
+    # Execute
+    result = adjudicate_claims(
+        adjudication_input=adjudication_input,
+        llm_config=llm_config
+    )
+
+    # Print output for debugging
+    print_fact_check_result(result, "Weak/Unreliable Citations")
+
+    # Validate structure
+    validate_fact_check_result(result)
+    assert len(result.results) == 1, "Should have results for 1 data source"
+    assert len(result.results[0].claim_verdicts) == 1, "Should have 1 verdict"
+
+    # Assert the verdict is "Fontes insuficientes para verificar"
+    verdict = result.results[0].claim_verdicts[0]
+    assert verdict.verdict == "Fontes insuficientes para verificar", (
+        f"Expected verdict 'Fontes insuficientes para verificar' for unverifiable claim, "
+        f"got '{verdict.verdict}'"
+    )
+
+    print("\n" + "=" * 80)
+    print("TEST: Insufficient Sources - Unverifiable Claim")
+    print("=" * 80)
+    print(f"✓ Verdict correctly set to: {verdict.verdict}")
+    print(f"✓ Justification: {verdict.justification[:100]}...")
     print()
 
 

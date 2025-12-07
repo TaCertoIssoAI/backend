@@ -607,7 +607,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 5. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
 
-6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Não foi possível verificar".
+6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
 
 7. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
 
@@ -628,7 +628,7 @@ Você deve retornar um objeto JSON estruturado contendo:
 - Cada veredito contém:
   - claim_id: o ID da alegação (você verá em "Afirmação ID: xxx")
   - claim_text: o texto da alegação (exatamente como foi apresentado)
-  - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar")
+  - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar")
   - justification: sua explicação detalhada, citando as fontes
 
 IMPORTANTE:
@@ -659,7 +659,7 @@ RUIM:
 ## Importante:
 
 - Seja rigoroso mas justo
-- Prefira "Não foi possível verificar" a fazer suposições
+- Prefira "Fontes insuficientes para verificar" a fazer suposições
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
 - Use SEMPRE números entre colchetes [1], [2], [3] para referenciar fontes, NUNCA URLs diretamente
 - Mantenha um tom profissional e imparcial
@@ -672,7 +672,7 @@ ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredi
 {additional_context}
 
 Para cada alegação, forneça:
-1. O veredito (Verdadeiro, Falso, Fora de Contexto, ou Não foi possível verificar)
+1. O veredito (Verdadeiro, Falso, Fora de Contexto, ou Fontes insuficientes para verificar)
 2. Uma justificativa detalhada citando as fontes fornecidas com números referentes à fonte. Ex: [1]
 3. Caso existam diversas fontes confiáveis de domínios e orgãos diferentes, busque citar fontes diversas (no quesito domínio e/ou autor) na justificativa da sua resposta.
 

@@ -73,17 +73,17 @@ def map_english_rating_to_portuguese(english_rating: str) -> Optional[str]:
     ]):
         return "Fora de Contexto"
 
-    # map to "Não foi possível verificar" (Could not verify)
+    # map to "Fontes insuficientes para verificar" (Could not verify)
     if any(word in rating_lower for word in [
         "unverifiable", "unproven", "unsupported", "unclear",
         "research in progress", "legend", "satire",
         "não foi possível", "impossível verificar"
     ]):
-        return "Não foi possível verificar"
+        return "Fontes insuficientes para verificar"
 
     # default: if we don't recognize it, mark as unverifiable
-    logger.warning(f"unknown rating '{english_rating}' - defaulting to 'Não foi possível verificar'")
-    return "Não foi possível verificar"
+    logger.warning(f"unknown rating '{english_rating}' - defaulting to 'Fontes insuficientes para verificar'")
+    return "Fontes insuficientes para verificar"
 
 
 class GoogleFactCheckGatherer:

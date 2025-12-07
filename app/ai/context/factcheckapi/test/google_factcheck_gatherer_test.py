@@ -264,7 +264,7 @@ async def test_gather_real_claim_vaccines():
             print(f"✓ Rating mapped to Portuguese: {citation.rating}")
             assert isinstance(citation.rating, str)
             # rating must be one of the portuguese verdict types
-            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
             # rating_comment should be None or a non-empty string
             if citation.rating_comment:
                 assert isinstance(citation.rating_comment, str)
@@ -311,7 +311,7 @@ async def test_gather_real_claim_climate():
         assert citation.source == "google_fact_checking_api"
         if citation.rating:
             print(f"    ✓ Rating mapped to Portuguese: {citation.rating}")
-            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
         else:
             print(f"    ⚠ No rating available")
 
@@ -352,7 +352,7 @@ async def test_gather_portuguese_claim():
         assert citation.source == "google_fact_checking_api"
         if citation.rating:
             print(f"    ✓ Rating mapped to Portuguese: {citation.rating}")
-            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
         else:
             print(f"    ⚠ No rating available")
 
@@ -403,7 +403,7 @@ async def test_compose_with_other_gatherers():
         assert citation.source == "google_fact_checking_api"
         if citation.rating:
             print(f"    ✓ Rating mapped to Portuguese: {citation.rating}")
-            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+            assert citation.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
         else:
             print(f"    ⚠ No rating available")
 
@@ -464,7 +464,7 @@ async def test_combine_google_and_web_search():
             # validate rating mapping for google citations
             if cit.rating:
                 print(f"     ✓ Rating mapped to Portuguese: {cit.rating}")
-                assert cit.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Não foi possível verificar"]
+                assert cit.rating in ["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
             else:
                 print(f"     ⚠ No rating available")
         elif cit.source == "apify_web_search":
