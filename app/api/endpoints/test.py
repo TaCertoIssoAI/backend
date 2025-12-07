@@ -3,7 +3,6 @@ Test endpoints for development and debugging.
 
 provides alternative endpoints with different configurations for testing purposes.
 """
-import uuid
 import time
 import asyncio
 import traceback
@@ -19,6 +18,7 @@ from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.tests.fixtures.mock_pipelinesteps import WithoutBrowsingPipelineSteps
 from app.observability.logger.logger import get_logger
 from app.observability.analytics import AnalyticsCollector
+from app.utils.id_generator import generate_message_id
 
 
 router = APIRouter()
@@ -45,7 +45,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
     returns detailed analysis with verdict, rationale, and citations.
     """
     start_time = time.time()
-    msg_id = uuid.uuid4()
+    msg_id = generate_message_id()
 
     logger.info(f"[{msg_id}] received /text-without-browser request with {len(request.content)} content item(s)")
 
@@ -152,7 +152,7 @@ async def analyze_text_no_browser_azure(request: Request) -> AnalysisResponse:
     returns detailed analysis with verdict, rationale, and citations.
     """
     start_time = time.time()
-    msg_id = uuid.uuid4()
+    msg_id = generate_message_id()
 
     logger.info(f"[{msg_id}] received /text-no-browser-azure request with {len(request.content)} content item(s)")
 
@@ -284,7 +284,7 @@ async def analyze_text_no_browser_gemini(request: Request) -> AnalysisResponse:
     returns detailed analysis with verdict, rationale, and citations.
     """
     start_time = time.time()
-    msg_id = uuid.uuid4()
+    msg_id = generate_message_id()
 
     logger.info(f"[{msg_id}] received /text-no-browser-gemini request with {len(request.content)} content item(s)")
 

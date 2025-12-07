@@ -94,7 +94,7 @@ def request_to_data_sources(
     return data_sources
 
 
-def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->AnalysisResponse:
+def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->AnalysisResponse:
         all_verdicts = []
         for ds_result in result.results:
             all_verdicts.extend(ds_result.claim_verdicts)
@@ -107,7 +107,7 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             if result.overall_summary:
                 rationale_parts.append(f"*Resumo Geral*:\n{result.overall_summary}")
 
-            analytics_url = get_analytics_url_for_fact_check(str(msg_id))
+            analytics_url = get_analytics_url_for_fact_check(msg_id)
             rationale_parts.append("Saiba mais sobre esse julgamento no nosso website: \n")
             rationale_parts.append(f"{analytics_url}\n")
 
@@ -167,7 +167,7 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
 
         resp_without_links = remove_link_like_substrings(rationale)
         return AnalysisResponse(
-            message_id=str(msg_id),
+            message_id=msg_id,
             rationale=rationale,
             responseWithoutLinks=resp_without_links,
         )

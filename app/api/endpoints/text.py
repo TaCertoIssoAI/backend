@@ -1,5 +1,4 @@
 from fastapi import APIRouter, HTTPException
-import uuid
 import time
 import traceback
 import asyncio
@@ -11,12 +10,13 @@ from app.ai import run_fact_check_pipeline
 from app.config.gemini_models import get_gemini_default_pipeline_config
 from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
 from app.observability.logger.logger import get_logger
+from app.utils.id_generator import generate_message_id
 
 router = APIRouter()
 logger = get_logger(__name__)
 
 
-def _log_request_details(msg_id: uuid.UUID, request: Request) -> None:
+def _log_request_details(msg_id: str, request: Request) -> None:
     """
     log detailed request information for debugging.
 
@@ -52,7 +52,7 @@ async def analyze_text(request: Request) -> AnalysisResponse:
     3. FastAPI handles the rest automatically
     """
     start_time = time.time()
-    msg_id = uuid.uuid4()
+    msg_id = generate_message_id()
     logger.info(f"[{msg_id}] received /text request with {len(request.content)} content item(s)")
 
     try:
