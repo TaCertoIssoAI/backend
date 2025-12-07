@@ -342,7 +342,7 @@ def test_text_with_broken_link():
     print("\n" + "=" * 80)
     print("TEST 6: Text with Potentially Broken Link")
     print("=" * 80)
-    
+
     payload = {
         "content": [
             {
@@ -351,10 +351,10 @@ def test_text_with_broken_link():
             }
         ]
     }
-    
+
     print("\n📤 Request payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
-    
+
     print("\n⏳ Sending request... (may fail gracefully for broken link)")
     start_time = time.time()
     response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
@@ -366,8 +366,183 @@ def test_text_with_broken_link():
 
     response_data = response.json()
     pretty_print_response(response_data)
-    
+
     print("\n✅ Test passed: Broken link handled gracefully")
+    return response_data
+
+
+def test_no_claims_fallback_greeting():
+    """
+    test no-claims fallback with a simple greeting.
+
+    this should trigger the fallback mechanism since greetings
+    do not contain verifiable claims.
+    """
+    print("\n" + "=" * 80)
+    print("TEST 7: No Claims Fallback - Greeting")
+    print("=" * 80)
+
+    payload = {
+        "content": [
+            {
+                "textContent": "Olá, bom dia! Como você está?",
+                "type": "text"
+            }
+        ]
+    }
+
+    print("\n📤 Request payload:")
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    print("\n⏳ Sending request... (should trigger no-claims fallback)")
+    start_time = time.time()
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+    response_data = response.json()
+
+    # print response with fallback-specific formatting
+    print("\n" + "=" * 80)
+    print("📋 NO-CLAIMS FALLBACK RESPONSE")
+    print("=" * 80)
+
+    if "message_id" in response_data:
+        print(f"\n🆔 Message ID: {response_data['message_id']}")
+
+    if "rationale" in response_data:
+        print(f"\n💡 Fallback Explanation:")
+        print(f"   {response_data['rationale']}")
+
+    if "responseWithoutLinks" in response_data:
+        print(f"\n📝 Response:")
+        print(f"   {response_data['responseWithoutLinks']}")
+
+    # verify no claims were extracted
+    if "claims" in response_data:
+        print(f"\n🔎 Claims: {len(response_data.get('claims', []))} (expected 0)")
+        assert len(response_data.get("claims", [])) == 0, "Should have no claims for greeting"
+
+    # verify response has rationale (fallback explanation)
+    assert "rationale" in response_data, "Response should have rationale/explanation"
+    assert len(response_data["rationale"]) > 0, "Rationale should not be empty"
+
+    print("\n" + "=" * 80)
+
+    print("\n✅ Test passed: No-claims fallback triggered correctly for greeting")
+    return response_data
+
+
+def test_no_claims_fallback_personal_opinion():
+    """
+    test no-claims fallback with a personal opinion.
+
+    personal opinions are not fact-checkable and should trigger fallback.
+    """
+    print("\n" + "=" * 80)
+    print("TEST 8: No Claims Fallback - Personal Opinion")
+    print("=" * 80)
+
+    payload = {
+        "content": [
+            {
+                "textContent": "Eu acho que azul é a cor mais bonita do mundo.",
+                "type": "text"
+            }
+        ]
+    }
+
+    print("\n📤 Request payload:")
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    print("\n⏳ Sending request... (should trigger no-claims fallback)")
+    start_time = time.time()
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+    response_data = response.json()
+
+    # print response
+    print("\n" + "=" * 80)
+    print("📋 NO-CLAIMS FALLBACK RESPONSE")
+    print("=" * 80)
+
+    if "message_id" in response_data:
+        print(f"\n🆔 Message ID: {response_data['message_id']}")
+
+    if "rationale" in response_data:
+        print(f"\n💡 Fallback Explanation:")
+        print(f"   {response_data['rationale']}")
+
+    # verify no claims and has explanation
+    assert "rationale" in response_data, "Response should have rationale/explanation"
+    assert len(response_data["rationale"]) > 0, "Rationale should not be empty"
+
+    print("\n" + "=" * 80)
+
+    print("\n✅ Test passed: No-claims fallback triggered correctly for personal opinion")
+    return response_data
+
+
+def test_no_claims_fallback_question():
+    """
+    test no-claims fallback with a question without verifiable claims.
+
+    questions that don't contain claims should trigger fallback.
+    """
+    print("\n" + "=" * 80)
+    print("TEST 9: No Claims Fallback - Question")
+    print("=" * 80)
+
+    payload = {
+        "content": [
+            {
+                "textContent": "Como faço para preparar um bolo de chocolate?",
+                "type": "text"
+            }
+        ]
+    }
+
+    print("\n📤 Request payload:")
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    print("\n⏳ Sending request... (should trigger no-claims fallback)")
+    start_time = time.time()
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    elapsed_time = time.time() - start_time
+
+    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"📥 Response status: {response.status_code}")
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+    response_data = response.json()
+
+    # print response
+    print("\n" + "=" * 80)
+    print("📋 NO-CLAIMS FALLBACK RESPONSE")
+    print("=" * 80)
+
+    if "message_id" in response_data:
+        print(f"\n🆔 Message ID: {response_data['message_id']}")
+
+    if "rationale" in response_data:
+        print(f"\n💡 Fallback Explanation:")
+        print(f"   {response_data['rationale']}")
+
+    # verify response structure
+    assert "rationale" in response_data, "Response should have rationale/explanation"
+    assert len(response_data["rationale"]) > 0, "Rationale should not be empty"
+
+    print("\n" + "=" * 80)
+
+    print("\n✅ Test passed: No-claims fallback triggered correctly for question")
     return response_data
 
 
@@ -390,6 +565,9 @@ def run_all_tests():
     # run all tests
     tests = [
         test_text_with_single_link,
+        test_no_claims_fallback_greeting,
+        test_no_claims_fallback_personal_opinion,
+        test_no_claims_fallback_question,
        # test_text_with_broken_link
        # test_text_with_multiple_links,
         #test_link_only_no_surrounding_text,

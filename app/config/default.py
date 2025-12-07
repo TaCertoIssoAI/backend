@@ -44,6 +44,14 @@ def get_default_pipeline_config() -> PipelineConfig:
                 timeout=60.0
             )
         ),
+        # fallback uses fast model with slightly higher temperature for natural responses
+        fallback_llm_config=LLMConfig(
+            llm=ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.3,
+                timeout=15.0
+            )
+        ),
         # timeout configuration
         timeout_config=TimeoutConfig(
             link_content_expander_timeout_per_link=45.0,  # increased from 20.0 for Facebook scraping
@@ -92,6 +100,13 @@ def get_fast_pipeline_config() -> PipelineConfig:
                 timeout=30.0
             )
         ),
+        fallback_llm_config=LLMConfig(
+            llm=ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.3,
+                timeout=10.0
+            )
+        ),
         timeout_config=TimeoutConfig(
             link_content_expander_timeout_per_link=10.0,   # much faster
             link_content_expander_timeout_total=30.0,
@@ -135,6 +150,13 @@ def get_thorough_pipeline_config() -> PipelineConfig:
                 model="gpt-4o",
                 temperature=0.2,
                 timeout=120.0
+            )
+        ),
+        fallback_llm_config=LLMConfig(
+            llm=ChatOpenAI(
+                model="gpt-4o-mini",
+                temperature=0.3,
+                timeout=20.0
             )
         ),
         timeout_config=TimeoutConfig(

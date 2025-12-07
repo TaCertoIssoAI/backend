@@ -180,6 +180,15 @@ async def run_fact_check_pipeline(
             manager=manager,
         )
 
+        if not any(claim_out.has_valid_claims() for claim_out in claim_outputs):
+            # no valid claims found, use fallback
+            no_claims_fallaback = await steps.handle_no_claims_fallback(data_sources,config) # TODO: Pretty sure the data sources here DO NOT include the expanded links so fix that later
+            return FactCheckResult(
+                results= [],
+                sources_with_claims = [],
+                overall_summary=no_claims_fallaback.explanation
+            )
+
         # build final evidence retrieval result
         result = EvidenceRetrievalResult(claim_evidence_map=enriched_claims)
         analytics.populate_claims_from_evidence(result)

@@ -201,6 +201,13 @@ class ClaimExtractionOutput(BaseModel):
         description="List of fact-checkable claims extracted from the user message"
     )
 
+
+    def has_valid_claims(self)->bool:
+        """
+        Returns whether any valid claims exist
+        """
+        return len(self.claims) > 0
+
 # ===== STEP 4: EVIDENCE RETRIEVAL =====
 
 class EvidenceRetrievalInput(BaseModel):

@@ -110,5 +110,5 @@ class WithoutBrowsingPipelineSteps(DefaultPipelineSteps):
 
         return expanded_link_sources
 
-    # note: all other methods (extract_claims_from_all_sources, gather_evidence)
-    # are inherited from DefaultPipelineSteps and work as normal
+    # note: all other methods (extract_claims_from_all_sources, gather_evidence,
+    # handle_no_claims_fallback) are inherited from DefaultPipelineSteps and work as normal

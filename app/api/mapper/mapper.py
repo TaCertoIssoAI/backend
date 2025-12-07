@@ -106,6 +106,9 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             if result.overall_summary:
                 rationale_parts.append(f"*Resumo Geral*:\n{result.overall_summary}")
 
+            
+
+
             # add claims section header
             rationale_parts.append("\n\n*Análise por afirmação*:")
 
@@ -155,7 +158,9 @@ def fact_check_result_to_response(msg_id: uuid.UUID, result: FactCheckResult)->A
             if citation_text:
                 rationale = rationale + citation_text
         else:
-            rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido."
+            rationale = "Nenhuma alegação verificável foi encontrada no conteúdo fornecido.\n"
+            if result.overall_summary:
+                rationale = rationale + result.overall_summary
 
 
         resp_without_links = remove_link_like_substrings(rationale)

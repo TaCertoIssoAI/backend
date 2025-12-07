@@ -115,6 +115,11 @@ class PipelineConfig(BaseModel):
         description="LLM configuration for final adjudication step"
     )
 
+    fallback_llm_config: LLMConfig = Field(
+        ...,
+        description="LLM configuration for no-claims fallback explanation"
+    )
+
     # timeout configuration
     timeout_config: TimeoutConfig = Field(
         default_factory=TimeoutConfig,

@@ -12,6 +12,31 @@ from app.models import PipelineConfig, LLMConfig, TimeoutConfig
 from app.llms.gemini import GeminiChatModel
 
 
+def get_gemini_fallback_llm_config() -> LLMConfig:
+    """
+    create and return an LLMConfig using Gemini for no-claims fallback.
+
+    uses gemini-2.5-flash model optimized for generating friendly explanations
+    when no verifiable claims are found in user input.
+
+    returns:
+        LLMConfig with gemini model configured for fallback responses
+
+    example:
+        >>> from app.config.gemini_models import get_gemini_fallback_llm_config
+        >>> config = get_gemini_fallback_llm_config()
+        >>> config.llm.model
+        'gemini-2.5-flash'
+    """
+    return LLMConfig(
+        llm=GeminiChatModel(
+            model="gemini-2.5-flash",
+            google_api_key=os.getenv("GOOGLE_API_KEY"),
+            temperature=0.3  # slightly higher for more natural, friendly responses
+        )
+    )
+
+
 def get_gemini_default_pipeline_config() -> PipelineConfig:
     """
     create and return a PipelineConfig using Gemini for adjudication.
@@ -41,6 +66,15 @@ def get_gemini_default_pipeline_config() -> PipelineConfig:
         ),
         # adjudication uses gemini with thinking mode
         adjudication_llm_config=LLMConfig(
+            llm=GeminiChatModel(
+                model="gemini-2.5-flash",
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
+               # thinking_level="low",
+                temperature=0.0
+            )
+        ),
+        # fallback uses gemini for friendly explanations
+        fallback_llm_config=LLMConfig(
             llm=GeminiChatModel(
                 model="gemini-2.5-flash",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
@@ -97,6 +131,14 @@ def get_gemini_fast_pipeline_config() -> PipelineConfig:
                 temperature=0.0
             )
         ),
+        fallback_llm_config=LLMConfig(
+            llm=GeminiChatModel(
+                model="gemini-2.5-flash",
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
+               # thinking_level="low",
+                temperature=0.0
+            )
+        ),
         timeout_config=TimeoutConfig(
             link_content_expander_timeout_per_link=10.0,
             link_content_expander_timeout_total=30.0,
@@ -141,6 +183,14 @@ def get_gemini_thorough_pipeline_config() -> PipelineConfig:
                 model="gemini-3-pro-preview",
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
                 thinking_level="high",  # higher thinking level for thorough analysis
+                temperature=0.0
+            )
+        ),
+        fallback_llm_config=LLMConfig(
+            llm=GeminiChatModel(
+                model="gemini-2.5-flash",
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
+               # thinking_level="low",
                 temperature=0.0
             )
         ),

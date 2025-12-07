@@ -22,6 +22,7 @@ from app.models import (
     LLMConfig,
 )
 from app.ai.context import EvidenceGatherer
+from app.ai.pipeline.no_claims_fallback import NoClaimsFallbackOutput
 
 from app.ai.context.factcheckapi import (
     GoogleFactCheckGatherer
@@ -115,6 +116,26 @@ class PipelineSteps(Protocol):
 
         Returns:
             EvidenceRetrievalResult mapping claim IDs to enriched claims with citations
+        """
+        ...
+
+    async def handle_no_claims_fallback(
+        self,
+        data_sources: List[DataSource],
+        config: PipelineConfig
+    ) -> NoClaimsFallbackOutput:
+        """
+        Generate friendly explanation when no claims are found.
+
+        Uses an LLM to explain to the user why no verifiable claims could be
+        extracted from their input.
+
+        Args:
+            data_sources: List of data sources that had no claims extracted
+            config: Pipeline configuration with fallback LLM config
+
+        Returns:
+            NoClaimsFallbackOutput with explanation and original text
         """
         ...
 
@@ -321,3 +342,27 @@ class DefaultPipelineSteps:
             ]
 
         return await gather_evidence_async(retrieval_input, gatherers)
+
+    async def handle_no_claims_fallback(
+        self,
+        data_sources: List[DataSource],
+        config: PipelineConfig
+    ) -> NoClaimsFallbackOutput:
+        """
+        Default implementation: generates explanation when no claims are found.
+
+        Combines text from all data sources and uses LLM to generate a friendly
+        explanation for why no verifiable claims could be extracted.
+
+        See no_claims_fallback.generate_no_claims_explanation_async for details.
+        """
+        from app.ai.pipeline.no_claims_fallback import (
+            generate_no_claims_explanation_async,
+            get_combined_text_from_sources
+        )
+
+        # combine text from all data sources
+        combined_text = get_combined_text_from_sources(data_sources)
+
+        # generate explanation using fallback from config
+        return await generate_no_claims_explanation_async(combined_text, config)
