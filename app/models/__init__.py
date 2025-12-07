@@ -17,7 +17,8 @@ from .factchecking import (
     DataSourceWithClaims,
     ClaimVerdict,
     DataSourceResult,
-    EvidenceRetrievalInput
+    EvidenceRetrievalInput,
+    VerdictTypeEnum
 )
 from .config import (
     LLMConfig,

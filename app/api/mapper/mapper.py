@@ -11,7 +11,7 @@ from datetime import datetime
 
 from app.models.api import Request, ContentType,AnalysisResponse
 from app.models.commondata import DataSource
-from app.models.factchecking import ClaimSourceType,FactCheckResult
+from app.models.factchecking import ClaimSourceType,FactCheckResult,VerdictTypeEnum
 from app.observability.logger.logger import get_logger
 from app.clients import get_analytics_url_for_fact_check
 
@@ -94,6 +94,32 @@ def request_to_data_sources(
     return data_sources
 
 
+def _get_verdict_summary(all_verdicts: list) -> str:
+    """
+    generate a summary of verdicts showing how many claims were classified as each type.
+
+    args:
+        all_verdicts: list of ClaimVerdict objects
+
+    returns:
+        formatted string like "3 de 5 afirmações foram classificadas como Verdadeiras"
+
+    example:
+        >>> verdicts = [ClaimVerdict(..., verdict="Verdadeiro"), ClaimVerdict(..., verdict="Falso")]
+        >>> _get_verdict_summary(verdicts)
+        "1 de 2 afirmações foram classificadas como Verdadeiras"
+    """
+    if not all_verdicts:
+        return ""
+
+    total_claims = len(all_verdicts)
+
+    # count verdicts by type
+    verdadeiro_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.VERDADEIRO)
+    verdadeiro_count = max(0,verdadeiro_count)
+    return f"{verdadeiro_count} de {total_claims} afirmações foram classificadas como Verdadeiras."
+
+
 def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->AnalysisResponse:
         all_verdicts = []
         for ds_result in result.results:
@@ -105,10 +131,19 @@ def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->Analysi
 
             # add overall summary first if present
             if result.overall_summary:
-                rationale_parts.append(f"*Resumo Geral*:\n{result.overall_summary}")
+                # add "Resumo Geral" header
+                rationale_parts.append("*Resumo Geral*:\n")
+
+                # add verdict count summary
+                verdict_summary = _get_verdict_summary(all_verdicts)
+                if verdict_summary:
+                    rationale_parts.append(verdict_summary)
+
+                # add the actual overall summary text
+                rationale_parts.append(f"\n{result.overall_summary}\n")
 
             analytics_url = get_analytics_url_for_fact_check(msg_id)
-            rationale_parts.append("Saiba mais sobre esse julgamento no nosso website: \n")
+            rationale_parts.append("Saiba mais sobre esse julgamento no nosso website:")
             rationale_parts.append(f"{analytics_url}\n")
 
             # add claims section header

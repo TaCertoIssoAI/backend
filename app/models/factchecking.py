@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Optional, Dict, Literal, TYPE_CHECKING
+from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict
 
 if TYPE_CHECKING:
@@ -28,6 +29,47 @@ CitationSource = Literal[
 
 
 VerdictType = Literal["Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"]
+
+
+class VerdictTypeEnum(str, Enum):
+    """Enum for verdict types with clear typing and case-insensitive comparison."""
+    VERDADEIRO: VerdictType = "Verdadeiro"
+    FALSO: VerdictType = "Falso"
+    FORA_DE_CONTEXTO: VerdictType = "Fora de Contexto"
+    FONTES_INSUFICIENTES: VerdictType = "Fontes insuficientes para verificar"
+
+    def __eq__(self, other: object) -> bool:
+        """
+        override equality to do case-insensitive comparison with strip and lowercase.
+
+        args:
+            other: value to compare against
+
+        returns:
+            True if values match (case-insensitive, whitespace-stripped)
+
+        example:
+            >>> VerdictTypeEnum.VERDADEIRO == "verdadeiro"
+            True
+            >>> VerdictTypeEnum.VERDADEIRO == " Verdadeiro "
+            True
+            >>> VerdictTypeEnum.FALSO == "FALSO"
+            True
+        """
+        if isinstance(other, str):
+            return self.value.strip().lower() == other.strip().lower()
+        if isinstance(other, VerdictTypeEnum):
+            return self.value == other.value
+        return False
+
+    def __hash__(self) -> int:
+        """
+        provide hash based on the normalized value for consistent behavior.
+
+        returns:
+            hash of the lowercase, stripped value
+        """
+        return hash(self.value.strip().lower())
 
 
 
