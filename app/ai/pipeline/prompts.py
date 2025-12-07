@@ -631,7 +631,7 @@ Você deve retornar um objeto JSON estruturado contendo:
   - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar")
   - justification: sua explicação detalhada, citando as fontes
 - Um sumário geral sobre o output:
-  - O sumário deve ser conciso, cerca de 4-6 linhas
+  - O sumário deve ser conciso, cerca de 3-4 linhas
   - Não formate o sumário com caracteres *  
 
 IMPORTANTE:
@@ -641,7 +641,7 @@ IMPORTANTE:
 - Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
 - Casos você tenha uma gama de fontes confiáveis, busque referenciar fontes de diferentes domínios e autores.
 - NÃO inclua URLs (https://...) diretamente no resumo geral ou nas justificativas
-- No sumário geral seja conciso, escreva cerca de 4-6 linhas nele. Não formate o sumário com caracteres * 
+- No sumário geral seja conciso, escreva cerca de 3-4 linhas nele. Não formate o sumário com caracteres * 
 
 ## Exemplos de Justificação:
 
@@ -667,7 +667,7 @@ RUIM:
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
 - Use SEMPRE números entre colchetes [1], [2], [3] para referenciar fontes, NUNCA URLs diretamente
 - Mantenha um tom profissional e imparcial
-- Seja conciso no sumário, escreva cerca de 4-6 linhas de texto e não utiliza caracteres *
+- Seja conciso no sumário, escreva cerca de 3-4 linhas de texto e não utiliza caracteres *
 """
 
 ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredito fundamentado para cada uma.
@@ -681,7 +681,7 @@ Para cada alegação, forneça:
 2. Uma justificativa detalhada citando as fontes fornecidas com números referentes à fonte. Ex: [1]
 3. Caso existam diversas fontes confiáveis de domínios e orgãos diferentes, busque citar fontes diversas (no quesito domínio e/ou autor) na justificativa da sua resposta.
 
-Também forneça um sumário da mensagem, seja conciso e escreva cerca de 4-6 linhas de texto
+Também forneça um sumário da mensagem, seja conciso e escreva cerca de 3-4 linhas de texto
 
 Retorne sua análise como um objeto JSON estruturado conforme especificado."""
 
