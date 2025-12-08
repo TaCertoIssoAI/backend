@@ -15,6 +15,7 @@ Architecture:
 """
 
 from typing import List, Optional
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from langchain_core.runnables import Runnable
 
@@ -31,6 +32,25 @@ from app.models import (
 )
 from .prompts import get_adjudication_prompt
 from app.observability.logger import time_profile, PipelineStep, get_logger
+
+
+# ===== CONSTANTS =====
+
+# date format for fact-checking context: DD-MM-YYYY
+DATE_FORMAT = "%d-%m-%Y"
+
+
+# ===== HELPER FUNCTIONS FOR DATE HANDLING =====
+
+def get_current_date() -> str:
+    """
+    Returns the current date in DD-MM-YYYY format using UTC timezone.
+    
+    Returns:
+        Formatted date string (e.g., "08-12-2024")
+    """
+    now = datetime.now(timezone.utc)
+    return now.strftime(DATE_FORMAT)
 
 
 # ===== INTERNAL LLM SCHEMAS =====
@@ -393,6 +413,9 @@ def adjudicate_claims(
         traceback.print_exc()
         raise
 
+    # Get current date
+    current_date = get_current_date()
+    
     # Prepare additional context
     additional_context_str = ""
     if adjudication_input.additional_context:
@@ -400,6 +423,7 @@ def adjudicate_claims(
 
     # Prepare input for the prompt template
     chain_input = {
+        "current_date": current_date,
         "formatted_sources_and_claims": formatted_sources,
         "additional_context": additional_context_str
     }
@@ -474,6 +498,9 @@ async def adjudicate_claims_async(
     # Format the input for the LLM
     formatted_sources = format_adjudication_input(adjudication_input)
     
+    # Get current date
+    current_date = get_current_date()
+    
     # Prepare additional context
     additional_context_str = ""
     if adjudication_input.additional_context:
@@ -481,6 +508,7 @@ async def adjudicate_claims_async(
     
     # Prepare input for the prompt template
     chain_input = {
+        "current_date": current_date,
         "formatted_sources_and_claims": formatted_sources,
         "additional_context": additional_context_str
     }
