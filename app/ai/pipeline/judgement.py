@@ -38,10 +38,10 @@ from app.observability.logger import time_profile, PipelineStep, get_logger
 
 def get_current_date() -> str:
     """
-    gets the current date in DAY-MONTH-YEAR format.
+    Returns the current date in DAY-MONTH-YEAR format.
     
-    returns:
-        formatted date string (e.g., "08-12-2024")
+    Returns:
+        Formatted date string (e.g., "08-12-2024")
     """
     now = datetime.now()
     return now.strftime("%d-%m-%Y")
