@@ -15,7 +15,7 @@ Architecture:
 """
 
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from langchain_core.runnables import Runnable
 
@@ -34,6 +34,12 @@ from .prompts import get_adjudication_prompt
 from app.observability.logger import time_profile, PipelineStep, get_logger
 
 
+# ===== CONSTANTS =====
+
+# date format for fact-checking context: DD-MM-YYYY
+DATE_FORMAT = "%d-%m-%Y"
+
+
 # ===== HELPER FUNCTIONS FOR DATE HANDLING =====
 
 def get_current_date() -> str:
@@ -43,9 +49,8 @@ def get_current_date() -> str:
     Returns:
         Formatted date string (e.g., "08-12-2024")
     """
-    from datetime import timezone
     now = datetime.now(timezone.utc)
-    return now.strftime("%d-%m-%Y")
+    return now.strftime(DATE_FORMAT)
 
 
 # ===== INTERNAL LLM SCHEMAS =====
