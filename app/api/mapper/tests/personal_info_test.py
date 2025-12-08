@@ -147,17 +147,17 @@ class TestCEPRemoval:
 # ===== PHONE MENTION TESTS =====
 
 class TestPhoneMentionRemoval:
-    """test whatsapp phone mention removal."""
+    """test WhatsApp phone mention removal."""
 
     def test_remove_phone_mention_standard(self):
-        """test removal of standard whatsapp mention (@{15 digits})."""
+        """test removal of standard WhatsApp mention (@{15 digits})."""
         text = "@117558187450509 vacinas causam autismo?"
         result = remove_phone_mentions(text)
         assert result == "[CELULAR REMOVIDO] vacinas causam autismo?"
         assert "@117558187450509" not in result
 
     def test_remove_phone_mention_from_issue(self):
-        """test removal of the exact phone number from github issue #XX."""
+        """test removal of the exact phone number from GitHub issue."""
         text = "@117558187450509 vacinas causam autismo? a minha professora me disse isso hoje na escola."
         result = remove_phone_mentions(text)
         assert "[CELULAR REMOVIDO]" in result
