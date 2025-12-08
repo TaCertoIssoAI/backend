@@ -38,12 +38,13 @@ from app.observability.logger import time_profile, PipelineStep, get_logger
 
 def get_current_date() -> str:
     """
-    Returns the current date in DAY-MONTH-YEAR format.
+    Returns the current date in DD-MM-YYYY format using UTC timezone.
     
     Returns:
         Formatted date string (e.g., "08-12-2024")
     """
-    now = datetime.now()
+    from datetime import timezone
+    now = datetime.now(timezone.utc)
     return now.strftime("%d-%m-%Y")
 
 

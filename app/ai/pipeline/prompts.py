@@ -696,7 +696,7 @@ def get_adjudication_prompt() -> ChatPromptTemplate:
     Returns the ChatPromptTemplate for claim adjudication.
 
     Expected input variables:
-    - current_date: The current date in DAY-MONTH-YEAR format
+    - current_date: The current date in DD-MM-YYYY format (e.g., "08-12-2024")
     - formatted_sources_and_claims: The formatted string with all data sources and their enriched claims
     - additional_context: Optional additional context for the adjudication
 
