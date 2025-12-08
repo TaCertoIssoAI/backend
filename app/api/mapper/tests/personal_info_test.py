@@ -10,6 +10,7 @@ from app.api.mapper.personal_info import (
     remove_cnpj,
     remove_cep,
     remove_credit_cards,
+    remove_phone_mentions,
     remove_all_pii,
     sanitize_request,
     sanitize_response,
@@ -141,6 +142,84 @@ class TestCEPRemoval:
         text = "Endereço sem CEP"
         result = remove_cep(text)
         assert result == text
+
+
+# ===== PHONE MENTION TESTS =====
+
+class TestPhoneMentionRemoval:
+    """test whatsapp phone mention removal."""
+
+    def test_remove_phone_mention_standard(self):
+        """test removal of standard whatsapp mention (@{15 digits})."""
+        text = "@117558187450509 vacinas causam autismo?"
+        result = remove_phone_mentions(text)
+        assert result == "[CELULAR REMOVIDO] vacinas causam autismo?"
+        assert "@117558187450509" not in result
+
+    def test_remove_phone_mention_from_issue(self):
+        """test removal of the exact phone number from github issue #XX."""
+        text = "@117558187450509 vacinas causam autismo? a minha professora me disse isso hoje na escola."
+        result = remove_phone_mentions(text)
+        assert "[CELULAR REMOVIDO]" in result
+        assert "@117558187450509" not in result
+        assert "vacinas causam autismo" in result
+
+    def test_remove_multiple_phone_mentions(self):
+        """test removal of multiple phone mentions."""
+        text = "@117558187450509 e @551234567890123 estão na conversa"
+        result = remove_phone_mentions(text)
+        assert result.count("[CELULAR REMOVIDO]") == 2
+        assert "@117558187450509" not in result
+        assert "@551234567890123" not in result
+
+    def test_phone_mention_in_middle_of_text(self):
+        """test phone mention removal when embedded in text."""
+        text = "Olá @551234567890123 tudo bem?"
+        result = remove_phone_mentions(text)
+        assert result == "Olá [CELULAR REMOVIDO] tudo bem?"
+        assert "@551234567890123" not in result
+
+    def test_phone_mention_at_end(self):
+        """test phone mention at end of text."""
+        text = "Por favor responda @117558187450509"
+        result = remove_phone_mentions(text)
+        assert result == "Por favor responda [CELULAR REMOVIDO]"
+        assert "@117558187450509" not in result
+
+    def test_no_phone_mention_in_text(self):
+        """test that text without phone mentions remains unchanged."""
+        text = "Esta mensagem não tem menções"
+        result = remove_phone_mentions(text)
+        assert result == text
+
+    def test_phone_mention_with_punctuation(self):
+        """test phone mention followed by punctuation."""
+        text = "@117558187450509, você viu isso?"
+        result = remove_phone_mentions(text)
+        assert result == "[CELULAR REMOVIDO], você viu isso?"
+
+    def test_at_symbol_without_15_digits(self):
+        """test that @ symbol alone or with different digit count is not removed."""
+        text = "@user123 ou @12345 não deve ser removido"
+        result = remove_phone_mentions(text)
+        assert result == text
+        assert "@user123" in result
+        assert "@12345" in result
+
+    def test_phone_mention_with_custom_replacement(self):
+        """test phone mention removal with custom replacement text."""
+        text = "@117558187450509 olá"
+        result = remove_phone_mentions(text, replacement="***")
+        assert result == "*** olá"
+
+    def test_remove_all_pii_includes_phone_mentions(self):
+        """test that remove_all_pii removes phone mentions."""
+        text = "@117558187450509 e meu CPF é 123.456.789-00"
+        result = remove_all_pii(text)
+        assert "[CELULAR REMOVIDO]" in result
+        assert "[CPF REMOVIDO]" in result
+        assert "@117558187450509" not in result
+        assert "123.456.789-00" not in result
 
 
 # ===== CREDIT CARD TESTS =====

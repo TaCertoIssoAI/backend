@@ -53,6 +53,12 @@ DINERS_PATTERN = re.compile(
     r'\b3(?:0[0-5]|[68]\d)\d[ -]?\d{6}[ -]?\d{4}\b'
 )
 
+# whatsapp mention pattern - matches @{15 digits}
+# brazilian phone numbers with country code (55) in whatsapp mention format
+PHONE_MENTION_PATTERN = re.compile(
+    r'@\d{15}\b'
+)
+
 
 def remove_cpf(text: str, replacement: str = "[CPF REMOVIDO]") -> str:
     """
@@ -121,11 +127,29 @@ def remove_credit_cards(text: str, replacement: str = "[CARTÃO REMOVIDO]") -> s
     return text
 
 
+def remove_phone_mentions(text: str, replacement: str = "[CELULAR REMOVIDO]") -> str:
+    """
+    remove whatsapp phone mentions from text.
+
+    matches the pattern @{15 digits} which is used in whatsapp when mentioning
+    users by their phone number (brazilian format with country code).
+
+    args:
+        text: input text that may contain phone mentions
+        replacement: string to replace phone mentions with
+
+    returns:
+        text with phone mentions replaced
+    """
+    return PHONE_MENTION_PATTERN.sub(replacement, text)
+
+
 def remove_all_pii(text: str) -> str:
     """
     remove all brazilian PII from text.
 
     applies all removal functions in sequence:
+    - phone mentions (whatsapp @{15 digits})
     - CPF numbers
     - CNPJ numbers
     - CEP numbers
@@ -142,6 +166,7 @@ def remove_all_pii(text: str) -> str:
 
     # remove in order of specificity
     # (more specific patterns first to avoid conflicts)
+    text = remove_phone_mentions(text)  # before other patterns
     #text = remove_credit_cards(text) we will be removing this check due to issues found with false-positives
     text = remove_cnpj(text)  # before CPF as CNPJ is longer
     text = remove_cpf(text)
