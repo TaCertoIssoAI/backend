@@ -573,6 +573,11 @@ def get_claim_extraction_prompt() -> ChatPromptTemplate:
 
 ADJUDICATION_SYSTEM_PROMPT = """Você é um especialista em verificação de fatos (fact-checking) para um sistema de checagem de notícias e alegações.
 
+DATA ATUAL: {current_date}
+
+Esta é a data de hoje. Leve isso em consideração ao fazer a verificação de fatos, especialmente para eventos recentes ou alegações temporais.
+No entanto, NÃO descarte fontes com datas anteriores à data atual, pois elas podem conter informações válidas e relevantes para a verificação.
+
 Sua tarefa é analisar alegações extraídas de diferentes fontes de dados e emitir um veredito fundamentado para cada uma, baseando-se estritamente nas evidências e citações fornecidas. 
 
 Após todas as afirmações individuais terem seu veredito, você irá analizar o contexto de todas elas juntas, verificando como cada afirmação interaje com a outra
@@ -691,6 +696,7 @@ def get_adjudication_prompt() -> ChatPromptTemplate:
     Returns the ChatPromptTemplate for claim adjudication.
 
     Expected input variables:
+    - current_date: The current date in DAY-MONTH-YEAR format
     - formatted_sources_and_claims: The formatted string with all data sources and their enriched claims
     - additional_context: Optional additional context for the adjudication
 
