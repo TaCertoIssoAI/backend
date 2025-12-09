@@ -7,7 +7,12 @@ like web browsing, making tests faster and more predictable.
 
 from typing import List
 
-from app.models import DataSource, PipelineConfig
+from app.models import (
+    DataSource,
+    PipelineConfig,
+    DataSourceWithExtractedClaims,
+    FactCheckResult,
+)
 from app.ai.context import EvidenceGatherer
 from app.ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.ai.pipeline.steps import DefaultPipelineSteps
@@ -109,6 +114,31 @@ class WithoutBrowsingPipelineSteps(DefaultPipelineSteps):
                     )
 
         return expanded_link_sources
+
+    def adjudicate_claims_with_search(
+        self,
+        sources_with_claims: List[DataSourceWithExtractedClaims],
+        model: str = "gemini-2.0-flash-exp"
+    ) -> FactCheckResult:
+        """
+        Implementation using Google Search grounding for adjudication.
+
+        This works the same as DefaultPipelineSteps since it doesn't use browser-based
+        scraping - it relies on Google's built-in search grounding API.
+
+        Args:
+            sources_with_claims: List of data sources with their extracted claims
+            model: Google GenAI model to use (default: gemini-2.0-flash-exp)
+
+        Returns:
+            FactCheckResult with verdicts for all claims
+        """
+        from app.ai.pipeline.adjudication_with_search import adjudicate_claims_with_search
+
+        return adjudicate_claims_with_search(
+            sources_with_claims=sources_with_claims,
+            model=model
+        )
 
     # note: all other methods (extract_claims_from_all_sources, gather_evidence,
     # handle_no_claims_fallback) are inherited from DefaultPipelineSteps and work as normal

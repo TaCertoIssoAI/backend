@@ -20,6 +20,8 @@ from app.models import (
     EvidenceRetrievalInput,
     EvidenceRetrievalResult,
     LLMConfig,
+    DataSourceWithExtractedClaims,
+    FactCheckResult,
 )
 from app.ai.context import EvidenceGatherer
 from app.ai.pipeline.no_claims_fallback import NoClaimsFallbackOutput
@@ -136,6 +138,27 @@ class PipelineSteps(Protocol):
 
         Returns:
             NoClaimsFallbackOutput with explanation and original text
+        """
+        ...
+
+    def adjudicate_claims_with_search(
+        self,
+        sources_with_claims: List[DataSourceWithExtractedClaims],
+        model: str = "gemini-2.0-flash-exp"
+    ) -> FactCheckResult:
+        """
+        Adjudicate claims using  Search grounding in a single API call.
+
+        This is an alternative to the traditional evidence gathering + adjudication flow.
+        Instead of pre-gathering evidence, this uses Google's built-in search grounding
+        to find evidence and generate verdicts in one LLM call.
+
+        Args:
+            sources_with_claims: List of data sources with their extracted claims
+            model:  GenAI model to use (default: gemini-2.0-flash-exp)
+
+        Returns:
+            FactCheckResult with verdicts for all claims
         """
         ...
 
@@ -366,3 +389,22 @@ class DefaultPipelineSteps:
 
         # generate explanation using fallback from config
         return await generate_no_claims_explanation_async(combined_text, config)
+
+    def adjudicate_claims_with_search(
+        self,
+        sources_with_claims: List[DataSourceWithExtractedClaims],
+        model: str = "gemini-2.0-flash-exp"
+    ) -> FactCheckResult:
+        """
+        Default implementation: calls adjudicate_claims_with_search from adjudication_with_search.
+
+        Uses Google Search grounding to find evidence and generate verdicts in a single LLM call.
+
+        See adjudication_with_search.adjudicate_claims_with_search for detailed documentation.
+        """
+        from app.ai.pipeline.adjudication_with_search import adjudicate_claims_with_search
+
+        return adjudicate_claims_with_search(
+            sources_with_claims=sources_with_claims,
+            model=model
+        )
