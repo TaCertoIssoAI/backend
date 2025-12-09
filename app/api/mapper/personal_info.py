@@ -166,11 +166,11 @@ def remove_all_pii(text: str) -> str:
 
     # remove in order of specificity
     # (more specific patterns first to avoid conflicts)
-    text = remove_phone_mentions(text)  # before other patterns
+    text = remove_phone_mentions(text, replacement="")  # before other patterns, we will also replace with an empty string due to this being always present when the user asks the bot on a whatsapp group
     #text = remove_credit_cards(text) we will be removing this check due to issues found with false-positives
-    text = remove_cnpj(text)  # before CPF as CNPJ is longer
-    text = remove_cpf(text)
-    text = remove_cep(text)
+    text = remove_cnpj(text,  replacement="")  # before CPF as CNPJ is longer
+    text = remove_cpf(text, replacement="")
+    text = remove_cep(text, replacement="")
 
     return text
 
