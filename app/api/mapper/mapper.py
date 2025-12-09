@@ -116,7 +116,21 @@ def _get_verdict_summary(all_verdicts: list) -> str:
 
     # count verdicts by type
     verdadeiro_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.VERDADEIRO)
-    verdadeiro_count = max(0,verdadeiro_count)
+    falso_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.FALSO)
+    fontes_insuficientes_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.FONTES_INSUFICIENTES)
+
+    # check edge cases where all claims have the same verdict
+    if verdadeiro_count == total_claims:
+        return "Todas as afirmações foram classificadas como verdadeiras."
+
+    if falso_count == total_claims:
+        return "Todas as afirmações foram classificadas como Falsas."
+
+    if fontes_insuficientes_count == total_claims:
+        return "Não foi possível verificar nenhuma das informações."
+
+    # default case: show count of true claims
+    verdadeiro_count = max(0, verdadeiro_count)
     return f"{verdadeiro_count} de {total_claims} afirmações foram classificadas como Verdadeiras."
 
 
