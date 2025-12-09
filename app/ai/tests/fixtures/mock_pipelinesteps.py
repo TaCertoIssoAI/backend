@@ -7,7 +7,16 @@ like web browsing, making tests faster and more predictable.
 
 from typing import List
 
-from app.models import DataSource, PipelineConfig
+from app.models import (
+    DataSource,
+    PipelineConfig,
+    DataSourceWithExtractedClaims,
+    FactCheckResult,
+    AdjudicationInput,
+    DataSourceResult,
+    ClaimVerdict,
+    LLMConfig,
+)
 from app.ai.context import EvidenceGatherer
 from app.ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.ai.pipeline.steps import DefaultPipelineSteps
@@ -110,5 +119,113 @@ class WithoutBrowsingPipelineSteps(DefaultPipelineSteps):
 
         return expanded_link_sources
 
+    def adjudicate_claims_with_search(
+        self,
+        sources_with_claims: List[DataSourceWithExtractedClaims],
+        model: str = "gpt-4o-mini"
+    ) -> FactCheckResult:
+        """
+        Implementation using OpenAI web search for adjudication.
+
+        This works the same as DefaultPipelineSteps since it doesn't use browser-based
+        scraping - it relies on OpenAI's web search tool.
+
+        Args:
+            sources_with_claims: List of data sources with their extracted claims
+            model: OpenAI model to use (default: gpt-4o-mini)
+
+        Returns:
+            FactCheckResult with verdicts for all claims
+        """
+        from app.ai.pipeline.adjudication_with_search import adjudicate_claims_with_search
+
+        return adjudicate_claims_with_search(
+            sources_with_claims=sources_with_claims,
+            model=model
+        )
+
     # note: all other methods (extract_claims_from_all_sources, gather_evidence,
     # handle_no_claims_fallback) are inherited from DefaultPipelineSteps and work as normal
+
+
+class UnverifiableMockPipelineSteps(WithoutBrowsingPipelineSteps):
+    """
+    pipeline steps that returns hard-coded unverifiable results for adjudication.
+
+    inherits mock link expansion from WithoutBrowsingPipelineSteps, but overrides
+    the adjudicate_claims method to return hard-coded results where all claims
+    are marked as "Fontes insuficientes para verificar".
+
+    ideal for:
+    - testing the adjudication_with_search fallback logic
+    - testing what happens when all claims are unverifiable
+    - integration tests that need predictable unverifiable results
+
+    usage:
+        >>> from app.ai.tests.fixtures.mock_pipelinesteps import UnverifiableMockPipelineSteps
+        >>> from app.ai.main_pipeline import run_fact_check_pipeline
+        >>> steps = UnverifiableMockPipelineSteps()
+        >>> result = await run_fact_check_pipeline(sources, config, steps)
+        >>> # adjudication will return all unverifiable, triggering fallback
+    """
+
+    def adjudicate_claims(
+        self,
+        adjudication_input: AdjudicationInput,
+        llm_config: LLMConfig
+    ) -> FactCheckResult:
+        """
+        override: returns hard-coded unverifiable results instead of real adjudication.
+
+        creates a result where every claim gets verdict "Fontes insuficientes para verificar"
+        with a generic justification. useful for testing the fallback to adjudication_with_search.
+
+        args:
+            adjudication_input: the adjudication input with sources and claims
+            llm_config: LLM configuration (ignored in mock)
+
+        returns:
+            FactCheckResult with all claims marked as unverifiable
+        """
+        print("\n[MOCK ADJUDICATION] Returning hard-coded unverifiable results (triggering fallback)")
+
+        results: List[DataSourceResult] = []
+
+        for source_with_claims in adjudication_input.sources_with_claims:
+            data_source = source_with_claims.data_source
+            enriched_claims = source_with_claims.enriched_claims
+
+            print(f"  Source: {data_source.id} with {len(enriched_claims)} claims")
+
+            # create unverifiable verdict for each claim
+            verdicts: List[ClaimVerdict] = []
+            for claim in enriched_claims:
+                verdict = ClaimVerdict(
+                    claim_id=claim.id,
+                    claim_text=claim.text,
+                    verdict="Fontes insuficientes para verificar",
+                    justification=(
+                        f"Não foram encontradas fontes suficientes para verificar a alegação: '{claim.text}'. "
+                        f"As evidências disponíveis são insuficientes ou contraditórias."
+                    ),
+                    citations_used=[]
+                )
+                verdicts.append(verdict)
+                print(f"    - [{claim.id}] {claim.text[:60]}... -> Fontes insuficientes")
+
+            # create result for this data source
+            source_result = DataSourceResult(
+                data_source_id=data_source.id,
+                source_type=data_source.source_type,
+                claim_verdicts=verdicts
+            )
+            results.append(source_result)
+
+        return FactCheckResult(
+            results=results,
+            overall_summary=(
+                "Todas as alegações não puderam ser verificadas devido à falta de fontes confiáveis. "
+                "As evidências disponíveis são insuficientes para confirmar ou refutar as alegações."
+            ),
+            sources_with_claims=adjudication_input.sources_with_claims
+        )

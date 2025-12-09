@@ -15,10 +15,14 @@ from .factchecking import (
     ClaimSourceType,
     VerdictType,
     DataSourceWithClaims,
+    DataSourceWithExtractedClaims,
     ClaimVerdict,
     DataSourceResult,
     EvidenceRetrievalInput,
-    VerdictTypeEnum
+    VerdictTypeEnum,
+    LLMClaimVerdict,
+    LLMDataSourceResult,
+    LLMAdjudicationOutput,
 )
 from .config import (
     LLMConfig,
@@ -38,6 +42,7 @@ from .analytics import (
 ClaimExtractionInput.model_rebuild()
 ClaimExtractionOutput.model_rebuild()
 DataSourceWithClaims.model_rebuild()
+DataSourceWithExtractedClaims.model_rebuild()
 
 __all__ = [
     "UserInput",
@@ -61,10 +66,15 @@ __all__ = [
     "MessageType",
     "DataSource",
     "DataSourceWithClaims",
+    "DataSourceWithExtractedClaims",
     "ClaimVerdict",
     "DataSourceResult",
     "LLMConfig",
     "TimeoutConfig",
     "PipelineConfig",
+    "VerdictTypeEnum",
+    "LLMClaimVerdict",
+    "LLMDataSourceResult",
+    "LLMAdjudicationOutput",
 ]
 

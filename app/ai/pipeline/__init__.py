@@ -34,6 +34,12 @@ from .judgement import (
     format_adjudication_input,
 )
 
+from .adjudication_with_search import (
+    adjudicate_claims_with_search,
+    adjudicate_claims_with_search_async,
+    get_claims_from_sources,
+)
+
 from .prompts import (
     get_claim_extraction_prompt,
     CLAIM_EXTRACTION_SYSTEM_PROMPT,
@@ -41,6 +47,7 @@ from .prompts import (
     get_adjudication_prompt,
     ADJUDICATION_SYSTEM_PROMPT,
     ADJUDICATION_USER_PROMPT,
+    ADJUDICATION_WITH_SEARCH_SYSTEM_PROMPT,
 )
 
 # Re-export data models from app.models for convenience
@@ -65,6 +72,11 @@ __all__ = [
     "build_adjudication_chain",
     "format_adjudication_input",
 
+    # Adjudication with Google Search functions
+    "adjudicate_claims_with_search",
+    "adjudicate_claims_with_search_async",
+    "get_claims_from_sources",
+
     # Data models
     "ClaimExtractionOutput",
     "FactCheckResult",
@@ -78,4 +90,7 @@ __all__ = [
     "get_adjudication_prompt",
     "ADJUDICATION_SYSTEM_PROMPT",
     "ADJUDICATION_USER_PROMPT",
+
+    # Adjudication with search prompts
+    "ADJUDICATION_WITH_SEARCH_SYSTEM_PROMPT",
 ]

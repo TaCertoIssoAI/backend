@@ -172,15 +172,22 @@ def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->Analysi
             # check sources_with_claims for debugging
             logger.debug(f"Number of sources_with_claims: {len(result.sources_with_claims)}")
             for idx, swc in enumerate(result.sources_with_claims):
-                logger.debug(f"Source {idx}: {swc.data_source.id}, {len(swc.enriched_claims)} claims")
-                for claim in swc.enriched_claims:
-                    logger.debug(f"  Claim {claim.id}: {len(claim.citations)} citations")
+                # handle both DataSourceWithClaims and DataSourceWithExtractedClaims
+                claims = getattr(swc, 'enriched_claims', None) or getattr(swc, 'extracted_claims', [])
+                logger.debug(f"Source {idx}: {swc.data_source.id}, {len(claims)} claims")
+                for claim in claims:
+                    citations = getattr(claim, 'citations', [])
+                    logger.debug(f"  Claim {claim.id}: {len(citations)} citations")
 
             # build citation lookup map from sources_with_claims
             claim_citations_map = {}
             for source_with_claims in result.sources_with_claims:
-                for enriched_claim in source_with_claims.enriched_claims:
-                    claim_citations_map[enriched_claim.id] = enriched_claim.citations
+                # handle both DataSourceWithClaims (enriched_claims) and DataSourceWithExtractedClaims (extracted_claims)
+                claims = getattr(source_with_claims, 'enriched_claims', None) or getattr(source_with_claims, 'extracted_claims', [])
+                for claim in claims:
+                    # EnrichedClaim has citations, ExtractedClaim doesn't
+                    citations = getattr(claim, 'citations', [])
+                    claim_citations_map[claim.id] = citations
 
             logger.debug(f"Built citation map with {len(claim_citations_map)} entries")
             logger.debug(f"Claim IDs in map: {list(claim_citations_map.keys())}")

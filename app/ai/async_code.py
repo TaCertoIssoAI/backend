@@ -22,6 +22,7 @@ from app.models import (
     EvidenceRetrievalInput,
     EnrichedClaim,
     EvidenceRetrievalResult,
+    DataSourceWithExtractedClaims,
 )
 
 logger = logging.getLogger(__name__)
@@ -215,6 +216,8 @@ def fire_and_forget_streaming_pipeline(
     analytics: AnalyticsCollector,
     link_expansion_fn: Optional[Callable[[List[DataSource]], List[DataSource]]] = None,
     manager: Optional[ThreadPoolManager] = None,
+    pipeline_steps: Optional[Any] = None,
+    enable_adjudication_with_search: bool = False,
 ) -> tuple[List[ClaimExtractionOutput], Dict[str, EnrichedClaim]]:
     """
     extract claims and gather evidence using fire-and-forget streaming pattern.
@@ -225,16 +228,20 @@ def fire_and_forget_streaming_pipeline(
     3. loop while claim extraction or link expansion jobs are pending:
        - if claim extraction completes → fire evidence jobs for each claim
        - if link expansion completes → fire claim extraction jobs for each expanded source
-    4. wait for all evidence gathering jobs to complete
-    5. group citations by claim id and build enriched claims
+    4. (optional) fire adjudication with search job after all claims extracted
+    5. wait for all evidence gathering jobs to complete
+    6. group citations by claim id and build enriched claims
 
     args:
         data_sources: list of original data sources to extract claims from
         extract_fn: function that extracts claims from a single source
         evidence_gatherers: list of evidence gatherers (e.g., WebSearchGatherer, GoogleFactCheckGatherer)
+        analytics: analytics collector for tracking pipeline metrics
         link_expansion_fn: optional function that expands links from data sources,
                           returns list of new DataSource objects
         manager: thread pool manager (uses singleton if None)
+        pipeline_steps: pipeline steps instance for calling adjudication (required if enable_adjudication_with_search=True)
+        enable_adjudication_with_search: if True, fires adjudication with search job after claim extraction
 
     returns:
         tuple of (claim_outputs, enriched_claims_map)
@@ -244,7 +251,9 @@ def fire_and_forget_streaming_pipeline(
         ...     data_sources=sources,
         ...     extract_fn=extract_claims,
         ...     evidence_gatherers=[WebSearchGatherer(), GoogleFactCheckGatherer()],
-        ...     link_expansion_fn=expand_links
+        ...     link_expansion_fn=expand_links,
+        ...     pipeline_steps=steps,
+        ...     enable_adjudication_with_search=True
         ... )
     """
     if manager is None:
@@ -370,7 +379,36 @@ def fire_and_forget_streaming_pipeline(
         f"evidence gathering jobs"
     )
 
-    # step 3: wait for all evidence gathering jobs and group by claim
+    # step 3.5 (optional): fire adjudication with search job
+    adjudication_job_submitted = False
+    if enable_adjudication_with_search:
+        if pipeline_steps is None:
+            logger.warning("adjudication with search enabled but no pipeline_steps provided - skipping")
+        else:
+            logger.info("firing adjudication with search job")
+
+            # convert ClaimExtractionOutput to DataSourceWithExtractedClaims
+            sources_with_claims = [
+                DataSourceWithExtractedClaims(
+                    data_source=output.data_source,
+                    extracted_claims=output.claims
+                )
+                for output in claim_outputs
+            ]
+
+            logger.info(f"converted {len(sources_with_claims)} claim outputs to DataSourceWithExtractedClaims")
+
+            # fire adjudication with search job (fire and forget)
+            manager.submit(
+                OperationType.ADJUDICATION_WITH_SEARCH,
+                pipeline_steps.adjudicate_claims_with_search,
+                sources_with_claims
+            )
+
+            adjudication_job_submitted = True
+            logger.info("adjudication with search job submitted (retrieve later with wait_next_completed)")
+
+    # step 4: wait for all evidence gathering jobs and group by claim
     claim_citations = collect_evidence_results(
         manager, evidence_jobs_submitted, claim_id_to_claim
     )
