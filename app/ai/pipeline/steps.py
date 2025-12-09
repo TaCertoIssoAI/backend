@@ -144,18 +144,18 @@ class PipelineSteps(Protocol):
     def adjudicate_claims_with_search(
         self,
         sources_with_claims: List[DataSourceWithExtractedClaims],
-        model: str = "gemini-2.0-flash-exp"
+        model: str = "gpt-4o-mini"
     ) -> FactCheckResult:
         """
-        Adjudicate claims using  Search grounding in a single API call.
+        Adjudicate claims using web search in a single API call.
 
         This is an alternative to the traditional evidence gathering + adjudication flow.
-        Instead of pre-gathering evidence, this uses Google's built-in search grounding
+        Instead of pre-gathering evidence, this uses OpenAI's web search tool
         to find evidence and generate verdicts in one LLM call.
 
         Args:
             sources_with_claims: List of data sources with their extracted claims
-            model:  GenAI model to use (default: gemini-2.0-flash-exp)
+            model: OpenAI model to use (default: gpt-4o-mini)
 
         Returns:
             FactCheckResult with verdicts for all claims
@@ -393,12 +393,12 @@ class DefaultPipelineSteps:
     def adjudicate_claims_with_search(
         self,
         sources_with_claims: List[DataSourceWithExtractedClaims],
-        model: str = "gemini-2.0-flash-exp"
+        model: str = "gpt-4o-mini"
     ) -> FactCheckResult:
         """
         Default implementation: calls adjudicate_claims_with_search from adjudication_with_search.
 
-        Uses Google Search grounding to find evidence and generate verdicts in a single LLM call.
+        Uses OpenAI web search to find evidence and generate verdicts in a single LLM call.
 
         See adjudication_with_search.adjudicate_claims_with_search for detailed documentation.
         """

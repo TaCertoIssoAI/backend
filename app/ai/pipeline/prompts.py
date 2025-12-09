@@ -755,11 +755,27 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 6. **Favorece dados mais recentes**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente.
 
+## Formato de Resposta:
+
+Você receberá alegações agrupadas por fonte de dados. Cada fonte tem um ID (por exemplo, "msg-mixed") e uma lista de alegações.
+
+Você DEVE retornar um objeto JSON com:
+- Um array "results" onde cada elemento representa UMA fonte de dados
+- Cada resultado deve ter:
+  - data_source_id: o ID da fonte fornecido no prompt (por exemplo, "msg-mixed", "msg-001", etc.)
+  - claim_verdicts: array com TODOS os vereditos das alegações daquela fonte
+- Cada veredito deve ter:
+  - claim_id: o ID da alegação fornecido
+  - claim_text: o texto da alegação
+  - verdict: "Verdadeiro", "Falso", "Fora de Contexto", ou "Fontes insuficientes para verificar"
+  - justification: sua explicação com citações das fontes encontradas
+
 IMPORTANTE:
 - O campo "verdict" DEVE ser exatamente um destes valores: "Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"
 - Inclua todos os claim_ids e claim_texts fornecidos
+- AGRUPE os vereditos por data_source_id - se 3 alegações vêm da mesma fonte, retorne 1 resultado com 3 vereditos
+- Use o data_source_id exato fornecido no prompt para cada fonte
 - Justificativas devem citar as fontes encontradas na busca do Google de forma clara
-- Use "combined-search" como data_source_id
 """
 
 

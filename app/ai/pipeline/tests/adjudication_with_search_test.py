@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Tests for the adjudication with Google Search pipeline step.
+Tests for the adjudication with web search pipeline step.
 
-These tests make REAL calls to the Google GenAI API with Search grounding.
+These tests make REAL calls to the OpenAI API with web search tool.
 
-IMPORTANT: Set GOOGLE_API_KEY in your environment before running.
+IMPORTANT: Set OPENAI_API_KEY in your environment before running.
 
 Run with:
     pytest app/ai/pipeline/tests/adjudication_with_search_test.py -v -s
@@ -202,7 +202,7 @@ def test_multiple_claims():
 
 
 def test_recent_event():
-    """Test adjudication with search for a recent event (uses Google Search)."""
+    """Test adjudication with search for a recent event (uses web search)."""
     claim = ExtractedClaim(
         id="claim-test-4",
         text="Portugal venceu a Eurocopa de 2024",

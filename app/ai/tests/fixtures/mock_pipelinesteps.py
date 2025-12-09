@@ -118,17 +118,17 @@ class WithoutBrowsingPipelineSteps(DefaultPipelineSteps):
     def adjudicate_claims_with_search(
         self,
         sources_with_claims: List[DataSourceWithExtractedClaims],
-        model: str = "gemini-2.0-flash-exp"
+        model: str = "gpt-4o-mini"
     ) -> FactCheckResult:
         """
-        Implementation using Google Search grounding for adjudication.
+        Implementation using OpenAI web search for adjudication.
 
         This works the same as DefaultPipelineSteps since it doesn't use browser-based
-        scraping - it relies on Google's built-in search grounding API.
+        scraping - it relies on OpenAI's web search tool.
 
         Args:
             sources_with_claims: List of data sources with their extracted claims
-            model: Google GenAI model to use (default: gemini-2.0-flash-exp)
+            model: OpenAI model to use (default: gpt-4o-mini)
 
         Returns:
             FactCheckResult with verdicts for all claims
