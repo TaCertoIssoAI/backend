@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Literal, TYPE_CHECKING
+from typing import List, Optional, Dict, Literal, Union, TYPE_CHECKING
 from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -405,6 +405,39 @@ class DataSourceWithClaims(BaseModel):
     enriched_claims: List[EnrichedClaim] = Field(default_factory=list, description="Claims from this source with their evidence")
 
 
+class DataSourceWithExtractedClaims(BaseModel):
+    """A data source paired with extracted claims (before evidence retrieval)"""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "data_source": {
+                "id": "msg-001",
+                "source_type": "original_text",
+                "original_text": "Ouvi dizer que a vacina X causa infertilidade",
+                "metadata": {},
+                "locale": "pt-BR",
+                "timestamp": "2024-11-16T10:00:00Z"
+            },
+            "extracted_claims": [
+                {
+                    "id": "claim-uuid-1",
+                    "text": "Vacina X causa infertilidade",
+                    "source": {
+                        "source_type": "original_text",
+                        "source_id": "msg-001"
+                    },
+                    "entities": ["vacina X", "infertilidade"]
+                }
+            ]
+        }
+    })
+
+    data_source: "DataSource" = Field(..., description="The data source from which claims were extracted")
+    extracted_claims: List[ExtractedClaim] = Field(
+        default_factory=list,
+        description="Claims from this source without citations (before evidence retrieval)"
+    )
+
+
 class AdjudicationInput(BaseModel):
     """Input to the adjudication step - groups enriched claims by their data source"""
     model_config = ConfigDict(json_schema_extra={
@@ -481,6 +514,26 @@ class LLMDataSourceResult(BaseModel):
 
 class LLMAdjudicationOutput(BaseModel):
     """Schema for complete LLM adjudication output."""
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "results": [
+                {
+                    "data_source_id": "msg-001",
+                    "claim_verdicts": [
+                        {
+                            "claim_id": "claim-uuid-1",
+                            "claim_text": "Vacina X causa infertilidade em mulheres",
+                            "verdict": "Falso",
+                            "justification": "Segundo o Ministério da Saúde [1], um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade. A alegação é contradita por múltiplas fontes científicas confiáveis [2][3].",
+                            "citations_used": []
+                        }
+                    ]
+                }
+            ],
+            "overall_summary": "A mensagem contém uma alegação falsa sobre vacinas. Não há evidências científicas que sustentem a afirmação de que a vacina X causa infertilidade."
+        }
+    })
+
     results: List[LLMDataSourceResult] = Field(
         default_factory=list,
         description="Results grouped by data source (in same order as input)"
@@ -567,8 +620,8 @@ class FactCheckResult(BaseModel):
         None,
         description="Optional high-level summary of all fact-check results"
     )
-    sources_with_claims: List[DataSourceWithClaims] = Field(
+    sources_with_claims: List[Union["DataSourceWithClaims", "DataSourceWithExtractedClaims"]] = Field(
         default_factory=list,
-        description="Original data sources with their enriched claims (includes all citations for lookup)"
+        description="Original data sources with claims (enriched with citations or raw extracted claims)"
     )
 
