@@ -22,6 +22,7 @@ from app.models import (
     LLMConfig,
     DataSourceWithExtractedClaims,
     FactCheckResult,
+    AdjudicationInput,
 )
 from app.ai.context import EvidenceGatherer
 from app.ai.pipeline.no_claims_fallback import NoClaimsFallbackOutput
@@ -138,6 +139,27 @@ class PipelineSteps(Protocol):
 
         Returns:
             NoClaimsFallbackOutput with explanation and original text
+        """
+        ...
+
+    def adjudicate_claims(
+        self,
+        adjudication_input: AdjudicationInput,
+        llm_config: LLMConfig
+    ) -> FactCheckResult:
+        """
+        Adjudicate claims using traditional evidence-based adjudication.
+
+        Uses pre-gathered evidence (citations) to make verdicts on claims.
+        This is the standard adjudication method that analyzes enriched claims
+        with their citations.
+
+        Args:
+            adjudication_input: Input with data sources and enriched claims
+            llm_config: LLM configuration (model, temperature, timeout)
+
+        Returns:
+            FactCheckResult with verdicts for all claims
         """
         ...
 
@@ -389,6 +411,25 @@ class DefaultPipelineSteps:
 
         # generate explanation using fallback from config
         return await generate_no_claims_explanation_async(combined_text, config)
+
+    def adjudicate_claims(
+        self,
+        adjudication_input: AdjudicationInput,
+        llm_config: LLMConfig
+    ) -> FactCheckResult:
+        """
+        Default implementation: calls adjudicate_claims from judgement.py.
+
+        Uses the standard evidence-based adjudication with pre-gathered citations.
+
+        See judgement.adjudicate_claims for detailed documentation.
+        """
+        from app.ai.pipeline.judgement import adjudicate_claims
+
+        return adjudicate_claims(
+            adjudication_input=adjudication_input,
+            llm_config=llm_config
+        )
 
     def adjudicate_claims_with_search(
         self,

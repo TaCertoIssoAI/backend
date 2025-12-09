@@ -775,7 +775,16 @@ IMPORTANTE:
 - Inclua todos os claim_ids e claim_texts fornecidos
 - AGRUPE os vereditos por data_source_id - se 3 alegações vêm da mesma fonte, retorne 1 resultado com 3 vereditos
 - Use o data_source_id exato fornecido no prompt para cada fonte
+- Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
 - Justificativas devem citar as fontes encontradas na busca do Google de forma clara
+
+## Exemplos de Justificação:
+
+BOM:
+"Segundo o Ministério da Saúde [1], um estudo com 50.000 participantes não encontrou evidências ligando a vacina X a problemas de fertilidade. A alegação é contradita por múltiplas fontes científicas confiáveis [2][3]."
+
+RUIM:
+"Segundo o Ministério da Saúde (https://saude.gov.br/estudo-vacinas), um estudo com 50.000 participantes..." (NÃO inclua URLs no texto)
 """
 
 
