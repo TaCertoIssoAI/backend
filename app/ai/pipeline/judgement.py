@@ -16,7 +16,6 @@ Architecture:
 
 from typing import List, Optional
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
 from langchain_core.runnables import Runnable
 
 from app.models import (
@@ -24,11 +23,11 @@ from app.models import (
     FactCheckResult,
     DataSourceResult,
     ClaimVerdict,
-    VerdictType,
     LLMConfig,
     DataSourceWithClaims,
     EnrichedClaim,
-    Citation,
+    LLMDataSourceResult,
+    LLMAdjudicationOutput,
 )
 from .prompts import get_adjudication_prompt
 from app.observability.logger import time_profile, PipelineStep, get_logger
@@ -51,53 +50,6 @@ def get_current_date() -> str:
     """
     now = datetime.now(timezone.utc)
     return now.strftime(DATE_FORMAT)
-
-
-# ===== INTERNAL LLM SCHEMAS =====
-# These are what the LLM returns - only verdicts and justifications
-# IDs and source types are populated programmatically from input based on order
-
-class _LLMClaimVerdict(BaseModel):
-    """Internal schema for what the LLM returns for a single claim verdict."""
-    claim_id: Optional[str] = Field(
-        None,
-        description="ID of the claim (optional - if missing, matched by claim_text)"
-    )
-    claim_text: str = Field(..., description="The claim text (for fallback matching)")
-    verdict: VerdictType = Field(..., description="The verdict for this claim")
-    justification: str = Field(..., description="Detailed justification citing evidence sources")
-    citations_used: List[Citation] = Field(
-        default_factory=list,
-        description="List of citations that were used to make this verdict decision"
-    )
-
-
-class _LLMDataSourceResult(BaseModel):
-    """
-    Internal schema for LLM output for a single data source.
-    data_source_id is optional - if missing, we'll match by order as fallback.
-    source_type is populated programmatically to avoid validation errors.
-    """
-    data_source_id: Optional[str] = Field(
-        None,
-        description="ID of the data source (from the formatted input) - if missing, matched by order"
-    )
-    claim_verdicts: List[_LLMClaimVerdict] = Field(
-        default_factory=list,
-        description="Verdicts for all claims from this data source"
-    )
-
-
-class _LLMAdjudicationOutput(BaseModel):
-    """Internal schema for complete LLM adjudication output."""
-    results: List[_LLMDataSourceResult] = Field(
-        default_factory=list,
-        description="Results grouped by data source (in same order as input)"
-    )
-    overall_summary: str = Field(
-        default="",
-        description="High-level summary of all fact-check results"
-    )
 
 
 # ===== HELPER FUNCTIONS FOR INPUT FORMATTING =====
@@ -183,7 +135,7 @@ def format_adjudication_input(adjudication_input: AdjudicationInput) -> str:
 # ===== Helper functions for LLM output parsing ===== 
 
 def get_data_source_with_claims(
-    llm_source_result: _LLMDataSourceResult,
+    llm_source_result: LLMDataSourceResult,
     adjudication_input: AdjudicationInput,
     result_index: int
 ) -> Optional[DataSourceWithClaims]:
@@ -230,7 +182,7 @@ def get_data_source_with_claims(
 
 
 def get_claim_verdicts(
-    llm_source_result: _LLMDataSourceResult,
+    llm_source_result: LLMDataSourceResult,
     source_with_claims: DataSourceWithClaims
 ) -> List[ClaimVerdict]:
     """
@@ -283,13 +235,13 @@ def build_adjudication_chain(llm_config: LLMConfig) -> Runnable:
     builds the LCEL chain for fact-check adjudication.
 
     the chain follows this structure:
-        prompt | model.with_structured_output() -> _LLMAdjudicationOutput
+        prompt | model.with_structured_output() -> LLMAdjudicationOutput
 
     args:
         llm_config: LLM configuration with BaseChatOpenAI instance.
 
     returns:
-        a Runnable chain that takes dict input and returns _LLMAdjudicationOutput
+        a Runnable chain that takes dict input and returns LLMAdjudicationOutput
 
     best practices applied:
     - structured output binding for type safety
@@ -305,7 +257,7 @@ def build_adjudication_chain(llm_config: LLMConfig) -> Runnable:
     # bind the structured output schema
     # note: using default method instead of json_mode for better reliability
     structured_model = model.with_structured_output(
-        _LLMAdjudicationOutput
+        LLMAdjudicationOutput
     )
 
     # compose the chain using LCEL
@@ -433,7 +385,7 @@ def adjudicate_claims(
 
     # Invoke the chain - gets LLM output
     try:
-        result: _LLMAdjudicationOutput = chain.invoke(chain_input)
+        result: LLMAdjudicationOutput = chain.invoke(chain_input)
     except Exception as e:
         print(f"[ADJUDICATOR ERROR] LLM invocation failed: {e}")
         import traceback
@@ -514,7 +466,7 @@ async def adjudicate_claims_async(
     }
     
     # Invoke the chain asynchronously - gets LLM output
-    result: _LLMAdjudicationOutput = await chain.ainvoke(chain_input)
+    result: LLMAdjudicationOutput = await chain.ainvoke(chain_input)
     
     # Debug: Print what LLM returned
     print("\n[DEBUG] LLM returned (async):")

@@ -18,7 +18,10 @@ from .factchecking import (
     ClaimVerdict,
     DataSourceResult,
     EvidenceRetrievalInput,
-    VerdictTypeEnum
+    VerdictTypeEnum,
+    LLMClaimVerdict,
+    LLMDataSourceResult,
+    LLMAdjudicationOutput,
 )
 from .config import (
     LLMConfig,
@@ -66,5 +69,9 @@ __all__ = [
     "LLMConfig",
     "TimeoutConfig",
     "PipelineConfig",
+    "VerdictTypeEnum",
+    "LLMClaimVerdict",
+    "LLMDataSourceResult",
+    "LLMAdjudicationOutput",
 ]
 

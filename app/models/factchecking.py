@@ -444,6 +444,53 @@ class AdjudicationInput(BaseModel):
     additional_context: Optional[str] = Field(None, description="Any additional context for the adjudication")
 
 
+# ===== LLM OUTPUT SCHEMAS FOR ADJUDICATION =====
+# These schemas represent what the LLM returns during adjudication.
+# IDs and source types are populated programmatically from input based on order.
+
+class LLMClaimVerdict(BaseModel):
+    """Schema for what the LLM returns for a single claim verdict."""
+    claim_id: Optional[str] = Field(
+        None,
+        description="ID of the claim (optional - if missing, matched by claim_text)"
+    )
+    claim_text: str = Field(..., description="The claim text (for fallback matching)")
+    verdict: VerdictType = Field(..., description="The verdict for this claim")
+    justification: str = Field(..., description="Detailed justification citing evidence sources")
+    citations_used: List[Citation] = Field(
+        default_factory=list,
+        description="List of citations that were used to make this verdict decision"
+    )
+
+
+class LLMDataSourceResult(BaseModel):
+    """
+    Schema for LLM output for a single data source.
+    data_source_id is optional - if missing, we'll match by order as fallback.
+    source_type is populated programmatically to avoid validation errors.
+    """
+    data_source_id: Optional[str] = Field(
+        None,
+        description="ID of the data source (from the formatted input) - if missing, matched by order"
+    )
+    claim_verdicts: List[LLMClaimVerdict] = Field(
+        default_factory=list,
+        description="Verdicts for all claims from this data source"
+    )
+
+
+class LLMAdjudicationOutput(BaseModel):
+    """Schema for complete LLM adjudication output."""
+    results: List[LLMDataSourceResult] = Field(
+        default_factory=list,
+        description="Results grouped by data source (in same order as input)"
+    )
+    overall_summary: str = Field(
+        default="",
+        description="High-level summary of all fact-check results"
+    )
+
+
 class ClaimVerdict(BaseModel):
     """Verdict for a single claim with justification"""
     model_config = ConfigDict(json_schema_extra={
