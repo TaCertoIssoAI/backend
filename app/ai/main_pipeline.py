@@ -29,7 +29,7 @@ from app.models import (
     FactCheckResult,
 )
 from app.ai.pipeline.steps import PipelineSteps
-from app.ai.threads.thread_utils import ThreadPoolManager
+from app.ai.threads.thread_utils import ThreadPoolManager, OperationType
 from app.ai.async_code import fire_and_forget_streaming_pipeline
 from app.ai.pipeline.claim_extractor import extract_claims
 from app.ai.pipeline.judgement import adjudicate_claims
@@ -90,6 +90,11 @@ def build_adjudication_input(
         sources_with_claims=sources_with_claims,
         additional_context=None
     )
+
+def _chose_fact_checking_result() -> FactCheckResult:
+    """
+    Determines if the fact check result returned to the usert will be the one from the regular step or the fallback from Adjundication with Search
+    """
 
 async def run_fact_check_pipeline(
     data_sources: List[DataSource],
@@ -171,6 +176,7 @@ async def run_fact_check_pipeline(
         )
 
         # run fire-and-forget streaming pipeline (sync call)
+        # enable adjudication_with_search to fire in parallel with normal evidence gathering
         claim_outputs, enriched_claims = fire_and_forget_streaming_pipeline(
             data_sources,
             extract_claims_with_config,
@@ -178,6 +184,8 @@ async def run_fact_check_pipeline(
             analytics,
             link_expansion_fn=expand_links_with_config,
             manager=manager,
+            pipeline_steps=steps,
+            enable_adjudication_with_search=True,
         )
 
         if not any(claim_out.has_valid_claims() for claim_out in claim_outputs):
@@ -216,6 +224,67 @@ async def run_fact_check_pipeline(
 
         # log adjudication output
         log_adjudication_output(fact_check_result)
+
+        # check if all verdicts are "Fontes insuficientes para verificar"
+        all_insufficient = all(
+            verdict.verdict == "Fontes insuficientes para verificar"
+            for result in fact_check_result.results
+            for verdict in result.claim_verdicts
+        )
+
+        if all_insufficient:
+            pipeline_logger.info("all verdicts are 'Fontes insuficientes para verificar' - checking adjudication_with_search fallback")
+
+            try:
+                # wait for adjudication_with_search job to complete (20 second timeout)
+                job_id, search_result = manager.wait_next_completed(
+                    operation_type=OperationType.ADJUDICATION_WITH_SEARCH,
+                    timeout=20.0,
+                    raise_on_error=False  # don't raise on error, we'll check the result
+                )
+
+                # check if result is valid
+                if isinstance(search_result, Exception):
+                    pipeline_logger.warning(
+                        f"adjudication_with_search job failed: {type(search_result).__name__}: {search_result}"
+                    )
+                    pipeline_logger.info("using original insufficient sources result")
+                elif search_result is None or not isinstance(search_result, FactCheckResult):
+                    pipeline_logger.warning(
+                        f"adjudication_with_search returned invalid result: {type(search_result)}"
+                    )
+                    pipeline_logger.info("using original insufficient sources result")
+                elif len(search_result.results) == 0:
+                    pipeline_logger.warning("adjudication_with_search returned empty results")
+                    pipeline_logger.info("using original insufficient sources result")
+                else:
+                    # valid result - use it as fallback
+                    pipeline_logger.info(
+                        f"[FALLBACK] using adjudication_with_search result: "
+                        f"{len(search_result.results)} results, "
+                        f"{sum(len(r.claim_verdicts) for r in search_result.results)} verdicts"
+                    )
+
+                    # log both outputs for comparison
+                    pipeline_logger.info("[ORIGINAL OUTPUT - Insufficient Sources]")
+                    log_adjudication_output(fact_check_result)
+
+                    pipeline_logger.info("[FALLBACK OUTPUT - Adjudication with Search]")
+                    log_adjudication_output(search_result)
+
+                    # use search result as final result
+                    fact_check_result = search_result
+
+            except TimeoutError:
+                pipeline_logger.warning(
+                    "adjudication_with_search job did not complete within 20 seconds - using original result"
+                )
+            except Exception as e:
+                pipeline_logger.error(
+                    f"error while waiting for adjudication_with_search: {type(e).__name__}: {e}",
+                    exc_info=True
+                )
+                pipeline_logger.info("using original insufficient sources result")
 
         # summary with prefix
         pipeline_logger.set_prefix("[SUMMARY]")
