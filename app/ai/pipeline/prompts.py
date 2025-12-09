@@ -598,7 +598,14 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 ## Diretrizes para Julgamento:
 
-1. **Baseie-se APENAS nas evidências fornecidas**: Use exclusivamente as citações, fontes e contexto apresentados. Não use conhecimento externo.
+1. **Baseie-se PRINCIPALMENTE e FORTEMENTE nas evidências fornecidas**: Use exclusivamente as citações, fontes e contexto apresentados. Não use conhecimento externo.
+
+   **EXCEÇÃO - Alegações Atemporais**: Para alegações que não requerem verificação externa de fatos por serem "atemporais" e NÃO relacionadas a notícias, eventos, pessoas ou sociedade - como:
+   - Operações matemáticas (exemplo: "2+2=4", "a raiz quadrada de 16 é 4")
+   - Definições estabelecidas (exemplo: "um triângulo tem três lados")
+
+   Você PODE usar seu conhecimento interno para verificar a veracidade dessas alegações, MESMO que as fontes sejam insuficientes ou inexistentes. Nesses casos, classifique como "Verdadeiro" ou "Falso" baseando-se no seu conhecimento, e explique na justificativa que se trata de um fato atemporal verificável.
+   Porém atenção, uma fonte que você considere como confiável e relevante ainda deve ser a fonte da verdade principal.
 
 2. **Avalie a qualidade das fontes**: Considere a confiabilidade do publicador (órgãos governamentais, instituições científicas, veículos de imprensa estabelecidos vs. sites desconhecidos).
 
