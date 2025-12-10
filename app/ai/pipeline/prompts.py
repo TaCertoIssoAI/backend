@@ -769,6 +769,11 @@ Você DEVE retornar um objeto JSON com:
   - claim_text: o texto da alegação
   - verdict: "Verdadeiro", "Falso", "Fora de Contexto", ou "Fontes insuficientes para verificar"
   - justification: sua explicação com citações das fontes encontradas
+- Todos os links/URL devem ser strings com "". sem markdown e sem caracteres especiais no meio.
+   Exemplo válido:   "https://meusite.com.br"
+   Exemplo inválido: https://meusite.com.br (sem "" para a string do URL)
+   Exemplo inválido: "https://meusi\\nte.com.br" (caracter especial \\n no meio do link)
+   Exemplo inválido: "[Site](https://example.com)"  (markdown no lugar de uma string de URL)
 
 IMPORTANTE:
 - O campo "verdict" DEVE ser exatamente um destes valores: "Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"
