@@ -778,6 +778,38 @@ IMPORTANTE:
 - Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
 - Justificativas devem citar as fontes encontradas na busca do Google de forma clara
 
+## REGRAS CRÍTICAS DE FORMATAÇÃO JSON:
+
+**VOCÊ DEVE RETORNAR JSON VÁLIDO E BEM FORMATADO:**
+
+1. **Escape de caracteres especiais**: SEMPRE escape aspas duplas, barras invertidas e caracteres de controle em strings:
+   - Aspas duplas dentro de strings: use \\"
+   - Barras invertidas: use \\\\
+   - Nova linha: use \\n
+   - Tab: use \\t
+
+2. **URLs em strings**: URLs devem estar entre aspas e caracteres especiais devem ser escapados:
+   - Correto: "url": "https://example.com/article?id=123&source=google"
+   - NUNCA deixe aspas sem fechar ou parênteses sem escape
+
+3. **Strings longas**: Mantenha strings longas em uma única linha, usando \\n para quebras de linha reais
+
+4. **Números em citações**: Use colchetes simples como [1], [2], [3] - NUNCA use (1) ou outros formatos
+
+5. **Validação**: Seu JSON DEVE:
+   - Ter todas as aspas fechadas corretamente
+   - Ter todos os colchetes e chaves balanceados
+   - Não ter vírgulas extras no final de arrays ou objetos
+   - Ser parseable por qualquer parser JSON padrão
+
+6. **NUNCA inclua**:
+   - URLs nuas fora de strings JSON
+   - Parênteses desbalanceados em strings
+   - Aspas não escapadas dentro de strings
+   - Texto explicativo fora do JSON
+
+SE VOCÊ RETORNAR JSON INVÁLIDO, O SISTEMA FALHARÁ. VALIDE SEU JSON ANTES DE RETORNAR.
+
 ## Exemplos de Justificação:
 
 BOM:
