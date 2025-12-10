@@ -116,7 +116,22 @@ def generate_no_claims_explanation(
     }
 
     # invoke the chain - gets explanation string
-    explanation: str = chain.invoke(chain_input)
+    try:
+        explanation: str = chain.invoke(chain_input)
+    except Exception as e:
+        # if LLM call fails (API overload, timeout, etc.), use default message
+        from app.observability.logger import get_logger
+        logger = get_logger(__name__)
+        logger.warning(f"no-claims fallback LLM call failed: {type(e).__name__}: {e}")
+        logger.info("using default no-claims message")
+
+        # return friendly default message
+        explanation = (
+            "Não consegui identificar alegações verificáveis em sua mensagem. "
+            "Para verificar informações, é útil incluir detalhes concretos como nomes de pessoas, "
+            "lugares, datas, números ou eventos específicos. "
+            "Posso ajudar com algo assim?"
+        )
 
     # return structured output
     return NoClaimsFallbackOutput(
@@ -150,7 +165,22 @@ async def generate_no_claims_explanation_async(
     }
 
     # invoke the chain asynchronously - gets explanation string
-    explanation: str = await chain.ainvoke(chain_input)
+    try:
+        explanation: str = await chain.ainvoke(chain_input)
+    except Exception as e:
+        # if LLM call fails (API overload, timeout, etc.), use default message
+        from app.observability.logger import get_logger
+        logger = get_logger(__name__)
+        logger.warning(f"no-claims fallback LLM call failed: {type(e).__name__}: {e}")
+        logger.info("using default no-claims message")
+
+        # return friendly default message
+        explanation = (
+            "Não consegui identificar alegações verificáveis em sua mensagem. "
+            "Para verificar informações, é útil incluir detalhes concretos como nomes de pessoas, "
+            "lugares, datas, números ou eventos específicos. "
+            "Posso ajudar com algo assim?"
+        )
 
     # return structured output
     return NoClaimsFallbackOutput(

@@ -209,7 +209,13 @@ def _chose_fact_checking_result(
             f"error while waiting for adjudication_with_search: {type(e).__name__}: {e}",
             exc_info=True
         )
-        # if original adjudication failed (empty results), we can't return empty result
+
+        # if this is already a RuntimeError we raised earlier, just re-raise it
+        # (don't double-wrap our own error messages)
+        if isinstance(e, RuntimeError):
+            raise
+
+        # for other exceptions, check if we need to raise or return original
         if len(original_result.results) == 0:
             logger.error("both normal adjudication and fallback failed - raising error")
             raise RuntimeError(
