@@ -452,6 +452,122 @@ class ThreadPoolManager:
             for job_id, result in non_matching_jobs:
                 self.completion_queues[operation_type].put((job_id, result))
 
+    def clear_completed_jobs(
+        self,
+        pipeline_id: str,
+        operation_type: Optional[OperationType] = None,
+    ) -> int:
+        """
+        remove all completed jobs for a specific pipeline_id.
+
+        this is a non-blocking cleanup operation that drains the completion queue
+        for the specified pipeline without waiting for or processing results.
+
+        args:
+            pipeline_id: pipeline ID to filter by (required)
+            operation_type: optional type of jobs to clear. if None, clears all operation types.
+
+        returns:
+            number of jobs cleared
+
+        example:
+            >>> # clear all completed jobs for request-123 (all operation types)
+            >>> manager = ThreadPoolManager.get_instance()
+            >>> cleared = manager.clear_completed_jobs(pipeline_id="request-123")
+            >>> print(f"cleared {cleared} jobs")
+
+            >>> # clear only claims extraction jobs for request-123
+            >>> cleared = manager.clear_completed_jobs(
+            ...     pipeline_id="request-123",
+            ...     operation_type=OperationType.CLAIMS_EXTRACTION
+            ... )
+            >>> print(f"cleared {cleared} jobs")
+        """
+        cleared_count = 0
+
+        # if operation_type is None, clear from all operation types
+        if operation_type is None:
+            operation_types = list(OperationType)
+        else:
+            operation_types = [operation_type]
+
+        # drain jobs from each operation type
+        for op_type in operation_types:
+            while True:
+                try:
+                    # use very short timeout for non-blocking behavior
+                    _job_id, _result = self.wait_next_completed(
+                        operation_type=op_type,
+                        timeout=0.001,  # 1ms timeout = effectively non-blocking
+                        raise_on_error=False,  # don't raise on job errors
+                        pipeline_id=pipeline_id
+                    )
+                    cleared_count += 1
+                except TimeoutError:
+                    # no more jobs available for this operation type
+                    break
+
+        return cleared_count
+
+    def clear_completed_jobs_async(
+        self,
+        pipeline_id: str,
+        operation_type: Optional[OperationType] = None,
+    ) -> Future:
+        """
+        non-blocking background cleanup of completed jobs for a specific pipeline_id.
+
+        this submits the cleanup as a background task and returns immediately,
+        allowing the server to continue responding while cleanup happens in the background.
+
+        args:
+            pipeline_id: pipeline ID to filter by (required)
+            operation_type: optional type of jobs to clear. if None, clears all operation types.
+
+        returns:
+            Future that will contain the number of jobs cleared when complete
+
+        example:
+            >>> # submit cleanup in background and continue
+            >>> manager = ThreadPoolManager.get_instance()
+            >>> future = manager.clear_completed_jobs_async(pipeline_id="request-123")
+            >>> # server continues, cleanup happens in background
+            >>> # optionally check result later
+            >>> if future.done():
+            ...     cleared = future.result()
+            ...     print(f"cleared {cleared} jobs")
+        """
+        # use threading to avoid blocking the calling thread
+        import threading
+
+        def cleanup_task():
+            """background cleanup task"""
+            return self.clear_completed_jobs(
+                pipeline_id=pipeline_id,
+                operation_type=operation_type
+            )
+
+        # create future to track completion
+        future = Future()
+
+        def run_cleanup():
+            """wrapper that sets result on future"""
+            try:
+                result = cleanup_task()
+                future.set_result(result)
+            except Exception as e:
+                future.set_exception(e)
+
+        # run in background thread
+        cleanup_thread = threading.Thread(
+            target=run_cleanup,
+            daemon=True,  # daemon thread won't block shutdown
+            name=f"cleanup-{pipeline_id}"
+        )
+        cleanup_thread.start()
+
+        return future
+
     def wait_next_completed_any(
         self,
         timeout: Optional[float] = None,

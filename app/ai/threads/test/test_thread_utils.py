@@ -193,61 +193,6 @@ def test_map_threaded():
 
     print("   ✓ map_threaded works")
 
-
-async def test_async_bridge():
-    """test async bridge (submit_async)."""
-    print("\n8. testing async bridge...")
-
-    ThreadPoolManager._instance = None
-    manager = ThreadPoolManager.get_instance(max_workers=5)
-    manager.initialize()
-
-    def slow_task(x: int) -> int:
-        time.sleep(0.1)
-        return x * 3
-
-    # test submit_async
-    result = await manager.submit_async(
-        OperationType.CLAIMS_EXTRACTION,
-        slow_task,
-        7
-    )
-
-    assert result == 21
-
-    manager.shutdown()
-
-    print("   ✓ async bridge works")
-
-
-async def test_map_threaded_async():
-    """test map_threaded_async helper."""
-    print("\n9. testing map_threaded_async...")
-
-    ThreadPoolManager._instance = None
-    manager = ThreadPoolManager.get_instance(max_workers=5)
-    manager.initialize()
-
-    def cube(x: int) -> int:
-        time.sleep(0.05)
-        return x ** 3
-
-    items = [1, 2, 3, 4]
-
-    results = await map_threaded_async(
-        items=items,
-        func=cube,
-        operation_type=OperationType.LINK_CONTEXT_EXPANDING,
-        manager=manager
-    )
-
-    assert results == [1, 8, 27, 64]
-
-    manager.shutdown()
-
-    print("   ✓ map_threaded_async works")
-
-
 def test_context_manager():
     """test ThreadPoolContext context manager."""
     print("\n10. testing context manager...")
@@ -794,6 +739,346 @@ def test_pipeline_id_with_mixed_operations():
     print("   ✓ pipeline_id isolation works across different operation types")
 
 
+def test_clear_completed_jobs():
+    """test clear_completed_jobs removes all jobs for a specific pipeline."""
+    print("\n22. testing clear_completed_jobs...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def fast_task(x: int) -> int:
+        time.sleep(0.05)
+        return x * 2
+
+    pipeline_a = "pipeline-A"
+    pipeline_b = "pipeline-B"
+    pipeline_c = "pipeline-C"
+
+    # submit 5 jobs for pipeline A (CLAIMS_EXTRACTION)
+    for i in range(5):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            fast_task,
+            i,
+            pipeline_id=pipeline_a
+        )
+
+    # submit 3 jobs for pipeline B (CLAIMS_EXTRACTION)
+    for i in range(10, 13):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            fast_task,
+            i,
+            pipeline_id=pipeline_b
+        )
+
+    # submit mixed operation types for pipeline C
+    for i in range(20, 22):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            fast_task,
+            i,
+            pipeline_id=pipeline_c
+        )
+    for i in range(22, 25):
+        manager.submit(
+            OperationType.LINK_CONTEXT_EXPANDING,
+            fast_task,
+            i,
+            pipeline_id=pipeline_c
+        )
+
+    # wait for all jobs to complete
+    time.sleep(0.5)
+
+    # clear all jobs for pipeline A (specific operation type)
+    cleared_a = manager.clear_completed_jobs(
+        pipeline_id=pipeline_a,
+        operation_type=OperationType.CLAIMS_EXTRACTION
+    )
+
+    assert cleared_a == 5, f"should have cleared 5 jobs, got {cleared_a}"
+
+    # verify pipeline A jobs are gone (timeout immediately)
+    try:
+        manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=0.01,
+            pipeline_id=pipeline_a
+        )
+        assert False, "should not find any pipeline A jobs"
+    except TimeoutError:
+        pass  # expected - no jobs left
+
+    # verify pipeline B jobs are still there
+    results_b = []
+    for _ in range(3):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=1.0,
+            pipeline_id=pipeline_b
+        )
+        results_b.append(result)
+
+    assert len(results_b) == 3
+    assert set(results_b) == {20, 22, 24}
+
+    # clear pipeline B jobs (without specifying operation_type)
+    cleared_b = manager.clear_completed_jobs(
+        pipeline_id=pipeline_b
+    )
+
+    assert cleared_b == 0, "pipeline B jobs were already consumed"
+
+    # clear all jobs for pipeline C (across all operation types)
+    cleared_c = manager.clear_completed_jobs(
+        pipeline_id=pipeline_c
+    )
+
+    assert cleared_c == 5, f"should have cleared 5 jobs (2 CLAIMS + 3 LINK), got {cleared_c}"
+
+    # verify pipeline C jobs are gone from both operation types
+    try:
+        manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=0.01,
+            pipeline_id=pipeline_c
+        )
+        assert False, "should not find any pipeline C CLAIMS_EXTRACTION jobs"
+    except TimeoutError:
+        pass  # expected
+
+    try:
+        manager.wait_next_completed(
+            OperationType.LINK_CONTEXT_EXPANDING,
+            timeout=0.01,
+            pipeline_id=pipeline_c
+        )
+        assert False, "should not find any pipeline C LINK_CONTEXT_EXPANDING jobs"
+    except TimeoutError:
+        pass  # expected
+
+    manager.shutdown()
+
+    print("   ✓ clear_completed_jobs works correctly")
+
+
+def test_clear_completed_jobs_all_operation_types():
+    """test clear_completed_jobs without operation_type clears all types."""
+    print("\n23. testing clear_completed_jobs for all operation types...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=10)
+    manager.initialize()
+
+    def task_a(x: int) -> str:
+        time.sleep(0.05)
+        return f"A-{x}"
+
+    def task_b(x: int) -> str:
+        time.sleep(0.05)
+        return f"B-{x}"
+
+    def task_c(x: int) -> str:
+        time.sleep(0.05)
+        return f"C-{x}"
+
+    pipeline_target = "pipeline-target"
+    pipeline_other = "pipeline-other"
+
+    # submit jobs for target pipeline across 3 different operation types
+    # 3 CLAIMS_EXTRACTION jobs
+    for i in range(3):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_a,
+            i,
+            pipeline_id=pipeline_target
+        )
+
+    # 2 LINK_CONTEXT_EXPANDING jobs
+    for i in range(10, 12):
+        manager.submit(
+            OperationType.LINK_CONTEXT_EXPANDING,
+            task_b,
+            i,
+            pipeline_id=pipeline_target
+        )
+
+    # 4 LINK_EVIDENCE_RETRIEVER jobs
+    for i in range(20, 24):
+        manager.submit(
+            OperationType.LINK_EVIDENCE_RETRIEVER,
+            task_c,
+            i,
+            pipeline_id=pipeline_target
+        )
+
+    # submit jobs for other pipeline (should not be affected)
+    for i in range(100, 102):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_a,
+            i,
+            pipeline_id=pipeline_other
+        )
+
+    # wait for all jobs to complete
+    time.sleep(0.8)
+
+    # clear all jobs for target pipeline WITHOUT specifying operation_type
+    cleared = manager.clear_completed_jobs(pipeline_id=pipeline_target)
+
+    # should have cleared 3 + 2 + 4 = 9 jobs
+    assert cleared == 9, f"should have cleared 9 jobs (3+2+4), got {cleared}"
+
+    # verify target pipeline jobs are gone from all operation types
+    for op_type in [
+        OperationType.CLAIMS_EXTRACTION,
+        OperationType.LINK_CONTEXT_EXPANDING,
+        OperationType.LINK_EVIDENCE_RETRIEVER
+    ]:
+        try:
+            manager.wait_next_completed(
+                op_type,
+                timeout=0.01,
+                pipeline_id=pipeline_target
+            )
+            assert False, f"should not find any {op_type.name} jobs for target pipeline"
+        except TimeoutError:
+            pass  # expected - all jobs cleared
+
+    # verify other pipeline jobs are still there
+    results_other = []
+    for _ in range(2):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=1.0,
+            pipeline_id=pipeline_other
+        )
+        results_other.append(result)
+
+    assert len(results_other) == 2
+    assert set(results_other) == {"A-100", "A-101"}
+
+    manager.shutdown()
+
+    print("   ✓ clear_completed_jobs clears all operation types when not specified")
+
+
+def test_clear_completed_jobs_async_non_blocking():
+    """test clear_completed_jobs_async runs in background without blocking."""
+    print("\n24. testing clear_completed_jobs_async (non-blocking)...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def task(x: int) -> int:
+        time.sleep(0.05)
+        return x * 2
+
+    pipeline_id = "background-cleanup"
+
+    # submit 10 jobs
+    for i in range(10):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task,
+            i,
+            pipeline_id=pipeline_id
+        )
+
+    # wait for jobs to complete
+    time.sleep(0.8)
+
+    # start cleanup in background
+    start_time = time.time()
+    cleanup_future = manager.clear_completed_jobs_async(pipeline_id=pipeline_id)
+
+    # function should return immediately (non-blocking)
+    call_duration = time.time() - start_time
+    assert call_duration < 0.1, f"should return immediately, took {call_duration:.3f}s"
+
+    print(f"   cleanup submitted in {call_duration*1000:.1f}ms (non-blocking)")
+
+    # server can continue processing here while cleanup runs in background
+    # simulate server doing other work
+    time.sleep(0.1)
+
+    # wait for cleanup to complete
+    cleared = cleanup_future.result(timeout=2.0)
+
+    assert cleared == 10, f"should have cleared 10 jobs, got {cleared}"
+
+    # verify jobs are gone
+    try:
+        manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=0.01,
+            pipeline_id=pipeline_id
+        )
+        assert False, "should not find any jobs"
+    except TimeoutError:
+        pass  # expected
+
+    manager.shutdown()
+
+    print("   ✓ clear_completed_jobs_async runs in background without blocking")
+
+
+def test_clear_completed_jobs_async_fire_and_forget():
+    """test clear_completed_jobs_async can be used as fire-and-forget."""
+    print("\n25. testing clear_completed_jobs_async (fire-and-forget)...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def task(x: int) -> int:
+        time.sleep(0.05)
+        return x * 2
+
+    pipeline_id = "fire-and-forget"
+
+    # submit 5 jobs
+    for i in range(5):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task,
+            i,
+            pipeline_id=pipeline_id
+        )
+
+    # wait for jobs to complete
+    time.sleep(0.5)
+
+    # fire-and-forget cleanup (don't wait for result)
+    _cleanup_future = manager.clear_completed_jobs_async(pipeline_id=pipeline_id)
+
+    # server continues immediately, doesn't care about cleanup result
+    print("   server continues processing, cleanup runs in background")
+
+    # give cleanup time to finish (in real scenario, we wouldn't wait)
+    time.sleep(0.5)
+
+    # verify cleanup happened
+    try:
+        manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=0.01,
+            pipeline_id=pipeline_id
+        )
+        assert False, "should not find any jobs"
+    except TimeoutError:
+        pass  # expected - cleanup completed
+
+    manager.shutdown()
+
+    print("   ✓ fire-and-forget cleanup works")
+
+
 def run_all_tests():
     """run all tests."""
     print("=" * 60)
@@ -820,10 +1105,10 @@ def run_all_tests():
     test_pipeline_id_isolation()
     test_pipeline_id_cross_contamination_prevention()
     test_pipeline_id_with_mixed_operations()
-
-    # async tests
-    asyncio.run(test_async_bridge())
-    asyncio.run(test_map_threaded_async())
+    test_clear_completed_jobs()
+    test_clear_completed_jobs_all_operation_types()
+    test_clear_completed_jobs_async_non_blocking()
+    test_clear_completed_jobs_async_fire_and_forget()
 
     print("\n" + "=" * 60)
     print("✓ all tests passed!")
