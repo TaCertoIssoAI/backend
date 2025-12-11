@@ -473,6 +473,327 @@ def test_wait_next_completed_error_handling():
     print("   ✓ error handling in completion queue works")
 
 
+def test_pipeline_id_job_tracking():
+    """test that jobs submitted with pipeline_id have that value set."""
+    print("\n18. testing pipeline_id is set on jobs...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def simple_task(x: int) -> int:
+        return x * 2
+
+    # submit job with pipeline_id
+    pipeline_id = "test-pipeline-123"
+    future = manager.submit(
+        OperationType.CLAIMS_EXTRACTION,
+        simple_task,
+        5,
+        pipeline_id=pipeline_id
+    )
+
+    # wait for job to complete
+    result = future.result()
+    assert result == 10
+
+    # verify the job has the correct pipeline_id
+    # get the job from completed_jobs
+    with manager.running_jobs_lock:
+        # find the job in completed_jobs
+        job_found = False
+        for job_id, job in manager.completed_jobs.items():
+            if job.pipeline_id == pipeline_id:
+                assert job.pipeline_id == pipeline_id
+                job_found = True
+                break
+
+    assert job_found, "job with pipeline_id should be in completed_jobs"
+
+    # submit job without pipeline_id
+    future2 = manager.submit(
+        OperationType.CLAIMS_EXTRACTION,
+        simple_task,
+        10
+    )
+
+    result2 = future2.result()
+    assert result2 == 20
+
+    # verify the job has pipeline_id=None
+    with manager.running_jobs_lock:
+        job_found_none = False
+        for job_id, job in manager.completed_jobs.items():
+            if job.pipeline_id is None and job.func == simple_task:
+                job_found_none = True
+                break
+
+    assert job_found_none, "job without pipeline_id should have None value"
+
+    manager.shutdown()
+
+    print("   ✓ pipeline_id is correctly set on jobs")
+
+
+def test_pipeline_id_isolation():
+    """test that wait_next_completed filters by pipeline_id correctly."""
+    print("\n19. testing pipeline_id isolation in wait_next_completed...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def task_with_delay(x: int, delay: float) -> str:
+        time.sleep(delay)
+        return f"result-{x}"
+
+    # submit jobs for pipeline A (fast jobs)
+    pipeline_a = "pipeline-A"
+    for i in range(3):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_with_delay,
+            i,
+            0.05,  # fast
+            pipeline_id=pipeline_a
+        )
+
+    # submit jobs for pipeline B (slower jobs)
+    pipeline_b = "pipeline-B"
+    for i in range(3, 6):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_with_delay,
+            i,
+            0.1,  # slower
+            pipeline_id=pipeline_b
+        )
+
+    # submit jobs without pipeline_id (no isolation)
+    for i in range(6, 9):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_with_delay,
+            i,
+            0.05
+        )
+
+    # wait for all jobs from pipeline A
+    results_a = []
+    for _ in range(3):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            pipeline_id=pipeline_a
+        )
+        results_a.append(result)
+
+        # verify job belongs to pipeline A
+        with manager.running_jobs_lock:
+            job = manager.completed_jobs[job_id]
+            assert job.pipeline_id == pipeline_a, f"job {job_id} should belong to pipeline A"
+
+    assert len(results_a) == 3
+    assert set(results_a) == {"result-0", "result-1", "result-2"}
+
+    # wait for all jobs from pipeline B
+    results_b = []
+    for _ in range(3):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            pipeline_id=pipeline_b
+        )
+        results_b.append(result)
+
+        # verify job belongs to pipeline B
+        with manager.running_jobs_lock:
+            job = manager.completed_jobs[job_id]
+            assert job.pipeline_id == pipeline_b, f"job {job_id} should belong to pipeline B"
+
+    assert len(results_b) == 3
+    assert set(results_b) == {"result-3", "result-4", "result-5"}
+
+    # wait for jobs without pipeline_id (should get None pipeline jobs)
+    results_none = []
+    for _ in range(3):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            pipeline_id=None  # explicitly wait for non-isolated jobs
+        )
+        results_none.append(result)
+
+    assert len(results_none) == 3
+    assert set(results_none) == {"result-6", "result-7", "result-8"}
+
+    manager.shutdown()
+
+    print("   ✓ pipeline_id isolation works correctly")
+
+
+def test_pipeline_id_cross_contamination_prevention():
+    """test that jobs from different pipelines don't interfere with each other."""
+    print("\n20. testing prevention of cross-pipeline contamination...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def slow_task(x: int) -> int:
+        time.sleep(0.1)
+        return x * 10
+
+    # submit 5 jobs for request-1
+    request_1 = "request-1"
+    for i in range(1, 6):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            slow_task,
+            i,
+            pipeline_id=request_1
+        )
+
+    # submit 5 jobs for request-2
+    request_2 = "request-2"
+    for i in range(10, 15):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            slow_task,
+            i,
+            pipeline_id=request_2
+        )
+
+    # collect results for request-1
+    results_req1 = []
+    for _ in range(5):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=5.0,
+            pipeline_id=request_1
+        )
+        results_req1.append(result)
+
+    # verify request-1 got correct results
+    assert len(results_req1) == 5
+    assert set(results_req1) == {10, 20, 30, 40, 50}
+
+    # collect results for request-2
+    results_req2 = []
+    for _ in range(5):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            timeout=5.0,
+            pipeline_id=request_2
+        )
+        results_req2.append(result)
+
+    # verify request-2 got correct results (and NOT request-1's results)
+    assert len(results_req2) == 5
+    assert set(results_req2) == {100, 110, 120, 130, 140}
+
+    # verify no overlap
+    assert set(results_req1).isdisjoint(set(results_req2))
+
+    manager.shutdown()
+
+    print("   ✓ cross-pipeline contamination is prevented")
+
+
+def test_pipeline_id_with_mixed_operations():
+    """test pipeline_id isolation across different operation types."""
+    print("\n21. testing pipeline_id with mixed operation types...")
+
+    ThreadPoolManager._instance = None
+    manager = ThreadPoolManager.get_instance(max_workers=5)
+    manager.initialize()
+
+    def task_type_a(x: int) -> str:
+        time.sleep(0.05)
+        return f"A-{x}"
+
+    def task_type_b(x: int) -> str:
+        time.sleep(0.05)
+        return f"B-{x}"
+
+    pipeline_id = "mixed-pipeline"
+
+    # submit claims extraction jobs for this pipeline
+    for i in range(3):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_type_a,
+            i,
+            pipeline_id=pipeline_id
+        )
+
+    # submit link expansion jobs for this pipeline
+    for i in range(3):
+        manager.submit(
+            OperationType.LINK_CONTEXT_EXPANDING,
+            task_type_b,
+            i,
+            pipeline_id=pipeline_id
+        )
+
+    # submit claims extraction jobs for a different pipeline
+    other_pipeline = "other-pipeline"
+    for i in range(10, 12):
+        manager.submit(
+            OperationType.CLAIMS_EXTRACTION,
+            task_type_a,
+            i,
+            pipeline_id=other_pipeline
+        )
+
+    # wait for claims extraction jobs from mixed-pipeline
+    results = []
+    for _ in range(3):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            pipeline_id=pipeline_id
+        )
+        results.append(result)
+
+        # verify it's from the correct pipeline
+        with manager.running_jobs_lock:
+            job = manager.completed_jobs[job_id]
+            assert job.pipeline_id == pipeline_id
+
+    assert len(results) == 3
+    assert set(results) == {"A-0", "A-1", "A-2"}
+
+    # wait for link expansion jobs from mixed-pipeline
+    link_results = []
+    for _ in range(3):
+        job_id, result = manager.wait_next_completed(
+            OperationType.LINK_CONTEXT_EXPANDING,
+            pipeline_id=pipeline_id
+        )
+        link_results.append(result)
+
+        # verify it's from the correct pipeline
+        with manager.running_jobs_lock:
+            job = manager.completed_jobs[job_id]
+            assert job.pipeline_id == pipeline_id
+
+    assert len(link_results) == 3
+    assert set(link_results) == {"B-0", "B-1", "B-2"}
+
+    # wait for claims extraction jobs from other-pipeline
+    other_results = []
+    for _ in range(2):
+        job_id, result = manager.wait_next_completed(
+            OperationType.CLAIMS_EXTRACTION,
+            pipeline_id=other_pipeline
+        )
+        other_results.append(result)
+
+    assert len(other_results) == 2
+    assert set(other_results) == {"A-10", "A-11"}
+
+    manager.shutdown()
+
+    print("   ✓ pipeline_id isolation works across different operation types")
+
+
 def run_all_tests():
     """run all tests."""
     print("=" * 60)
@@ -495,6 +816,10 @@ def run_all_tests():
     test_wait_next_completed_any()
     test_wait_next_completed_timeout()
     test_wait_next_completed_error_handling()
+    test_pipeline_id_job_tracking()
+    test_pipeline_id_isolation()
+    test_pipeline_id_cross_contamination_prevention()
+    test_pipeline_id_with_mixed_operations()
 
     # async tests
     asyncio.run(test_async_bridge())
