@@ -430,6 +430,7 @@ class ThreadPoolManager:
                         # if job doesn't match our pipeline_id, save it for later
                         if job is None or job.pipeline_id != pipeline_id:
                             non_matching_jobs.append((job_id, result))
+                            print(f"trying to match job of type: {operation_type}")
                             continue  # try next job
 
                     # job matches (or no filtering) - return it
