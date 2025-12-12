@@ -12,7 +12,7 @@ ANALYTICS_SERVICE_ENDPOINT  = _ENDPOINT_ENV_VAR if _ENDPOINT_ENV_VAR is not None
 _ANALYTICS_WEBSITE_VAR = os.getenv("ANALYTICS_WEBSITE_VAR")
 ANALYTICS_WEBSITE_URL = _ANALYTICS_WEBSITE_VAR if _ANALYTICS_WEBSITE_VAR is not None else "https://tacertoissoai.com.br"
 
-_TIMEOUT = 20
+_TIMEOUT = 30
 logger = logging.getLogger(__name__)
 
 
