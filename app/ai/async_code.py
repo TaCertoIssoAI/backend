@@ -86,6 +86,7 @@ def collect_evidence_results(
     manager: ThreadPoolManager,
     evidence_jobs_submitted: int,
     claim_id_to_claim: Dict[str, ExtractedClaim],
+    pipeline_id: Optional[str] = None,
 ) -> Dict[str, List[Any]]:
     """
     wait for all evidence gathering jobs to complete and collect results.
@@ -114,6 +115,7 @@ def collect_evidence_results(
                 operation_type=OperationType.LINK_EVIDENCE_RETRIEVER,
                 timeout=10.0,
                 raise_on_error=False,  # don't raise on individual failures
+                pipeline_id=pipeline_id,
             )
 
             evidence_completed += 1
@@ -156,6 +158,7 @@ def fire_evidence_jobs_for_claim(
     manager: ThreadPoolManager,
     claim_id_to_claim: Dict[str, ExtractedClaim],
     evidence_jobs_by_claim: Dict[str, List[str]],
+    pipeline_id: Optional[str] = None,
 ) -> int:
     """
     fire individual evidence gathering jobs for a single claim.
@@ -168,6 +171,7 @@ def fire_evidence_jobs_for_claim(
         manager: thread pool manager
         claim_id_to_claim: dict to track claims by id (updated in place)
         evidence_jobs_by_claim: dict to track gatherers per claim (updated in place)
+        pipeline_id: optional pipeline ID for request isolation
 
     returns:
         number of jobs submitted
@@ -198,6 +202,7 @@ def fire_evidence_jobs_for_claim(
         manager.submit(
             OperationType.LINK_EVIDENCE_RETRIEVER,
             gather_with_gatherer,
+            pipeline_id=pipeline_id,
         )
         jobs_submitted += 1
         evidence_jobs_by_claim[claim.id].append(gatherer_name)
@@ -218,6 +223,7 @@ def fire_and_forget_streaming_pipeline(
     manager: Optional[ThreadPoolManager] = None,
     pipeline_steps: Optional[Any] = None,
     enable_adjudication_with_search: bool = False,
+    pipeline_id: Optional[str] = None,
 ) -> tuple[List[ClaimExtractionOutput], Dict[str, EnrichedClaim]]:
     """
     extract claims and gather evidence using fire-and-forget streaming pattern.
@@ -269,6 +275,7 @@ def fire_and_forget_streaming_pipeline(
             OperationType.CLAIMS_EXTRACTION,
             extract_fn,
             extraction_input,
+            pipeline_id=pipeline_id,
         )
         claim_extraction_jobs_submitted += 1
 
@@ -279,6 +286,7 @@ def fire_and_forget_streaming_pipeline(
             OperationType.LINK_EXPANSION_PIPELINE,
             link_expansion_fn,
             data_sources,
+            pipeline_id=pipeline_id,
         )
         link_expansion_pending = True
         logger.info("fired link expansion pipeline job")
@@ -303,6 +311,7 @@ def fire_and_forget_streaming_pipeline(
                 operation_type=OperationType.CLAIMS_EXTRACTION,
                 timeout=0.1,  # non-blocking check
                 raise_on_error=True,
+                pipeline_id=pipeline_id,
             )
 
             claim_extractions_completed += 1
@@ -322,6 +331,7 @@ def fire_and_forget_streaming_pipeline(
                     manager=manager,
                     claim_id_to_claim=claim_id_to_claim,
                     evidence_jobs_by_claim=evidence_jobs_by_claim,
+                    pipeline_id=pipeline_id,
                 )
                 evidence_jobs_submitted += jobs_fired
 
@@ -339,6 +349,7 @@ def fire_and_forget_streaming_pipeline(
                     operation_type=OperationType.LINK_EXPANSION_PIPELINE,
                     timeout=0.1,  # non-blocking check
                     raise_on_error=True,
+                    pipeline_id=pipeline_id,
                 )
 
                 link_expansion_pending = False
@@ -363,6 +374,7 @@ def fire_and_forget_streaming_pipeline(
                         OperationType.CLAIMS_EXTRACTION,
                         extract_fn,
                         extraction_input,
+                        pipeline_id=pipeline_id,
                     )
                     claim_extraction_jobs_submitted += 1
                     logger.info(f"fired claim extraction for expanded source: {source.id}")
@@ -402,7 +414,8 @@ def fire_and_forget_streaming_pipeline(
             manager.submit(
                 OperationType.ADJUDICATION_WITH_SEARCH,
                 pipeline_steps.adjudicate_claims_with_search,
-                sources_with_claims
+                sources_with_claims,
+                pipeline_id=pipeline_id,
             )
 
             adjudication_job_submitted = True
@@ -410,7 +423,7 @@ def fire_and_forget_streaming_pipeline(
 
     # step 4: wait for all evidence gathering jobs and group by claim
     claim_citations = collect_evidence_results(
-        manager, evidence_jobs_submitted, claim_id_to_claim
+        manager, evidence_jobs_submitted, claim_id_to_claim, pipeline_id
     )
 
     # step 4: build enriched claims from grouped citations

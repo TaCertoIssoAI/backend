@@ -19,6 +19,7 @@ import requests
 import json
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # configuration
@@ -546,6 +547,163 @@ def test_no_claims_fallback_question():
     return response_data
 
 
+def test_concurrent_requests_pipeline_isolation():
+    """
+    test pipeline isolation by sending 2 concurrent requests:
+    1. A clearly fake claim
+    2. A clearly true claim
+
+    verifies that both requests complete successfully without cross-contamination.
+    """
+    print("\n" + "=" * 80)
+    print("TEST: Concurrent Requests - Pipeline Isolation")
+    print("=" * 80)
+    print("Testing that 2 concurrent requests don't interfere with each other")
+    print("=" * 80)
+
+    # define two different requests
+    fake_claim_payload = {
+        "content": [
+            {
+                "textContent": "A lua é feita de queijo suíço e foi descoberto por cientistas da NASA em 2023.",
+                "type": "text"
+            }
+        ]
+    }
+
+    true_claim_payload = {
+        "content": [
+            {
+                "textContent": "O Brasil é um país localizado na América do Sul e sua capital é Brasília.",
+                "type": "text"
+            }
+        ]
+    }
+
+    print("\n📤 Request 1 (FAKE CLAIM):")
+    print(json.dumps(fake_claim_payload, indent=2, ensure_ascii=False))
+
+    print("\n📤 Request 2 (TRUE CLAIM):")
+    print(json.dumps(true_claim_payload, indent=2, ensure_ascii=False))
+
+    # function to send a request and return result with metadata
+    def send_request(payload, request_name):
+        start_time = time.time()
+        response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
+        elapsed_time = time.time() - start_time
+
+        return {
+            "name": request_name,
+            "payload": payload,
+            "response": response,
+            "elapsed_time": elapsed_time,
+            "response_data": response.json() if response.status_code == 200 else None
+        }
+
+    # send both requests concurrently
+    print("\n⏳ Sending both requests concurrently...")
+    overall_start = time.time()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        # submit both requests
+        future_fake = executor.submit(send_request, fake_claim_payload, "FAKE CLAIM")
+        future_true = executor.submit(send_request, true_claim_payload, "TRUE CLAIM")
+
+        # collect results as they complete
+        results = {}
+        for future in as_completed([future_fake, future_true]):
+            result = future.result()
+            results[result["name"]] = result
+            print(f"✓ {result['name']} completed in {result['elapsed_time']:.2f}s")
+
+    overall_elapsed = time.time() - overall_start
+    print(f"\n⏱️  Total concurrent execution time: {overall_elapsed:.2f}s")
+
+    # verify both requests succeeded
+    fake_result = results["FAKE CLAIM"]
+    true_result = results["TRUE CLAIM"]
+
+    assert fake_result["response"].status_code == 200, f"Fake claim request failed with status {fake_result['response'].status_code}"
+    assert true_result["response"].status_code == 200, f"True claim request failed with status {true_result['response'].status_code}"
+
+    # print both responses
+    print("\n" + "=" * 80)
+    print("📋 REQUEST 1 RESPONSE (FAKE CLAIM)")
+    print("=" * 80)
+
+    fake_data = fake_result["response_data"]
+    print(f"\n🆔 Message ID: {fake_data.get('message_id', 'N/A')}")
+    print(f"\n💡 Rationale:")
+    print(f"   {fake_data.get('rationale', 'N/A')}")
+
+    if "claims" in fake_data and fake_data["claims"]:
+        print(f"\n🔎 Claims ({len(fake_data['claims'])} total):")
+        for i, claim in enumerate(fake_data["claims"], 1):
+            print(f"   {i}. {claim.get('claim', 'N/A')}")
+            if "verdict" in claim:
+                print(f"      → Verdict: {claim['verdict']}")
+
+    if "citations" in fake_data and fake_data["citations"]:
+        print(f"\n📚 Citations: {len(fake_data['citations'])} sources")
+
+    print(f"\n⚡ Processing Time: {fake_result['elapsed_time']:.2f}s")
+
+    print("\n" + "=" * 80)
+    print("📋 REQUEST 2 RESPONSE (TRUE CLAIM)")
+    print("=" * 80)
+
+    true_data = true_result["response_data"]
+    print(f"\n🆔 Message ID: {true_data.get('message_id', 'N/A')}")
+    print(f"\n💡 Rationale:")
+    print(f"   {true_data.get('rationale', 'N/A')}")
+
+    if "claims" in true_data and true_data["claims"]:
+        print(f"\n🔎 Claims ({len(true_data['claims'])} total):")
+        for i, claim in enumerate(true_data["claims"], 1):
+            print(f"   {i}. {claim.get('claim', 'N/A')}")
+            if "verdict" in claim:
+                print(f"      → Verdict: {claim['verdict']}")
+
+    if "citations" in true_data and true_data["citations"]:
+        print(f"\n📚 Citations: {len(true_data['citations'])} sources")
+
+    print(f"\n⚡ Processing Time: {true_result['elapsed_time']:.2f}s")
+
+    # verify responses are different (pipeline isolation working)
+    print("\n" + "=" * 80)
+    print("🔍 PIPELINE ISOLATION VERIFICATION")
+    print("=" * 80)
+
+    fake_msg_id = fake_data.get('message_id', '')
+    true_msg_id = true_data.get('message_id', '')
+
+    print(f"\n✓ Fake claim message_id: {fake_msg_id}")
+    print(f"✓ True claim message_id: {true_msg_id}")
+    print(f"✓ Message IDs are different: {fake_msg_id != true_msg_id}")
+
+    # verify that message IDs are unique (critical for isolation)
+    assert fake_msg_id != true_msg_id, "Message IDs should be unique for concurrent requests!"
+
+    # verify both have responses
+    assert "rationale" in fake_data, "Fake claim response missing rationale"
+    assert "rationale" in true_data, "True claim response missing rationale"
+
+    # verify responses are different (sanity check)
+    assert fake_data["rationale"] != true_data["rationale"], "Responses should be different for different claims!"
+
+    print("\n✅ Pipeline isolation verified:")
+    print("   - Both requests completed successfully")
+    print("   - Each request has unique message_id")
+    print("   - Responses are independent (no cross-contamination)")
+    print("=" * 80)
+
+    print("\n✅ Test passed: Concurrent requests handled correctly with pipeline isolation")
+    return {
+        "fake_claim": fake_data,
+        "true_claim": true_data
+    }
+
+
 def run_all_tests():
     """
     run all integration tests for text with links.
@@ -564,6 +722,7 @@ def run_all_tests():
     
     # run all tests
     tests = [
+        test_concurrent_requests_pipeline_isolation,  # Test pipeline isolation first
         test_text_with_single_link,
         test_no_claims_fallback_greeting,
         test_no_claims_fallback_personal_opinion,

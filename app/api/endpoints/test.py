@@ -80,6 +80,7 @@ async def analyze_text_without_browser(request: Request) -> AnalysisResponse:
             config,
             pipeline_steps,
             analytics,
+            message_id=msg_id
         )
         pipeline_duration = (time.time() - pipeline_start) * 1000
         logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
@@ -173,6 +174,7 @@ async def analyze_text_with_adjundication_search(request: Request) -> AnalysisRe
             config,
             pipeline_steps,
             analytics,
+            message_id=msg_id
         )
 
         pipeline_duration = (time.time() - pipeline_start) * 1000

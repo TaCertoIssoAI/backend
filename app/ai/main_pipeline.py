@@ -92,7 +92,8 @@ def build_adjudication_input(
 
 def _chose_fact_checking_result(
     original_result: FactCheckResult,
-    manager: ThreadPoolManager
+    manager: ThreadPoolManager,
+    pipeline_id: str
 ) -> FactCheckResult:
     """
     determines if the fact check result returned to the user will be the one from
@@ -105,6 +106,7 @@ def _chose_fact_checking_result(
     args:
         original_result: the fact check result from normal adjudication
         manager: thread pool manager to wait for adjudication_with_search job
+        pipeline_id: pipeline identifier to filter jobs
 
     returns:
         either the original result or the adjudication_with_search result
@@ -132,7 +134,8 @@ def _chose_fact_checking_result(
         job_id, search_result = manager.wait_next_completed(
             operation_type=OperationType.ADJUDICATION_WITH_SEARCH,
             timeout=20.0,
-            raise_on_error=False  # don't raise on error, we'll check the result
+            raise_on_error=False,  # don't raise on error, we'll check the result
+            pipeline_id=pipeline_id
         )
 
         # check if result is valid
@@ -229,7 +232,8 @@ async def run_fact_check_pipeline(
     data_sources: List[DataSource],
     config: PipelineConfig,
     steps: PipelineSteps,
-    analytics: AnalyticsCollector
+    analytics: AnalyticsCollector,
+    message_id: str
 ) -> FactCheckResult:
     """
     run the complete fact-checking pipeline on a list of data sources.
@@ -245,6 +249,8 @@ async def run_fact_check_pipeline(
         data_sources: list of data sources to fact-check
         config: pipeline configuration with timeout and LLM settings (required)
         steps: pipeline steps implementation. If None, uses DefaultPipelineSteps.
+        analytics: analytics collector for tracking metrics
+        message_id: unique identifier for this request, used for pipeline isolation
 
     returns:
         FactCheckResult with final verdicts for all claims, grouped by data source
@@ -262,13 +268,14 @@ async def run_fact_check_pipeline(
         ... ]
         >>> config = get_default_pipeline_config()
         >>> steps = DefaultPipelineSteps()
-        >>> result = await run_fact_check_pipeline(sources, config, steps)
+        >>> result = await run_fact_check_pipeline(sources, config, steps, analytics, "msg-001")
         >>> print(result.results[0].claim_verdicts[0].verdict)
         "Falso"
     """
 
     # get logger for main pipeline orchestration
     pipeline_logger = get_logger(__name__, PipelineStep.SYSTEM)
+    pipeline_logger.info(f"[{message_id}] pipeline isolation enabled with pipeline_id={message_id}")
 
     # initialize thread pool manager
     manager = ThreadPoolManager.get_instance(max_workers=25)
@@ -315,6 +322,7 @@ async def run_fact_check_pipeline(
             manager=manager,
             pipeline_steps=steps,
             enable_adjudication_with_search=True,
+            pipeline_id=message_id,
         )
 
         if not any(claim_out.has_valid_claims() for claim_out in claim_outputs):
@@ -365,7 +373,7 @@ async def run_fact_check_pipeline(
             log_adjudication_output(fact_check_result)
 
         # choose final result: use adjudication_with_search fallback if normal adjudication failed/insufficient
-        fact_check_result = _chose_fact_checking_result(fact_check_result, manager)
+        fact_check_result = _chose_fact_checking_result(fact_check_result, manager, message_id)
 
         # summary with prefix
         pipeline_logger.set_prefix("[SUMMARY]")
@@ -392,6 +400,6 @@ async def run_fact_check_pipeline(
         pipeline_logger.error("full traceback:", exc_info=True)
         raise
     finally:
-        # cleanup thread pool
-        pipeline_logger.info("shutting down thread pool")
-        manager.shutdown(wait=True)
+        # cleanup completed jobs for this pipeline (non-blocking background cleanup)
+        pipeline_logger.info(f"[{message_id}] starting background cleanup of completed jobs")
+        manager.clear_completed_jobs_async(pipeline_id=message_id)

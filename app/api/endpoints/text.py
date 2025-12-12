@@ -77,7 +77,13 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 3: run the async fact-checking pipeline
         logger.info(f"[{msg_id}] starting fact-check pipeline")
         pipeline_start = time.time()
-        fact_check_result = await run_fact_check_pipeline(data_sources, config, pipeline_step,analytics)
+        fact_check_result = await run_fact_check_pipeline(
+            data_sources,
+            config,
+            pipeline_step,
+            analytics,
+            message_id=msg_id
+        )
         pipeline_duration = (time.time() - pipeline_start) * 1000
         logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
 

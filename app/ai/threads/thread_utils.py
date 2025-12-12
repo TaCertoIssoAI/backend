@@ -64,6 +64,7 @@ class Job:
     kwargs: dict = field(default_factory=dict, compare=False)
     future: Future = field(default_factory=Future, compare=False)
     created_at: float = field(default_factory=time.time, compare=False)
+    pipeline_id: Optional[str] = field(default=None, compare=False)
 
     def __post_init__(self):
         """calculate priority after initialization."""
@@ -197,6 +198,7 @@ class ThreadPoolManager:
         operation_type: OperationType,
         func: Callable,
         *args,
+        pipeline_id: Optional[str] = None,
         **kwargs
     ) -> Future:
         """
@@ -206,6 +208,7 @@ class ThreadPoolManager:
             operation_type: type of operation (determines priority)
             func: function to execute
             *args: positional arguments for func
+            pipeline_id: optional pipeline ID for request isolation
             **kwargs: keyword arguments for func
 
         returns:
@@ -217,7 +220,8 @@ class ThreadPoolManager:
             >>> future = manager.submit(
             ...     OperationType.CLAIMS_EXTRACTION,
             ...     extract_claims,
-            ...     text="some text"
+            ...     text="some text",
+            ...     pipeline_id="request-123"
             ... )
             >>> result = future.result()  # blocks until complete
         """
@@ -230,7 +234,8 @@ class ThreadPoolManager:
             operation_type=operation_type,
             func=func,
             args=args,
-            kwargs=kwargs
+            kwargs=kwargs,
+            pipeline_id=pipeline_id
         )
 
         # add to priority queue
@@ -243,6 +248,7 @@ class ThreadPoolManager:
         operation_type: OperationType,
         func: Callable,
         *args,
+        pipeline_id: Optional[str] = None,
         **kwargs
     ) -> Any:
         """
@@ -252,6 +258,7 @@ class ThreadPoolManager:
             operation_type: type of operation (determines priority)
             func: function to execute (can be sync or async)
             *args: positional arguments for func
+            pipeline_id: optional pipeline ID for request isolation
             **kwargs: keyword arguments for func
 
         returns:
@@ -263,10 +270,11 @@ class ThreadPoolManager:
             >>> result = await manager.submit_async(
             ...     OperationType.CLAIMS_EXTRACTION,
             ...     extract_claims,
-            ...     text="some text"
+            ...     text="some text",
+            ...     pipeline_id="request-123"
             ... )
         """
-        future = self.submit(operation_type, func, *args, **kwargs)
+        future = self.submit(operation_type, func, *args, pipeline_id=pipeline_id, **kwargs)
 
         # bridge sync Future to async
         loop = asyncio.get_event_loop()
@@ -362,6 +370,7 @@ class ThreadPoolManager:
         operation_type: OperationType,
         timeout: Optional[float] = None,
         raise_on_error: bool = True,
+        pipeline_id: Optional[str] = None,
     ) -> Any:
         """
         wait for and return result of next completed job of given operation type.
@@ -372,6 +381,9 @@ class ThreadPoolManager:
             operation_type: operation type to wait for
             timeout: max time to wait in seconds (None = wait forever)
             raise_on_error: if True, raise exception if job failed; if False, return exception object
+            pipeline_id: optional pipeline ID for request isolation. if provided, only jobs
+                        with matching pipeline_id will be returned. jobs with non-matching
+                        pipeline_id will be put back in the queue for other waiters.
 
         returns:
             tuple of (job_id, result) where result is the job's return value or exception
@@ -381,35 +393,181 @@ class ThreadPoolManager:
             Exception: if job failed and raise_on_error is True
 
         example:
-            >>> # submit 10 claim extraction jobs
+            >>> # submit 10 claim extraction jobs for pipeline "req-123"
             >>> for claim in claims:
-            ...     manager.submit(OperationType.CLAIMS_EXTRACTION, extract, claim)
+            ...     manager.submit(
+            ...         OperationType.CLAIMS_EXTRACTION,
+            ...         extract,
+            ...         claim,
+            ...         pipeline_id="req-123"
+            ...     )
             >>>
             >>> # process results as they complete (streaming pattern)
             >>> for _ in range(10):
             ...     job_id, result = manager.wait_next_completed(
-            ...         OperationType.CLAIMS_EXTRACTION
+            ...         OperationType.CLAIMS_EXTRACTION,
+            ...         pipeline_id="req-123"
             ...     )
             ...     print(f"job {job_id} completed: {result}")
         """
+        # track non-matching jobs to put back
+        non_matching_jobs = []
+
         try:
-            job_id, result = self.completion_queues[operation_type].get(
-                block=True,
-                timeout=timeout
+            while True:
+                try:
+                    job_id, result = self.completion_queues[operation_type].get(
+                        block=True,
+                        timeout=timeout
+                    )
+
+                    # if pipeline_id filtering is enabled, check if job matches
+                    if pipeline_id is not None:
+                        # look up the job to check its pipeline_id
+                        with self.running_jobs_lock:
+                            job = self.completed_jobs.get(job_id)
+
+                        # if job doesn't match our pipeline_id, save it for later
+                        if job is None or job.pipeline_id != pipeline_id:
+                            non_matching_jobs.append((job_id, result))
+                            print(f"trying to match job of type: {operation_type}")
+                            continue  # try next job
+
+                    # job matches (or no filtering) - return it
+                    # if result is an exception, handle based on raise_on_error
+                    if isinstance(result, Exception):
+                        if raise_on_error:
+                            raise result
+                        return job_id, result
+
+                    return job_id, result
+
+                except queue.Empty:
+                    raise TimeoutError(
+                        f"no completed jobs of type {operation_type.name} "
+                        f"{'for pipeline ' + pipeline_id if pipeline_id else ''} "
+                        f"within {timeout}s"
+                    )
+        finally:
+            # put non-matching jobs back into queue for other waiters
+            for job_id, result in non_matching_jobs:
+                self.completion_queues[operation_type].put((job_id, result))
+
+    def clear_completed_jobs(
+        self,
+        pipeline_id: str,
+        operation_type: Optional[OperationType] = None,
+    ) -> int:
+        """
+        remove all completed jobs for a specific pipeline_id.
+
+        this is a non-blocking cleanup operation that drains the completion queue
+        for the specified pipeline without waiting for or processing results.
+
+        args:
+            pipeline_id: pipeline ID to filter by (required)
+            operation_type: optional type of jobs to clear. if None, clears all operation types.
+
+        returns:
+            number of jobs cleared
+
+        example:
+            >>> # clear all completed jobs for request-123 (all operation types)
+            >>> manager = ThreadPoolManager.get_instance()
+            >>> cleared = manager.clear_completed_jobs(pipeline_id="request-123")
+            >>> print(f"cleared {cleared} jobs")
+
+            >>> # clear only claims extraction jobs for request-123
+            >>> cleared = manager.clear_completed_jobs(
+            ...     pipeline_id="request-123",
+            ...     operation_type=OperationType.CLAIMS_EXTRACTION
+            ... )
+            >>> print(f"cleared {cleared} jobs")
+        """
+        cleared_count = 0
+
+        # if operation_type is None, clear from all operation types
+        if operation_type is None:
+            operation_types = list(OperationType)
+        else:
+            operation_types = [operation_type]
+
+        # drain jobs from each operation type
+        for op_type in operation_types:
+            while True:
+                try:
+                    # use very short timeout for non-blocking behavior
+                    _job_id, _result = self.wait_next_completed(
+                        operation_type=op_type,
+                        timeout=0.001,  # 1ms timeout = effectively non-blocking
+                        raise_on_error=False,  # don't raise on job errors
+                        pipeline_id=pipeline_id
+                    )
+                    cleared_count += 1
+                except TimeoutError:
+                    # no more jobs available for this operation type
+                    break
+
+        return cleared_count
+
+    def clear_completed_jobs_async(
+        self,
+        pipeline_id: str,
+        operation_type: Optional[OperationType] = None,
+    ) -> Future:
+        """
+        non-blocking background cleanup of completed jobs for a specific pipeline_id.
+
+        this submits the cleanup as a background task and returns immediately,
+        allowing the server to continue responding while cleanup happens in the background.
+
+        args:
+            pipeline_id: pipeline ID to filter by (required)
+            operation_type: optional type of jobs to clear. if None, clears all operation types.
+
+        returns:
+            Future that will contain the number of jobs cleared when complete
+
+        example:
+            >>> # submit cleanup in background and continue
+            >>> manager = ThreadPoolManager.get_instance()
+            >>> future = manager.clear_completed_jobs_async(pipeline_id="request-123")
+            >>> # server continues, cleanup happens in background
+            >>> # optionally check result later
+            >>> if future.done():
+            ...     cleared = future.result()
+            ...     print(f"cleared {cleared} jobs")
+        """
+        # use threading to avoid blocking the calling thread
+        import threading
+
+        def cleanup_task():
+            """background cleanup task"""
+            return self.clear_completed_jobs(
+                pipeline_id=pipeline_id,
+                operation_type=operation_type
             )
 
-            # if result is an exception, handle based on raise_on_error
-            if isinstance(result, Exception):
-                if raise_on_error:
-                    raise result
-                return job_id, result
+        # create future to track completion
+        future = Future()
 
-            return job_id, result
+        def run_cleanup():
+            """wrapper that sets result on future"""
+            try:
+                result = cleanup_task()
+                future.set_result(result)
+            except Exception as e:
+                future.set_exception(e)
 
-        except queue.Empty:
-            raise TimeoutError(
-                f"no completed jobs of type {operation_type.name} within {timeout}s"
-            )
+        # run in background thread
+        cleanup_thread = threading.Thread(
+            target=run_cleanup,
+            daemon=True,  # daemon thread won't block shutdown
+            name=f"cleanup-{pipeline_id}"
+        )
+        cleanup_thread.start()
+
+        return future
 
     def wait_next_completed_any(
         self,
