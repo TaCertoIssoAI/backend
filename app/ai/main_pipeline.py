@@ -402,8 +402,4 @@ async def run_fact_check_pipeline(
     finally:
         # cleanup completed jobs for this pipeline (non-blocking background cleanup)
         pipeline_logger.info(f"[{message_id}] starting background cleanup of completed jobs")
-        #manager.clear_completed_jobs_async(pipeline_id=message_id)
-
-        # cleanup thread pool
-        pipeline_logger.info("shutting down thread pool")
-        manager.shutdown(wait=True)
+        manager.clear_completed_jobs_async(pipeline_id=message_id)
