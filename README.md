@@ -183,5 +183,87 @@ Implementa comunicação com serviços externos, incluindo envio de analytics pa
 Biblioteca customizada de ThreadPool (Buffer pré-alocado de Threads para execução de tarefas) e filas para processamento paralelo de múltiplas fontes de dados, garantindo processamento mais rápido e menor latência.
 
 ---
+
+## Como funciona o Pipeline de Fact-Checking
+
+O pipeline de fact-checking processa mensagens dos usuários em etapas sequenciais, cada uma enriquecendo as informações até produzir o veredito final com citações.
+
+### Visão Geral do Fluxo
+
+```
+Mensagem do Usuário
+
+1. Separação por fonte do dados (texto, imagem...)
+    ↓
+2. Expansão de Links
+    ↓
+3. Extração de Claims
+    ↓
+4. Busca de Evidências
+    ↓
+5. Adjudicação
+    ↓
+Resposta com Veredito e Citações
+```
+
+
+### Diagrama de arquitetura da Pipeline
+![diagrama_pipeline](./images/diagrama_pipeline_2.png)
+
+### Etapas Detalhadas
+
+**1. Expansão de Links (Link Expansion)**
+
+- **O que faz:** Identifica URLs no texto original e busca o conteúdo desses links
+- **Como funciona:**
+  - Extrai automaticamente todos os URLs da mensagem do usuário
+  - Acessa cada URL e obtém o conteúdo completo da página (artigos, posts, etc)
+  - Cria novos "data sources" do tipo `link_context` com o conteúdo expandido
+- **Tecnologia:** Executa em paralelo usando ThreadPoolManager para processar múltiplos links simultaneamente
+- **Resultado:** Lista de fontes de dados expandidas que serão analisadas junto com o texto original
+
+**2. Extração de Claims (Claim Extraction)**
+
+- **O que faz:** Identifica afirmações verificáveis no texto usando LLM (Large Language Model)
+- **Como funciona:**
+  - Processa cada fonte de dados (texto original + conteúdo dos links expandidos)
+  - Usa um LLM para extrair claims factuais que podem ser verificados
+  - Cada claim recebe um ID único e referência à fonte de onde foi extraído
+- **Modelo:** Configurável via `claim_extraction_llm_config` (padrão: Gemini ou GPT-4)
+- **Resultado:** Lista de `ClaimExtractionOutput` com todas as afirmações extraídas de todas as fontes
+
+**3. Busca de Evidências (Evidence Gathering)**
+
+- **O que faz:** Para cada claim extraído, busca evidências que suportem ou refutem a afirmação
+- **Como funciona:**
+  - Executa múltiplas buscas em paralelo para cada claim:
+    - **Google Fact Check API:** Busca fact-checks já publicados sobre o claim
+    - **Web Search:** Realiza buscas na web filtradas por domínios confiáveis
+  - Agrega todas as citações encontradas para cada claim
+  - Normaliza e deduplica as fontes
+- **Concorrência:** Usa gatherers assíncronos para buscar em múltiplas fontes simultaneamente
+- **Resultado:** `EvidenceRetrievalResult` mapeando cada claim_id para um `EnrichedClaim` com citações
+
+**4. Adjudicação (Adjudication)**
+
+- **O que faz:** Analisa todos os claims e evidências para produzir vereditos finais
+- **Como funciona:**
+  - Recebe o texto original, claims extraídos e todas as evidências coletadas
+  - Um LLM forte (configurável, padrão: Gemini ou GPT-4) analisa o conjunto completo
+  - Gera vereditos para cada claim: Verdadeiro, Falso, Enganoso ou Fontes Insuficientes
+  - Produz um resumo geral explicando a análise
+  - Inclui citações específicas que fundamentam cada veredito
+- **Fallback:** Se as fontes forem insuficientes, executa `adjudication_with_search` que usa busca web integrada do OpenAI para encontrar mais evidências em tempo real
+- **Resultado:** `FactCheckResult` com vereditos detalhados, citações e explicação para o usuário
+
+### Características Técnicas
+
+- **Execução Assíncrona:** Todas as etapas usam async/await para operações I/O eficientes
+- **Processamento Paralelo:** ThreadPoolManager processa múltiplos claims e links simultaneamente
+- **Isolamento de Pipeline:** Cada requisição recebe um `pipeline_id` único para rastreamento e limpeza de recursos
+- **Observabilidade:** Analytics collector captura métricas de cada etapa
+- **Resiliência:** Sistema de fallback garante resposta mesmo quando fontes primárias falham
+
+---
 Este projeto faz parte da iniciativa **Tá Certo Isso AI**.
 
