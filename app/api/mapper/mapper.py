@@ -118,6 +118,7 @@ def _get_verdict_summary(all_verdicts: list) -> str:
     verdadeiro_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.VERDADEIRO)
     falso_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.FALSO)
     fontes_insuficientes_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.FONTES_INSUFICIENTES)
+    fora_de_contexto_count = sum(1 for v in all_verdicts if v.verdict == VerdictTypeEnum.FORA_DE_CONTEXTO)
 
     # check edge cases where all claims have the same verdict
     if verdadeiro_count == total_claims:
@@ -128,6 +129,9 @@ def _get_verdict_summary(all_verdicts: list) -> str:
 
     if fontes_insuficientes_count == total_claims:
         return "Não foi possível verificar nenhuma das informações."
+    
+    if fora_de_contexto_count == total_claims:
+        return "Todas as afirmações foram classificadas como fora de contexto."
 
     # default case: show count of true claims
     verdadeiro_count = max(0, verdadeiro_count)
