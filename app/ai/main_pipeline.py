@@ -117,13 +117,13 @@ def _chose_fact_checking_result(
     if len(original_result.results) == 0:
         logger.info("normal adjudication failed (no results) - checking adjudication_with_search fallback")
     else:
-        all_insufficient = all(
+        any_insufficient = any(
             verdict.verdict == "Fontes insuficientes para verificar"
             for result in original_result.results
             for verdict in result.claim_verdicts
         )
 
-        if not all_insufficient:
+        if not any_insufficient:
             # at least one verdict has sufficient sources, use original result
             return original_result
 
