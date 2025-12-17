@@ -729,7 +729,11 @@ DATA ATUAL: {current_date}
 
 Esta é a data de hoje. Leve isso em consideração ao fazer a verificação de fatos, especialmente para eventos recentes ou alegações temporais.
 
-IMPORTANTE: Mantenha TODOS os caracteres especiais do português (ç, ã, õ, á, é, í, ó, ú, â, ê, ô, etc.) em sua resposta. NÃO remova ou substitua acentos e cedilhas.
+CRÍTICO - ENCODING: Você DEVE manter TODOS os caracteres especiais do português (ç, ã, õ, á, é, í, ó, ú, â, ê, ô, Ç, Ã, Õ, Á, É, Í, Ó, Ú, Â, Ê, Ô) em sua resposta JSON.
+NÃO remova, NÃO substitua, NÃO normalize acentos, cedilhas ou til.
+Exemplos CORRETOS: "eleições", "não", "à", "é", "Afirmação"
+Exemplos INCORRETOS: "eleicoes", "nao", "a", "e", "Afirmacao"
+A resposta DEVE usar encoding UTF-8 com caracteres acentuados preservados.
 
 Sua tarefa é analisar alegações e verificá-las usando a **busca do Google** para encontrar evidências em tempo real.
 Após todas as afirmações individuais terem seu veredito, você irá analizar o contexto de todas elas juntas, verificando como cada afirmação interaje com a outra

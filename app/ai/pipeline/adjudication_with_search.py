@@ -261,6 +261,11 @@ def adjudicate_claims_with_search(
     # Make single API call with web search and structured output
     print(f"[DEBUG] Calling OpenAI Responses API with model: {model}")
 
+    # Force UTF-8 encoding in messages
+    for message in messages:
+        if isinstance(message.get("content"), str):
+            message["content"] = message["content"].encode('utf-8').decode('utf-8')
+
     llm_output = None
     try:
         response = client.responses.parse(
@@ -271,10 +276,25 @@ def adjudicate_claims_with_search(
         )
         print("[DEBUG] API call successful")
 
+        # Debug: check encoding of response
         for res in response.output_parsed.results:
             for v in res.claim_verdicts:
                 print("[RAW repr claim_text]:", repr(v.claim_text))
                 print("[RAW repr justification]:", repr(v.justification))
+
+                # Force re-encode to UTF-8 if needed
+                if v.claim_text:
+                    v.claim_text = v.claim_text.encode('utf-8', errors='ignore').decode('utf-8')
+                if v.justification:
+                    v.justification = v.justification.encode('utf-8', errors='ignore').decode('utf-8')
+
+        # Fix encoding in overall_summary too
+        if response.output_parsed and response.output_parsed.overall_summary:
+            response.output_parsed.overall_summary = (
+                response.output_parsed.overall_summary
+                .encode('utf-8', errors='ignore')
+                .decode('utf-8')
+            )
 
         if not hasattr(response, 'output_parsed') or response.output_parsed is None:
             # fallback: try to get raw output and parse manually
