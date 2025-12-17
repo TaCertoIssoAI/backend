@@ -19,12 +19,76 @@ import requests
 import json
 import sys
 import time
+from pathlib import Path
+from datetime import datetime
 
 
 # configuration
 BASE_URL = "http://localhost:8000"
 ADJUDICATION_SEARCH_ENDPOINT = f"{BASE_URL}/text-adjudication-search"
 HEALTH_ENDPOINT = f"{BASE_URL}/health"
+
+# output directory for test results
+OUTPUT_DIR = Path(__file__).parent / "test_outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+
+def write_response_to_file(test_name: str, payload: dict, response_data: dict, elapsed_time: float):
+    """
+    write test response to a text file for inspection.
+
+    args:
+        test_name: name of the test
+        payload: request payload
+        response_data: API response data
+        elapsed_time: request duration in seconds
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{timestamp}_{test_name}.txt"
+    filepath = OUTPUT_DIR / filename
+
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write("=" * 80 + "\n")
+        f.write(f"TEST: {test_name}\n")
+        f.write(f"TIMESTAMP: {datetime.now().isoformat()}\n")
+        f.write(f"DURATION: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)\n")
+        f.write("=" * 80 + "\n\n")
+
+        # request section
+        f.write("REQUEST PAYLOAD:\n")
+        f.write("-" * 80 + "\n")
+        f.write(json.dumps(payload, indent=2, ensure_ascii=False))
+        f.write("\n\n")
+
+        # response section
+        f.write("RESPONSE:\n")
+        f.write("-" * 80 + "\n")
+        f.write(json.dumps(response_data, indent=2, ensure_ascii=False))
+        f.write("\n\n")
+
+        # rationale section (full text)
+        if "rationale" in response_data:
+            f.write("FULL RATIONALE:\n")
+            f.write("-" * 80 + "\n")
+            f.write(response_data["rationale"])
+            f.write("\n\n")
+
+        # response without links section
+        if "responseWithoutLinks" in response_data:
+            f.write("RESPONSE WITHOUT LINKS:\n")
+            f.write("-" * 80 + "\n")
+            f.write(response_data["responseWithoutLinks"])
+            f.write("\n\n")
+
+        # message id
+        if "message_id" in response_data:
+            f.write("MESSAGE ID:\n")
+            f.write("-" * 80 + "\n")
+            f.write(response_data["message_id"])
+            f.write("\n")
+
+    print(f"\n💾 Response saved to: {filepath}")
+    return filepath
 
 
 def pretty_print_response(response_data: dict):
@@ -130,6 +194,10 @@ def test_fallback_with_verifiable_claims():
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
+
+    # write response to file
+    write_response_to_file("test1_scientific_claims", payload, response_data, elapsed_time)
+
     pretty_print_response(response_data)
 
     # verify response schema
@@ -204,6 +272,10 @@ def test_fallback_with_recent_event():
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
+
+    # write response to file
+    write_response_to_file("test2_recent_event", payload, response_data, elapsed_time)
+
     pretty_print_response(response_data)
 
     # verify response has required fields
@@ -253,6 +325,10 @@ def test_fallback_with_mixed_claims():
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
+
+    # write response to file
+    write_response_to_file("test3_mixed_claims", payload, response_data, elapsed_time)
+
     pretty_print_response(response_data)
 
     # verify response schema
@@ -298,6 +374,7 @@ def run_all_tests():
     print("=" * 80)
     print(f"Target: {ADJUDICATION_SEARCH_ENDPOINT}")
     print("⚠️  NOTE: These tests require OPENAI_API_KEY to be set in .env")
+    print(f"💾 Test responses will be saved to: {OUTPUT_DIR}")
     print("=" * 80)
 
     # check server health first
