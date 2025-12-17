@@ -27,14 +27,16 @@ from app.models import (
     DataSourceWithClaims,
     EnrichedClaim,
     FactCheckResult,
+    VerdictTypeEnum
 )
 from app.ai.pipeline.steps import PipelineSteps
-from app.ai.threads.thread_utils import ThreadPoolManager, OperationType
+from app.ai.threads.thread_utils import ThreadPoolManager
 from app.ai.async_code import fire_and_forget_streaming_pipeline
 from app.ai.pipeline.claim_extractor import extract_claims
 from app.observability.analytics import AnalyticsCollector
 from app.observability.logger import get_logger, PipelineStep
 from app.ai.log_utils import log_adjudication_input, log_adjudication_output
+from .utils import _chose_fact_checking_result
 
 
 def build_adjudication_input(
@@ -89,144 +91,6 @@ def build_adjudication_input(
         sources_with_claims=sources_with_claims,
         additional_context=None
     )
-
-def _chose_fact_checking_result(
-    original_result: FactCheckResult,
-    manager: ThreadPoolManager,
-    pipeline_id: str
-) -> FactCheckResult:
-    """
-    determines if the fact check result returned to the user will be the one from
-    the regular step or the fallback from adjudication with search.
-
-    if all verdicts in the original result are "Fontes insuficientes para verificar",
-    waits for the adjudication_with_search job to complete and returns that result
-    if it's valid.
-
-    args:
-        original_result: the fact check result from normal adjudication
-        manager: thread pool manager to wait for adjudication_with_search job
-        pipeline_id: pipeline identifier to filter jobs
-
-    returns:
-        either the original result or the adjudication_with_search result
-    """
-    logger = get_logger(__name__, PipelineStep.ADJUDICATION)
-
-    # check if normal adjudication failed (empty results) or all verdicts are "Fontes insuficientes"
-    if len(original_result.results) == 0:
-        logger.info("normal adjudication failed (no results) - checking adjudication_with_search fallback")
-    else:
-        any_insufficient = any(
-            verdict.verdict == "Fontes insuficientes para verificar"
-            for result in original_result.results
-            for verdict in result.claim_verdicts
-        )
-
-        if not any_insufficient:
-            # at least one verdict has sufficient sources, use original result
-            return original_result
-
-        logger.info("all verdicts are 'Fontes insuficientes para verificar' - checking adjudication_with_search fallback")
-
-    try:
-        # wait for adjudication_with_search job to complete (20 second timeout)
-        job_id, search_result = manager.wait_next_completed(
-            operation_type=OperationType.ADJUDICATION_WITH_SEARCH,
-            timeout=20.0,
-            raise_on_error=False,  # don't raise on error, we'll check the result
-            pipeline_id=pipeline_id
-        )
-
-        # check if result is valid
-        if isinstance(search_result, Exception):
-            logger.warning(
-                f"adjudication_with_search job failed: {type(search_result).__name__}: {search_result}"
-            )
-            # if original adjudication also failed, raise error
-            if len(original_result.results) == 0:
-                logger.error("both normal adjudication and fallback failed - raising error")
-                raise RuntimeError(
-                    f"adjudication failed and fallback also failed. "
-                    f"normal adjudication returned no results and adjudication_with_search failed: {search_result}"
-                ) from search_result
-            logger.info("using original insufficient sources result")
-            return original_result
-        elif search_result is None or not isinstance(search_result, FactCheckResult):
-            logger.warning(
-                f"adjudication_with_search returned invalid result: {type(search_result)}"
-            )
-            # if original adjudication also failed, raise error
-            if len(original_result.results) == 0:
-                logger.error("both normal adjudication and fallback failed - raising error")
-                raise RuntimeError(
-                    f"adjudication failed and fallback returned invalid result. "
-                    f"normal adjudication returned no results and adjudication_with_search returned: {type(search_result)}"
-                )
-            logger.info("using original insufficient sources result")
-            return original_result
-        elif len(search_result.results) == 0:
-            logger.warning("adjudication_with_search returned empty results")
-            # if original adjudication also failed, raise error
-            if len(original_result.results) == 0:
-                logger.error("both normal adjudication and fallback failed - raising error")
-                raise RuntimeError(
-                    "adjudication failed and fallback returned empty results. "
-                    "both normal adjudication and adjudication_with_search returned no results."
-                )
-            logger.info("using original insufficient sources result")
-            return original_result
-        else:
-            # valid result - use it as fallback
-            logger.info(
-                f"[FALLBACK] using adjudication_with_search result: "
-                f"{len(search_result.results)} results, "
-                f"{sum(len(r.claim_verdicts) for r in search_result.results)} verdicts"
-            )
-
-            # log both outputs for comparison
-            logger.info("[ORIGINAL OUTPUT - Insufficient Sources]")
-            log_adjudication_output(original_result)
-
-            logger.info("[FALLBACK OUTPUT - Adjudication with Search]")
-            log_adjudication_output(search_result)
-
-            # use search result as final result
-            return search_result
-
-    except TimeoutError:
-        logger.warning(
-            "adjudication_with_search job did not complete within 20 seconds"
-        )
-        # if original adjudication failed (empty results), we can't return empty result
-        if len(original_result.results) == 0:
-            logger.error("both normal adjudication and fallback failed - raising error")
-            raise RuntimeError(
-                "adjudication failed and fallback did not complete in time. "
-                "normal adjudication returned no results and adjudication_with_search timed out after 20s."
-            )
-        logger.info("using original insufficient sources result")
-        return original_result
-    except Exception as e:
-        logger.error(
-            f"error while waiting for adjudication_with_search: {type(e).__name__}: {e}",
-            exc_info=True
-        )
-
-        # if this is already a RuntimeError we raised earlier, just re-raise it
-        # (don't double-wrap our own error messages)
-        if isinstance(e, RuntimeError):
-            raise
-
-        # for other exceptions, check if we need to raise or return original
-        if len(original_result.results) == 0:
-            logger.error("both normal adjudication and fallback failed - raising error")
-            raise RuntimeError(
-                f"adjudication failed and fallback also failed. "
-                f"normal adjudication returned no results and adjudication_with_search error: {e}"
-            ) from e
-        logger.info("using original insufficient sources result")
-        return original_result
 
 async def run_fact_check_pipeline(
     data_sources: List[DataSource],
