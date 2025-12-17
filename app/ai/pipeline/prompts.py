@@ -15,10 +15,11 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
 
 **Extraia alegações que:**
 - Podem ser verificadas como verdadeiras ou falsas com base em evidências.
-- Fazem afirmações sobre o mundo.
+- Fazem afirmações sobre o mundo (eventos passados, presentes ou futuros).
 - Contêm entidades nomeadas, eventos ou detalhes específicos.
 - São opiniões pessoais que contém alegações ou juízo de valor sobre algum fato do mundo e podem ser verificadas.
 - São perguntas que contém alegações ou juízo de valor sobre algum fato do mundo e podem ser verificadas.
+- Fazem afirmações sobre ações futuras de grupos, organizações, governos ou pessoas (desde que sejam alegações verificáveis sobre planos, anúncios ou intenções declaradas).
 
 **Exemplos de boas alegações:**
 - "A vacina X causa infertilidade em mulheres"
@@ -27,6 +28,10 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
 - "Eu acho que vacinas causam autismo"
 - "Vacinas causam autismo?"
+- "O governo vai aumentar os impostos sobre combustíveis em janeiro"
+- "A empresa X vai demitir 5.000 funcionários no próximo trimestre"
+- "O partido Y anunciou que vai apresentar um projeto de lei para proibir plásticos descartáveis"
+- "O sindicato planeja iniciar uma greve nacional na próxima semana"
 
 **NÃO extraia:**
 - Perguntas sem alegações implícitas ("O que você acha?")
