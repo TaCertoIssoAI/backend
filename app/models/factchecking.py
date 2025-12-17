@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from typing import List, Optional, Dict, Literal, Union, TYPE_CHECKING
 from enum import Enum
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict,field_validator
+import re
 
 if TYPE_CHECKING:
     from .commondata import DataSource
@@ -301,6 +302,16 @@ class Citation(BaseModel):
     rating: Optional[VerdictType] = None  # Google fact-check rating: "Falso", "Enganoso", "Verdadeiro", etc.
     rating_comment: Optional[str] = None #optional comment about the rating
     date: Optional[str] = None  # When the fact-check was published
+
+
+    @field_validator("url", mode="before")
+    @classmethod
+    def normalize_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            v = v.replace("\n", "").replace("\r", "")
+            v = re.sub(r"\s+", "", v)
+            v = v.strip()
+        return v
 
 class EnrichedClaim(ExtractedClaim):
     """Claim enriched with evidence from external fact checking - extends ExtractedClaim with citations"""

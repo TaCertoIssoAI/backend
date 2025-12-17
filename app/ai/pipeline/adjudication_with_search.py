@@ -17,9 +17,11 @@ Architecture:
 """
 
 import os
+import re
+import json
 from typing import List
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from app.models import (
     ExtractedClaim,
@@ -31,6 +33,90 @@ from app.models import (
 
 from .prompts import ADJUDICATION_WITH_SEARCH_SYSTEM_PROMPT
 from .utils import get_current_date, convert_llm_output_to_data_source_results
+
+# ===== JSON REPAIR UTILITIES =====
+
+def _repair_json_urls(json_text: str) -> str:
+    """
+    repair common JSON formatting issues in URLs.
+
+    fixes:
+    - unescaped backslashes in URLs
+    - unescaped quotes in URLs
+    - newlines and tabs in string values
+    - malformed URL strings
+
+    args:
+        json_text: raw JSON string that may contain malformed URLs
+
+    returns:
+        repaired JSON string
+    """
+    # fix unescaped newlines and tabs in strings
+    json_text = json_text.replace('\n', '\\n').replace('\t', '\\t')
+
+    # fix URLs with unescaped backslashes (common issue)
+    # find all URL patterns and ensure backslashes are escaped
+    url_pattern = r'"url"\s*:\s*"([^"]*)"'
+
+    def fix_url(match):
+        url = match.group(1)
+        # escape any unescaped backslashes
+        url = url.replace('\\', '\\\\')
+        # remove any double escaping
+        url = url.replace('\\\\\\\\', '\\\\')
+        return f'"url": "{url}"'
+
+    json_text = re.sub(url_pattern, fix_url, json_text)
+
+    # fix any remaining unescaped quotes in string values (conservative approach)
+    # this is tricky, so we only fix obvious cases
+
+    return json_text
+
+
+def _parse_with_fallback(raw_response: str) -> LLMAdjudicationOutput:
+    """
+    parse JSON response with fallback repair logic.
+
+    tries to parse the response as-is first, then applies JSON repair
+    if initial parsing fails.
+
+    args:
+        raw_response: raw JSON string from the API
+
+    returns:
+        parsed LLMAdjudicationOutput
+
+    raises:
+        ValueError: if parsing fails even after repair attempts
+    """
+    # try parsing as-is first
+    try:
+        parsed_data = json.loads(raw_response)
+        return LLMAdjudicationOutput(**parsed_data)
+    except (json.JSONDecodeError, ValidationError) as e:
+        print(f"[DEBUG] Initial JSON parsing failed: {type(e).__name__}: {str(e)}")
+        print("[DEBUG] Attempting JSON repair...")
+
+        # apply repairs
+        repaired_json = _repair_json_urls(raw_response)
+
+        try:
+            parsed_data = json.loads(repaired_json)
+            result = LLMAdjudicationOutput(**parsed_data)
+            print("[DEBUG] JSON repair successful!")
+            return result
+        except (json.JSONDecodeError, ValidationError) as repair_error:
+            print(f"[ERROR] JSON repair failed: {type(repair_error).__name__}: {str(repair_error)}")
+            print(f"[DEBUG] Original JSON (first 500 chars): {raw_response[:500]}")
+            print(f"[DEBUG] Repaired JSON (first 500 chars): {repaired_json[:500]}")
+            raise ValueError(
+                f"Failed to parse JSON response even after repair. "
+                f"Original error: {str(e)}. "
+                f"Repair error: {str(repair_error)}"
+            ) from repair_error
+
 
 # ===== CLIENT INITIALIZATION =====
 
@@ -164,6 +250,8 @@ def adjudicate_claims_with_search(
 
     # Make single API call with web search and structured output
     print(f"[DEBUG] Calling OpenAI Responses API with model: {model}")
+
+    llm_output = None
     try:
         response = client.responses.parse(
             model=model,
@@ -172,19 +260,43 @@ def adjudicate_claims_with_search(
             text_format=LLMAdjudicationOutput,
         )
         print("[DEBUG] API call successful")
+
+        # Parse structured output
+        print("\n[DEBUG] Parsing structured output...")
+
+        if not hasattr(response, 'output_parsed') or response.output_parsed is None:
+            # fallback: try to get raw output and parse manually
+            if hasattr(response, 'output') and response.output:
+                print("[DEBUG] output_parsed is None, attempting manual parsing from raw output")
+                llm_output = _parse_with_fallback(response.output)
+            else:
+                print("[ERROR] response.output_parsed is None and no raw output available!")
+                print(f"[DEBUG] Response object: {response}")
+                raise ValueError("API response output_parsed is None - no content returned")
+        else:
+            llm_output = response.output_parsed
+
+    except (json.JSONDecodeError, ValidationError) as parse_error:
+        # catch JSON parsing errors and attempt repair
+        print(f"[ERROR] JSON parsing failed: {type(parse_error).__name__}: {str(parse_error)}")
+
+        # try to get raw response text
+        if 'response' in locals() and hasattr(response, 'output') and response.output:
+            print("[DEBUG] Attempting to repair malformed JSON from raw output")
+            llm_output = _parse_with_fallback(response.output)
+        else:
+            print("[ERROR] Cannot access raw response for repair")
+            raise ValueError(
+                f"Failed to parse structured output and cannot access raw response for repair. "
+                f"Error: {str(parse_error)}"
+            ) from parse_error
+
     except Exception as e:
         print(f"[ERROR] API call failed: {type(e).__name__}: {str(e)}")
         raise
 
-    # Parse structured output
-    print("\n[DEBUG] Parsing structured output...")
-
-    if not hasattr(response, 'output_parsed') or response.output_parsed is None:
-        print("[ERROR] response.output_parsed is None!")
-        print(f"[DEBUG] Response object: {response}")
-        raise ValueError("API response output_parsed is None - no content returned")
-
-    llm_output: LLMAdjudicationOutput = response.output_parsed
+    if llm_output is None:
+        raise ValueError("Failed to obtain parsed output from API response")
     print(f"[DEBUG] Successfully parsed {len(llm_output.results)} result(s)")
 
     # Print detailed verdict information
