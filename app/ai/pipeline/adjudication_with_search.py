@@ -52,8 +52,14 @@ def _repair_json_urls(json_text: str) -> str:
     returns:
         repaired JSON string
     """
+    # ensure text is properly encoded as UTF-8
+    if isinstance(json_text, bytes):
+        json_text = json_text.decode('utf-8', errors='replace')
+
     # fix unescaped newlines and tabs in strings
-    json_text = json_text.replace('\n', '\\n').replace('\t', '\\t')
+    # use regex to avoid corrupting UTF-8 multi-byte sequences
+    json_text = re.sub(r'(?<!\\)\n', r'\\n', json_text)
+    json_text = re.sub(r'(?<!\\)\t', r'\\t', json_text)
 
     # fix URLs with unescaped backslashes (common issue)
     # find all URL patterns and ensure backslashes are escaped
@@ -91,9 +97,13 @@ def _parse_with_fallback(raw_response: str) -> LLMAdjudicationOutput:
     raises:
         ValueError: if parsing fails even after repair attempts
     """
+    # ensure raw_response is a UTF-8 string
+    if isinstance(raw_response, bytes):
+        raw_response = raw_response.decode('utf-8', errors='replace')
+
     # try parsing as-is first
     try:
-        parsed_data = json.loads(raw_response)
+        parsed_data = json.loads(raw_response, strict=False)
         return LLMAdjudicationOutput(**parsed_data)
     except (json.JSONDecodeError, ValidationError) as e:
         print(f"[DEBUG] Initial JSON parsing failed: {type(e).__name__}: {str(e)}")
@@ -103,7 +113,7 @@ def _parse_with_fallback(raw_response: str) -> LLMAdjudicationOutput:
         repaired_json = _repair_json_urls(raw_response)
 
         try:
-            parsed_data = json.loads(repaired_json)
+            parsed_data = json.loads(repaired_json, strict=False)
             result = LLMAdjudicationOutput(**parsed_data)
             print("[DEBUG] JSON repair successful!")
             return result
@@ -261,8 +271,10 @@ def adjudicate_claims_with_search(
         )
         print("[DEBUG] API call successful")
 
-        # Parse structured output
-        print("\n[DEBUG] Parsing structured output...")
+        for res in response.output_parsed.results:
+            for v in res.claim_verdicts:
+                print("[RAW repr claim_text]:", repr(v.claim_text))
+                print("[RAW repr justification]:", repr(v.justification))
 
         if not hasattr(response, 'output_parsed') or response.output_parsed is None:
             # fallback: try to get raw output and parse manually
