@@ -9,12 +9,13 @@ from langchain_core.prompts import ChatPromptTemplate
 
 CLAIM_EXTRACTION_SYSTEM_PROMPT = """Você é um especialista em extração de alegações para um sistema de checagem de fatos.
 
-Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto fornecido.
+Sua tarefa é identificar as alegações verificáveis presentes no texto fornecido. Seja conservativo na extração de afirmações e apenas extrair afirmações coerentes e que contenham todo o contexto em si mesmo
 
 ## O que Extrair:
 
 **Extraia alegações que:**
 - Podem ser verificadas como verdadeiras ou falsas com base em evidências.
+- Contenham todo o contexto necessário para verificação embutidos
 - Fazem afirmações sobre o mundo (eventos passados, presentes ou futuros).
 - Contêm entidades nomeadas, eventos ou detalhes específicos.
 - São opiniões pessoais que contém alegações ou juízo de valor sobre algum fato do mundo e podem ser verificadas.
@@ -24,6 +25,7 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
 **Exemplos de boas alegações:**
 - "A vacina X causa infertilidade em mulheres"
 - "O presidente anunciou um imposto de carbono de R$50 por tonelada"
+- "O evento de nome X aconteceu na cidade de Sidney"
 - "O estudo examinou 50.000 participantes"
 - "Não há evidências ligando a vacina X a problemas de fertilidade"
 - "Eu acho que vacinas causam autismo"
@@ -35,6 +37,7 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
 
 **NÃO extraia:**
 - Perguntas sem alegações implícitas ("O que você acha?")
+- Afirmações cujo contexto esteja faltando ou que mencione entidades externas à afirmação em si (Ex: o evento ocorreu na cidade)
 - Cumprimentos ou conversa trivial
 - Trechos dos quais não é possível extrair nenhuma afirmação sobre algo, nenhum fato ou nenhum juízo de valor: (Ex: Olá, bom dia)
 
@@ -47,7 +50,7 @@ Sua tarefa é identificar TODAS as alegações verificáveis presentes no texto 
    - Original: "O estudo examinou 50.000 participantes"
    - Normalizada: "O estudo de segurança da vacina X examinou 50.000 participantes"
 
-2. **APENAS alegações autocontidas**: Extraia alegações que podem ser compreendidas completamente sozinhas.
+2. **APENAS alegações autocontidas**: Extraia alegações que podem ser compreendidas completamente sozinhas e não alegações que mencionam acontecimentos de forma abstrata, sem um nome ou informação específica
 
 BOM - Autocontidas:
    - "Não há evidências ligando a vacina X a problemas de fertilidade em mulheres."
@@ -56,10 +59,12 @@ BOM - Autocontidas:
    RUIM - Precisa de contexto:
    - "O estudo examinou mais de 50.000 participantes." (Qual estudo?)
    - "A pesquisa foi conduzida pelo Ministério da Saúde durante 3 anos." (Qual pesquisa?)
+   - "O evento ocorreu" (Qual evento?)
 
    **Corrija normalizando:**
    - "O estudo de segurança da vacina X examinou mais de 50.000 participantes."
    - "O Ministério da Saúde conduziu pesquisa sobre a vacina X durante 3 anos."
+   - "O evento Rock in Rio ocorreu"
 
    Se uma alegação usa pronomes (ele, ela, isso, aquilo) ou referências vagas (o estudo, a pesquisa),
    normalize substituindo pelo sujeito real. Se você não conseguir identificar o sujeito
@@ -68,8 +73,6 @@ BOM - Autocontidas:
 3. **Extraia todas as alegações distintas**: Um único texto pode conter múltiplas alegações. Extraia cada uma separadamente.
 
 4. **Preserve o idioma**: Mantenha o idioma original do texto. Texto em português → alegações em português.
-
-5. **Extraia entidades**: Identifique entidades nomeadas principais (pessoas, lugares, organizações, produtos, datas, números) em cada alegação.
 
 6. **Forneça análise**: Para cada alegação, explique brevemente por que ela é verificável e o que a torna passível de checagem.
 
@@ -597,7 +600,7 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 2. **Falso**: A alegação é comprovadamente falsa com base nas evidências apresentadas. As fontes confiáveis contradizem diretamente a alegação.
 
-3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas.
+3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas. Se a afirmação vor verdadeira, mas apresentada no contexto geral (todas as afirmações) de forma enganosa, ela deve ser dita como Fora de Contexto
 
 4. **Fontes Insuficentes**: Não há evidências suficientes nas fontes fornecidas para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
 
