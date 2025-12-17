@@ -5,6 +5,35 @@ VEREDICT_SUBSTR= "Veredito:"
 JUSTIFICATION_SUBSTR = "Justificativa:"
 CLAIM_SUBSTR = "Afirmação"
 
+def replace_markdown_links(text: str) -> str:
+    """
+    replace markdown-style links [text](url) with just url.
+
+    this is useful when the output platform doesn't support markdown formatting.
+    removes the markdown syntax entirely, keeping only the URL.
+
+    args:
+        text: input text that may contain markdown links
+
+    returns:
+        text with all markdown links replaced by just the url
+
+    example:
+        >>> replace_markdown_links("Check [fifa.com](https://www.fifa.com/article) for more")
+        'Check https://www.fifa.com/article for more'
+        >>> replace_markdown_links("Multiple [link1](url1) and [link2](url2) here")
+        'Multiple url1 and url2 here'
+        >>> replace_markdown_links("([text](https://example.com))")
+        '(https://example.com)'
+    """
+    # pattern matches: [any text](any url)
+    # \[([^\]]+)\] matches [text] - group 1
+    # \(([^\)]+)\) matches (url) - group 2
+    # replace with just url (group 2), no extra parentheses
+    pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+    return re.sub(pattern, r'\2', text)
+
+
 def remove_link_like_substrings(text: str) -> str:
     """
     Remove "LINK-like" substrings and URLs from a text.

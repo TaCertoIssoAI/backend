@@ -15,7 +15,7 @@ from app.models.factchecking import ClaimSourceType,FactCheckResult,VerdictTypeE
 from app.observability.logger.logger import get_logger
 from app.clients import get_analytics_url_for_fact_check
 
-from .formating import VEREDICT_SUBSTR,JUSTIFICATION_SUBSTR,CLAIM_SUBSTR, remove_link_like_substrings
+from .formating import VEREDICT_SUBSTR,JUSTIFICATION_SUBSTR,CLAIM_SUBSTR, remove_link_like_substrings, replace_markdown_links
 
 logger = get_logger(__name__)
 
@@ -224,6 +224,8 @@ def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->Analysi
             if result.overall_summary:
                 rationale = rationale + result.overall_summary
 
+        #this is for the openAI model output
+        rationale = replace_markdown_links(rationale)
 
         resp_without_links = remove_link_like_substrings(rationale)
         return AnalysisResponse(
