@@ -54,7 +54,7 @@ Módulos relacionados ao processamento de IA e verificação de fatos:
 
 Como grande parte das operações da pipeline são I/O heavy e bloqueam a execução de uma thread (que espera que esse I/O termine) nós implementamos um sistema para execução concorrente de jobs da pipeline. Para isso utilizamos a Threadpool do python 
 para alocar uma buffer de threads para executar jobs e utilizamos uma fila de jobs separados pelo tipo da operação (equivale à cada passo do pipeline). Isso permite que um parte do código submeta jobs como extração de links, busca por evidência... de forma async, e quando esses jobs precisarem ser processados, um outro trecho de código espera
-pela execução deles por meio da fila concorrente que implementamos
+pela execução deles por meio da fila concorrente que implementamos.
 
 #### `app/api/` - API REST
 Implementação dos endpoints da API usando FastAPI:
@@ -73,7 +73,7 @@ Configurações centrais da aplicação:
 #### `app/models/` - Modelos de Dados
 Schemas Pydantic para validação de dados:
 - Modelos de request/response
-- Estruturas de dados internas
+- Estruturas de dados internas da pipeline (entradas e saídas de cada passo da pipeline)
 - Validadores
 
 
