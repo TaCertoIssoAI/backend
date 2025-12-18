@@ -22,7 +22,7 @@ from dataclasses import dataclass
 # ===== CONFIGURATION =====
 
 API_BASE_URL = "http://localhost:8000"
-API_ENDPOINT = "/text-without-browser"
+API_ENDPOINT = "/text"
 MAX_CONCURRENT_REQUESTS = 5
 
 # these will be set based on command-line argument

@@ -1,55 +1,55 @@
-# Dataset API Testing
+# Testes da API com Datasets
 
-This folder contains a simple script to test the fact-checking API against datasets.
+Esta pasta contém um script simples para testar a API de fact-checking contra datasets.
 
-## Structure
+## Estrutura
 
 ```
 experiments/
-├── run_against_dataset.py        # Main testing script
-├── requirements.txt               # Python dependencies
-├── README.md                      # This file
-└── meta_ai_2025_fake_news_g1/    # Another dataset
+├── run_against_dataset.py        # Script principal de teste
+├── requirements.txt               # Dependências Python
+├── README.md                      # Este arquivo
+└── meta_ai_2025_fake_news_g1/    # Outro dataset
     └── ...
 ```
 
-## Setup
+## Configuração
 
-1. Create and activate virtual environment:
+1. Crie e ative o ambiente virtual:
 ```bash
 cd experiments
 python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # No Windows: venv\Scripts\activate
 ```
 
-2. Install dependencies:
+2. Instale as dependências:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Make sure the API server is running:
+3. Certifique-se de que o servidor da API está rodando:
 ```bash
-# In another terminal, from project root:
+# Em outro terminal, a partir da raiz do projeto:
 uvicorn app.main:app --reload --port 8000
 ```
 
-## Usage
+## Uso
 
-Run the script with a dataset folder:
+Execute o script com uma pasta de dataset:
 
 ```bash
-# Run against another dataset
+# Execute contra outro dataset
 python run_against_dataset.py meta_ai_2025_fake_news_g1
 ```
 
-**No arguments?** The script will show available dataset folders:
+**Sem argumentos?** O script mostrará as pastas de dataset disponíveis:
 ```bash
 python run_against_dataset.py
 ```
 
-## Configuration
+## Configuração
 
-Edit constants in `run_against_dataset.py`:
+Edite as constantes em `run_against_dataset.py`:
 
 ```python
 API_BASE_URL = "http://localhost:8000"
@@ -57,91 +57,91 @@ API_ENDPOINT = "/text"
 MAX_CONCURRENT_REQUESTS = 5
 ```
 
-## How It Works
+## Como Funciona
 
-1. **Reads CSV** - Finds the first `.csv` file in the dataset folder
-2. **Auto-detects claim column** - Looks for common column names like "Título da checagem", "claim_text", "text", "claim"
-3. **Calls API concurrently** - Max 5 requests in parallel
-4. **Writes responses** - Saves all API responses to a text file
+1. **Lê o CSV** - Encontra o primeiro arquivo `.csv` na pasta do dataset
+2. **Auto-detecta a coluna de alegação** - Procura por nomes de coluna comuns como "Título da checagem", "claim_text", "text", "claim"
+3. **Chama a API concorrentemente** - Máximo de 5 requisições em paralelo
+4. **Escreve as respostas** - Salva todas as respostas da API em um arquivo de texto
 
-## Dataset Selection
+## Seleção de Dataset
 
-When you run the script, it:
-1. Looks in the specified dataset folder for `.csv` files
-2. If multiple CSVs exist, lists them and uses the **first one alphabetically**
-3. Auto-detects which column contains the claim text
-4. Writes results to `api_responses_YYYYMMDD_HHMMSS.txt` in the **same dataset folder**
+Quando você executa o script, ele:
+1. Procura na pasta do dataset especificado por arquivos `.csv`
+2. Se múltiplos CSVs existirem, lista-os e usa o **primeiro em ordem alfabética**
+3. Auto-detecta qual coluna contém o texto da alegação
+4. Escreve os resultados em `api_responses_AAAAMMDD_HHMMSS.txt` na **mesma pasta do dataset**
 
-**Tip:** If you have multiple CSV files and want a specific one to be used, either:
-- Name it so it comes first alphabetically (e.g., `01_dataset.csv`)
-- Move or delete the other CSV files temporarily
+**Dica:** Se você tiver múltiplos arquivos CSV e quiser que um específico seja usado:
+- Nomeie-o para que venha primeiro em ordem alfabética (ex: `01_dataset.csv`)
+- Mova ou delete os outros arquivos CSV temporariamente
 
-## Output File Format
+## Formato do Arquivo de Saída
 
-The script generates a text file with all API responses:
+O script gera um arquivo de texto com todas as respostas da API:
 
 ```
 ================================================================================
-DATASET API TESTING RESULTS
+RESULTADOS DOS TESTES DA API COM DATASET
 ================================================================================
 Dataset: filtered_dataset.csv
 API: http://localhost:8000/text
-Date: 2025-12-17 15:30:45
-Total claims: 145
+Data: 2025-12-17 15:30:45
+Total de alegações: 145
 ================================================================================
 
 ================================================================================
-CLAIM 1
+ALEGAÇÃO 1
 ================================================================================
 
-Text: Sergio Moro tirou foto ao lado do Lula após seu partido...
+Texto: Sergio Moro tirou foto ao lado do Lula após seu partido...
 
-Status: SUCCESS
+Status: SUCESSO
 
-Response:
+Resposta:
 --------------------------------------------------------------------------------
-[Full API response with verdict, rationale, and citations]
+[Resposta completa da API com veredito, justificativa e citações]
 --------------------------------------------------------------------------------
 
 ================================================================================
-CLAIM 2
+ALEGAÇÃO 2
 ================================================================================
 
 ...
 ```
 
-## Example Console Output
+## Exemplo de Saída no Console
 
 ```
 ================================================================================
-DATASET API TESTING
+TESTES DA API COM DATASET
 ================================================================================
-Input:  /path/to/filtered_dataset.csv
-Output: /path/to/api_responses_20251217_153045.txt
+Entrada:  /caminho/para/filtered_dataset.csv
+Saída: /caminho/para/api_responses_20251217_153045.txt
 API:    http://localhost:8000/text
-Max concurrent requests: 5
+Máximo de requisições concorrentes: 5
 ================================================================================
 
-Reading CSV...
-✓ Using column 'Título da checagem' for claim text
-Loaded 145 claims from CSV
+Lendo CSV...
+✓ Usando coluna 'Título da checagem' para texto da alegação
+Carregadas 145 alegações do CSV
 
-Processing with max 5 concurrent requests...
+Processando com máximo de 5 requisições concorrentes...
 
-[1] Processing: Sergio Moro tirou foto ao lado do Lula após seu partido...
-[2] Processing: A vacina X causa infertilidade...
-[1] ✓ Success
-[3] Processing: O governo vai aumentar impostos...
-[2] ✓ Success
+[1] Processando: Sergio Moro tirou foto ao lado do Lula após seu partido...
+[2] Processando: A vacina X causa infertilidade...
+[1] ✓ Sucesso
+[3] Processando: O governo vai aumentar impostos...
+[2] ✓ Sucesso
 ...
 
 ================================================================================
-SUMMARY
+RESUMO
 ================================================================================
-Total processed:  145
-✓ Successful:     142 (97.9%)
-✗ Failed:         3 (2.1%)
+Total processado:  145
+✓ Bem-sucedidos:   142 (97.9%)
+✗ Falhas:          3 (2.1%)
 ================================================================================
 
-Results saved to: api_responses_20251217_153045.txt
+Resultados salvos em: api_responses_20251217_153045.txt
 ```
