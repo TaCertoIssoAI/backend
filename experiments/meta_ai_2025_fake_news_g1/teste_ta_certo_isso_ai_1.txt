@@ -1,0 +1,1117 @@
+================================================================================
+DATASET API TESTING RESULTS
+================================================================================
+Dataset: fato_ou_fake_30_noticias__.csv
+API: http://localhost:8000/text-without-browser
+Date: 2025-12-17 21:07:25
+Total claims: 30
+================================================================================
+
+================================================================================
+CLAIM 1
+================================================================================
+
+Text: Post nas redes afirmou que Lula prometeu que, se fosse eleito novamente, não enganaria o povo 'mais uma vez', insinuando que ele admitiu enganar antes.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como fora de contexto.
+
+A alegação de que Lula prometeu não enganar o povo 'mais uma vez' em caso de reeleição é descontextualizada. A declaração original, feita em 2025, referia-se ao compromisso de não permitir que mentirosos ganhassem eleições para enganar o povo, sem relação com uma promessa de reeleição.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/-U2FGEDuHuqD
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Lula prometeu que, se fosse eleito novamente, não enganaria o povo 'mais uma vez', insinuando que ele admitiu enganar antes.
+*Veredito:* Fora de Contexto
+*Justificativa:* A alegação de que Lula afirmou que, se fosse reeleito, não enganaria o povo 'mais uma vez' é uma interpretação incorreta de uma declaração feita em 2025. Nessa ocasião, Lula afirmou: "Enquanto eu tiver forças, nunca mais um cidadão mentiroso vai ganhar as eleições nesse país para enganar o povo." Essa declaração foi feita durante uma cerimônia de entrega de títulos de regularização fundiária em Araguatins, no Tocantins, e não se referia a uma promessa de reeleição, mas sim a um compromisso de não permitir que mentirosos ganhassem eleições para enganar o povo. Portanto, a alegação está descontextualizada.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 2
+================================================================================
+
+Text: Vídeo viral mostra uma mulher sendo carregada pelo vento após sair de casa para ver a passagem de um vendaval, sugerindo que a situação aconteceu de verdade.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como fora de contexto.
+
+A alegação de que uma mulher foi carregada pelo vento após sair de casa para ver a passagem de um vendaval é descontextualizada. Embora existam vídeos de mulheres sendo levadas pelo vento durante vendavais, como o caso de uma mulher em Praia Grande que tentou fechar a porta de um carro durante um vendaval (https://santaportal.com.br/praiagrande/mulher-tenta-fechar-porta-de-carro-durante-vendaval-em-praia-grande-e-viraliza-video?utm_source=openai), a alegação específica é baseada em um vídeo criado com inteligência artificial e não representa um evento real. Portanto, a alegação é descontextualizada, apresentando uma cena fictícia como se fosse real.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/qelHLetDVdze
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Uma mulher foi carregada pelo vento após sair de casa para ver a passagem de um vendaval.
+*Veredito:* Fora de Contexto
+*Justificativa:* Circula nas redes sociais um vídeo que mostra uma mulher sendo levada pelo vento após sair de casa para observar a passagem de um vendaval. No entanto, esse vídeo foi criado com inteligência artificial e não representa um evento real. Portanto, a alegação é descontextualizada, apresentando uma cena fictícia como se fosse real.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 3
+================================================================================
+
+Text: Imagem compartilhada nas redes sugere que o ataque terrorista ocorrido em uma praia australiana foi encenado e usa foto de um homem com sangue falso para provar a encenação.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o ataque terrorista ocorrido na praia de Bondi, em Sydney, Austrália, foi encenado, é falsa. Diversas fontes confiáveis confirmam que o ataque foi real, resultando em mortes e feridos, e foi classificado pelas autoridades como um ato terrorista direcionado à comunidade judaica. Não há evidências que sugiram que o ataque tenha sido encenado.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/YaS-VoIDyDhc
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O ataque terrorista ocorrido em uma praia australiana foi encenado.
+*Veredito:* Falso
+*Justificativa:* O ataque terrorista ocorrido na praia de Bondi, em Sydney, Austrália, em 14 de dezembro de 2025, foi amplamente documentado por diversas fontes confiáveis. O ataque resultou na morte de 12 pessoas, incluindo um dos atacantes, e deixou cerca de 30 feridos. As autoridades locais classificaram o incidente como um ato terrorista direcionado à comunidade judaica. (https://www.jn.pt/mundo/artigo/comunidade-internacional-condena-ataque-antissemita-em-praia-australiana/?utm_source=openai) Além disso, a comunidade internacional condenou o ataque como um ato de terrorismo e antissemitismo. (https://jornaleconomico.sapo.pt/noticias/comunidade-internacional-condena-ataque-terrorista-e-antissemita-em-praia-australiana/?utm_source=openai) Portanto, não há evidências que sugiram que o ataque tenha sido encenado.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 4
+================================================================================
+
+Text: Postagens alegam que o Ibama estaria expulsando famílias de suas terras porque o governo vendeu o território para a China, usando um vídeo da operação.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o Ibama estaria expulsando famílias de suas terras devido à venda de território para a China é falsa. Fontes de checagem de fatos desmentem categoricamente essa afirmação. As demais evidências apresentadas são irrelevantes ou abordam contextos distintos, como invasões de terras por indígenas, e não corroboram a narrativa principal.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/l40rk74axgPF
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O Ibama estaria expulsando famílias de suas terras porque o governo vendeu o território para a China.
+*Veredito:* Falso
+*Justificativa:* A alegação de que o Ibama estaria expulsando famílias de suas terras devido à venda de território para a China pelo governo é falsa. Múltiplas verificações de fatos, incluindo as realizadas por 'Aos Fatos', desmentem essa afirmação, classificando-a como enganosa [1][6]. As outras fontes fornecidas não apoiam a alegação; uma delas se refere a uma invasão de fazenda por indígenas [2], enquanto outras são documentos legais ou comentários políticos sem relação direta com a afirmação principal [3][4][5].
+
+*Fontes*:
+
+[1] Aos - Posts enganam ao afirmar que o Ibama expulsou famílias de ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/aosfatos.org/photos/posts-enganam-ao-afirmar-que-o-ibama-expulsou-fam%C3%ADlias-de-suas-casas-ap%C3%B3s-o-gove/1479000477561209/
+
+[2] Cerca de 50 invasores indígenas ocuparam uma fazenda em ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/reel/DQQUkJijGDp/
+
+[3] Uma covardia sem tamanho! Eu estive em Alvorada do Oeste (RO ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/deputadoluciomosquini/posts/-uma-covardia-sem-tamanhoeu-estive-em-alvorada-do-oeste-ro-e-n%C3%A3o-acreditei-no-qu/1355496335937825/
+
+[4] UNIVERSIDADE DE BRASÍLIA DEPARTAMENTO DE ...
+    Fonte: biblioteca.funai.gov.br
+    URL: https://biblioteca.funai.gov.br/media/pdf/TESES/MFN-22914.pdf
+
+[5] D10088
+    Fonte: www.planalto.gov.br
+    URL: https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2019/decreto/d10088.htm
+
+[6] É falso que Ibama expulsou famílias em Rondônia porque governo ...
+    Fonte: Aos Fatos
+    URL: https://www.aosfatos.org/noticias/falso-ibama-expulsou-familias-rondonia-governo-vendeu-terras-china/
+    Data: 2025-12-10T00:00:00Z
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 5
+================================================================================
+
+Text: Circula um vídeo de casas tremendo atribuído ao terremoto de dezembro de 2025 no Japão, insinuando que as imagens mostram os tremores recentes.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+1 de 2 afirmações foram classificadas como Verdadeiras.
+
+As alegações apresentadas contêm informações mistas. A primeira afirmação sobre o terremoto de dezembro de 2025 no Japão é verdadeira, conforme confirmado por fontes confiáveis. No entanto, a segunda alegação sobre o vídeo mostrando casas tremendo, atribuído ao terremoto de dezembro de 2025, é falsa, pois o vídeo na verdade registra um terremoto anterior, ocorrido em 1º de janeiro de 2024, na província de Ishikawa. (https://noticias.uol.com.br/confere/ultimas-noticias/2025/01/14/video-terremoto-tibete-falso.htm?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/b1NhkSu3x2yt
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Houve um terremoto em dezembro de 2025 no Japão.
+*Veredito:* Verdadeiro
+*Justificativa:* Em 8 de dezembro de 2025, um terremoto de magnitude 7,6 atingiu o norte do Japão, especificamente a região de Aomori, às 23h15 (horário local). (https://www.gp1.com.br/internacional/noticia/2025/12/8/terremoto-de-magnitude-76-atinge-o-japao-e-governo-alerta-para-tsunami-609989.html?utm_source=openai) O tremor foi sentido em amplas regiões do país, incluindo a capital Tóquio. (https://www.vaticannews.va/pt/mundo/news/2025-12/japao-terremoto-8-dezembro-2025.html?utm_source=openai)
+
+*Afirmação 2*: Um vídeo circula mostrando casas tremendo, atribuído ao terremoto de dezembro de 2025 no Japão.
+*Veredito:* Fora de Contexto
+*Justificativa:* Um vídeo que circula nas redes sociais, alegando mostrar o terremoto de dezembro de 2025 no Japão, na verdade registra um terremoto anterior, ocorrido em 1º de janeiro de 2024, na província de Ishikawa. (https://noticias.uol.com.br/confere/ultimas-noticias/2025/01/14/video-terremoto-tibete-falso.htm?utm_source=openai) Portanto, o vídeo não corresponde ao terremoto de dezembro de 2025.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 6
+================================================================================
+
+Text: Foto de Donald Trump usando um andador circula como se mostrasse o ex-presidente caminhando com dificuldade em um evento.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que Donald Trump foi visto usando um andador em um evento é falsa. A imagem que circula nas redes sociais, que supostamente mostra essa situação, foi gerada por inteligência artificial, conforme confirmado por uma fonte de checagem de fatos. As outras fontes fornecidas não apresentam informações relevantes para a verificação dessa afirmação.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/sY6UzMyvvmxd
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Donald Trump estava usando um andador em um evento.
+*Veredito:* Falso
+*Justificativa:* A alegação de que Donald Trump estava usando um andador em um evento é falsa. A foto que circula nas redes sociais mostrando o ex-presidente com um andador foi criada com inteligência artificial, conforme verificado pelo G1 [2]. As demais fontes apresentadas não contêm informações que corroborem ou refutem o uso de um andador por Donald Trump [1][3][4][5].
+
+*Fontes*:
+
+[1] Os Estados Unidos decidiram cancelar sua participação em um ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/jovempannews/posts/os-estados-unidos-decidiram-cancelar-sua-participa%C3%A7%C3%A3o-em-um-evento-com-a-for%C3%A7a-a/1225305472963822/
+
+[2] Foto de Trump caminhando com andador foi criada com IA | G1
+    Fonte: g1.globo.com
+    URL: https://g1.globo.com/fato-ou-fake/noticia/2025/12/15/e-fake-foto-de-trump-caminhando-com-andador-imagem-foi-criada-com-inteligencia-artificial.ghtml
+
+[3] La jornada de protesta 'No Kings Day' reunió multitudes en varias ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DK5eTZaABwa/
+
+[4] A cidade de Liuyang, na China — famosa por seus espetáculos de ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/reel/DQsG5ODESno/
+
+[5] Diario - Durante su estancia en el Centro John F. Kennedy, el ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/DiarioABCdeMichoacan/photos/-durante-su-estancia-en-el-centro-john-f-kennedy-el-presidente-de-estados-unidos/1279205490902162/
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 7
+================================================================================
+
+Text: Vídeo que mostra caminhões em chamas é divulgado como prova de uma reação violenta à greve de caminhoneiros no Brasil.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de uma reação violenta à greve de caminhoneiros no Brasil é falsa. Não há registros de incidentes significativos ou bloqueios em rodovias associados à greve de dezembro de 2025, que foi considerada um fracasso.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/qDoS9O4RmlmA
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Houve uma reação violenta à greve de caminhoneiros no Brasil.
+*Veredito:* Falso
+*Justificativa:* Não há registros de reações violentas associadas à greve de caminhoneiros no Brasil em dezembro de 2025. A greve foi considerada um fracasso, sem incidentes significativos ou bloqueios em rodovias. (https://veja.abril.com.br/brasil/greve-dos-caminhoneiros-e-ate-agora-um-grande-fracasso-em-todo-o-pais/?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 8
+================================================================================
+
+Text: Nas redes, um vídeo mostra o empresário Luciano Hang chorando ao supostamente apoiar a pré-candidatura de Flávio Bolsonaro em 2025.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como fora de contexto.
+
+A alegação de que Luciano Hang chorou ao apoiar a pré-candidatura de Flávio Bolsonaro em 2025 é classificada como "Fora de Contexto". O vídeo em questão é de 2018, quando Hang comemorava a vitória de Jair Bolsonaro nas eleições daquele ano, e não tem relação com a pré-candidatura de Flávio Bolsonaro em 2025. (https://checamos.afp.com/doc.afp.com.87V44T8?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/79AMtPPAH9KJ
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O empresário Luciano Hang chorou ao supostamente apoiar a pré-candidatura de Flávio Bolsonaro em 2025.
+*Veredito:* Fora de Contexto
+*Justificativa:* Circula nas redes sociais um vídeo atribuído a Luciano Hang em que ele supostamente agradece Flávio Bolsonaro. A peça é considerada FAKE pela checagem. A assessoria de Hang afirma que o material é antigo e não foi publicado recentemente. (https://www.portaltela.com/noticias/politica/2025/12/11/video-nao-mostra-reacao-de-hang-a-candidatura-de-flavio-bolsonaro/?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 9
+================================================================================
+
+Text: Mensagens afirmam que o Banco Central lançará uma cédula de R$ 9 com a imagem do ex-jogador Ronaldo Fenômeno.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o Banco Central lançará uma cédula de R$ 9 com a imagem de Ronaldo Fenômeno é categoricamente falsa. Todas as evidências apresentadas, incluindo verificações de fatos de veículos de imprensa e reportagens em redes sociais, indicam que o Banco Central negou oficialmente esses boatos. As afirmações têm uma linha coerente de pensamento, todas desmentindo a alegação original.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/V63APv0ACaww
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O Banco Central lançará uma cédula de R$ 9 com a imagem do ex-jogador Ronaldo Fenômeno.
+*Veredito:* Falso
+*Justificativa:* A alegação de que o Banco Central lançará uma cédula de R$ 9 com a imagem do ex-jogador Ronaldo Fenômeno é falsa. Múltiplas fontes de checagem de fatos, como a AFP Checamos [6] e o UOL Notícias [7], classificaram essa informação como falsa. Além disso, diversas publicações em redes sociais reportam que o próprio Banco Central negou os boatos sobre a criação de tal nota [1][2][3][4][5].
+
+*Fontes*:
+
+[1] Banco Central nega boatos sobre nota de R$ 9 em homenagem a ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/fatosdompedrito/posts/banco-central-nega-boatos-sobre-nota-de-r-9-em-homenagem-a-ronaldocircula-nas-re/1440538670829467/
+
+[2] Fatos - Banco Central nega boatos sobre nota de R$ 9 em ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/fatosdompedrito/photos/banco-central-nega-boatos-sobre-nota-de-r-9-em-homenagem-a-ronaldocircula-nas-re/1440538640829470/
+
+[3] É FAKE QUE BANCO CENTRAL VAI CRIAR CÉDULA DE R$ 9 EM ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com//posts/%C3%A9-fake-que-banco-central-vai-criar-c%C3%A9dula-de-r-9-em-homenagem-a-ronaldo-fen%C3%B4meno/122145284492959583/
+
+[4] Soure Marajo - Banco Central nega boatos sobre nota de R$ 9 em ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/marajo.soure.77/photos/banco-central-nega-boatos-sobre-nota-de-r-9-em-homenagem-a-ronaldocircula-nas-re/2285165401906843/
+
+[5] É - Banco Central nega boatos sobre nota de R$ 9 em homenagem ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/eextraordinario/photos/banco-central-nega-boatos-sobre-nota-de-r-9-em-homenagem-a-ronaldocircula-nas-re/1271054961722433/
+
+[6] É falso que Banco Central planeja lançar nota de R$ 9 com rosto de ...
+    Fonte: AFP Checamos
+    URL: https://checamos.afp.com/doc.afp.com.87V68ZU
+    Data: 2025-12-11T20:56:00Z
+
+[7] É falso que BC lançará nota de R$ 9 em homenagem a Ronaldo ...
+    Fonte: UOL Notícias
+    URL: https://noticias.uol.com.br/confere/ultimas-noticias/2025/12/09/e-falso-que-bc-lancara-nota-em-homenagem-a-ronaldo-fenomeno.htm
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 10
+================================================================================
+
+Text: 'Titanic' e 'Homem-Aranha'; cenas foram criadas com inteligência artificial"
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A única alegação apresentada, que afirma que cenas dos filmes 'Titanic' e 'Homem-Aranha' foram criadas com inteligência artificial, é falsa. As evidências fornecidas desmentem diretamente essa afirmação, indicando que se trata de desinformação. Não há outras afirmações para estabelecer uma linha de pensamento coerente.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/9PPiglEOMJLr
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Cenas dos filmes 'Titanic' e 'Homem-Aranha' foram criadas com inteligência artificial.
+*Veredito:* Falso
+*Justificativa:* A alegação de que cenas dos filmes 'Titanic' e 'Homem-Aranha' foram criadas com inteligência artificial é falsa. As fontes [1] e [4] afirmam categoricamente que é #FAKE que vídeos mostrando bastidores desses filmes tenham sido criados com IA do Google. As demais fontes [2], [3] e [5] não são relevantes para a verificação desta afirmação.
+
+*Fontes*:
+
+[1] É FALSO! Nos últimos dias essas imagens circularam bastante pela ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DN3WByp3HJS/
+
+[2] Stanislav Yanevski, conhecido por dar vida a Viktor Krum em ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DKAaLWaPcHw/
+
+[3] Michael Cera revelou contou que os diretores de elenco de Animais ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DLVNVS6xLp-/
+
+[4] Photo by ルイス・ズウ (@luis_zuu) · October 9, 2025
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DPl3hJwjUdp/
+
+[5] Hoje é o Dia do Beijo! E para celebrar, relembramos alguns dos ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DIYs7LDhJ1C/
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 11
+================================================================================
+
+Text: Vídeo que circula nas redes mostra caminhões parados no Rodoanel de São Paulo e é compartilhado como se fosse uma paralisação em dezembro de 2025.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A análise revela que a alegação de uma paralisação de caminhões no Rodoanel de São Paulo em dezembro de 2025 é falsa. As evidências mostram que houve um incidente isolado com um único caminhão em novembro de 2025, e não uma paralisação generalizada. Verificadores de fatos confirmam que alegações de uma greve em dezembro de 2025 são falsas e utilizam imagens de 2018, indicando uma descontextualização temporal.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/y4MvjNtYMl-i
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Houve uma paralisação de caminhões no Rodoanel de São Paulo em dezembro de 2025.
+*Veredito:* Falso
+*Justificativa:* As evidências indicam que não houve uma paralisação generalizada de caminhões no Rodoanel de São Paulo em dezembro de 2025. Houve um incidente isolado em 12 de novembro de 2025, onde um único caminhão bloqueou a via por algumas horas, conforme noticiado pela Agência Brasil e Folha de S.Paulo [1][3][4][5]. Alegações sobre uma paralisação de caminhoneiros em dezembro de 2025 foram desmentidas por verificadores de fatos, que apontam que vídeos e reportagens circulando são, na verdade, de eventos ocorridos em 2018 e estão sendo compartilhados fora de contexto [6][7]. Aos Fatos, por exemplo, classificou como "Falso" a alegação de que a Globo noticiou um congestionamento por paralisação de caminhoneiros em 4 de dezembro de 2025 [7].
+
+*Fontes*:
+
+[1] Polícia retira motorista de caminhão que interditou Rodoanel, em SP
+    Fonte: agenciabrasil.ebc.com.br
+    URL: https://agenciabrasil.ebc.com.br/geral/noticia/2025-11/policia-retira-motorista-do-caminhao-que-interditou-o-rodoanel
+
+[3] Caminhão interdita Rodoanel em São Paulo e PM é acionada ...
+    Fonte: agenciabrasil.ebc.com.br
+    URL: https://agenciabrasil.ebc.com.br/geral/noticia/2025-11/caminhao-interdita-rodoanel-em-sao-paulo-e-pm-e-acionada
+
+[4] Uma carreta está atravessada na pista do Rodoanel Mário Covas ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DQ9GzKfjeHr/
+
+[5] O falso artefato explosivo que estava na carreta que bloqueou as ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DQ97LCzkxXv/
+
+[6] Vídeo mostra protesto de caminhoneiros em 2018, não em 2025
+    Fonte: Estadão
+    URL: https://www.estadao.com.br/estadao-verifica/video-paralisacao-greve-caminhoneiros-2018/
+
+[7] Reportagem do Jornal Hoje que noticia greve dos caminhoneiros é ...
+    Fonte: Aos Fatos
+    URL: https://www.aosfatos.org/noticias/reportagem-do-jornal-hoje-que-noticia-greve-dos-caminhoneiros-e-de-2018-nao-atual/
+    Data: 2025-12-05T00:00:00Z
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 12
+================================================================================
+
+Text: Viral no TikTok afirma que a obra da ponte sobre o rio Araguaia está parada e só será concluída no governo atual porque nada foi feito antes.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+As alegações do TikTok sobre a ponte do rio Araguaia são falsas e promovem desinformação. A obra não está parada, estando 99% concluída em agosto de 2024, e sua conclusão não é exclusiva do governo atual, pois o projeto teve início em 2008 e progrediu em administrações anteriores. A narrativa de que "nada foi feito antes" é desmentida por evidências de trabalho significativo em governos passados.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/LXwt6cvgerIy
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: A obra da ponte sobre o rio Araguaia está parada.
+*Veredito:* Falso
+*Justificativa:* A alegação de que a obra da ponte sobre o rio Araguaia está parada é falsa. Múltiplas fontes, incluindo o Departamento Nacional de Infraestrutura de Transportes (DNIT), informaram em agosto de 2024 que a ponte estava 99% concluída [5]. O G1 e o Estadão também classificaram como falso que a obra tenha ficado parada durante o governo Bolsonaro ou Lula [2][4]. Embora uma notícia de julho de 2025 mencione que a entrega da ponte estava sem previsão devido à falta de acessos [6], isso não significa que a construção da estrutura principal esteja paralisada, mas sim que a sua operacionalização completa estava pendente. A Justiça Federal, inclusive, autorizou a continuidade das obras em junho de 2025 [7].
+
+*Afirmação 2*: A obra da ponte sobre o rio Araguaia só será concluída no governo atual.
+*Veredito:* Falso
+*Justificativa:* A alegação de que a obra da ponte sobre o rio Araguaia só será concluída no governo atual é falsa. A construção da ponte é um projeto de longa data, com a gestão direcionada à construção iniciada em 2008 e a ordem de serviço assinada em 2017 [4]. O ex-presidente Jair Bolsonaro realizou visita técnica à ponte em 2022, indicando que a obra estava em andamento em seu governo [2]. Diversas checagens de fatos, como as do Estadão e AFP Checamos, classificaram como "Fora de Contexto" ou "Falso" alegações de que o governo Bolsonaro "não conseguiu fazer nada" ou que a ponte foi "completamente construída no governo Lula", indicando que houve trabalho em governos anteriores e que a obra não foi iniciada ou concluída exclusivamente pelo governo atual [6][7][14]. A previsão de conclusão era para o segundo semestre de 2024 [1].
+
+*Afirmação 3*: Nada foi feito antes para a conclusão da obra da ponte sobre o rio Araguaia.
+*Veredito:* Falso
+*Justificativa:* A afirmação de que "nada foi feito antes" para a conclusão da obra da ponte sobre o rio Araguaia é falsa. A gestão direcionada à construção da ponte foi iniciada em 2008, e a ordem de serviço assinada em 2017 [4 de Claim 2]. Além disso, veículos de checagem como o Estadão desmentiram alegações de que o governo Bolsonaro "não conseguiu fazer nada" ou que a obra estava paralisada, indicando que houve progresso significativo em administrações anteriores [6][9]. Há evidências de que o governo Bolsonaro deixou a ponte "quase pronta", faltando apenas as cabeceiras, conforme relatos em redes sociais e checagens de fatos [3][6].
+
+*Fontes*:
+
+[1] É falso que construção de ponte entre Pará e Tocantins tenha ficado ...
+    Fonte: Estadão
+    URL: https://www.estadao.com.br/estadao-verifica/ponte-liga-para-tocantins-comecou-ser-construida-governo-bolsonaro/
+
+[2] Obra de ponte do Araguaia não ficou parada no governo Lula ...
+    Fonte: Estadão
+    URL: https://www.estadao.com.br/estadao-verifica/governo-lula-ponte-araguaia-tocantins-para/
+
+[3] Ponte entre Xambioá (PA) e São Geraldo do Araguaia (TO) não foi ...
+    Fonte: www.gov.br
+    URL: https://www.gov.br/secom/pt-br/fatos/brasil-contra-fake/noticias/2024/07-1/ponte-entre-xambioa-pa-e-sao-geraldo-do-araguaia-to-nao-foi-inaugurada-e-nem-interditada
+
+[4] Obra de ponte sobre rio Araguaia não ficou parada sob Bolsonaro ...
+    Fonte: g1.globo.com
+    URL: https://g1.globo.com/fato-ou-fake/noticia/2025/12/09/e-fake-que-obra-de-ponte-sobre-o-rio-araguaia-tenha-ficado-parada-durante-governo-bolsonaro.ghtml
+
+[5] Ponte sobre o Rio Araguaia, que ligará Tocantins ao Pará na BR ...
+    Fonte: www.gov.br
+    URL: https://www.gov.br/dnit/pt-br/assuntos/noticias/ponte-sobre-o-rio-araguaia-que-ligara-tocantins-ao-para-na-br-153-esta-99-concluida
+
+[6] Ponte de R$ 200 milhões entre Tocantins e Pará segue sem ...
+    Fonte: g1.globo.com
+    URL: https://g1.globo.com/to/tocantins/noticia/2025/07/21/ponte-de-r-200-milhoes-entre-tocantins-e-para-segue-sem-previsao-de-entrega-por-falta-de-acessos-entenda.ghtml
+
+[7] Justiça Federal autoriza retomada de obras de ponte para ...
+    Fonte: g1.globo.com
+    URL: https://g1.globo.com/pa/para/noticia/2025/06/11/justica-federal-autoriza-retomada-de-obras-de-ponte-para-escoamento-da-agropecuaria-entre-pa-e-to.ghtml
+
+[9] COMEÇOU AS OBRAS DAS CABECEIRAS DA PONTE JAIR ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/reel/DO_wrquCZHN/
+
+[14] Ponte sobre o Rio Araguaia não teve obra paralisada no governo ...
+    Fonte: AFP Checamos
+    URL: https://checamos.afp.com/doc.afp.com.67VG363
+    Data: 2025-07-25T20:19:00Z
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 13
+================================================================================
+
+Text: Um vídeo mostra a cidade de Caracas acompanhada de um som de sirene de guerra e textos insinuando que o sinal indicava um iminente ataque dos Estados Unidos.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que um vídeo mostra Caracas com sirenes de guerra indicando um iminente ataque dos Estados Unidos é falsa. O vídeo original, datado de abril de 2022, foi manipulado para adicionar um áudio que sugere um alerta de ataque aéreo iminente, associando-o erroneamente a uma ameaça dos EUA. Portanto, a alegação não é verdadeira.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/mpc4UjIo9nFg
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Um vídeo mostra a cidade de Caracas com som de sirene de guerra e textos insinuando que o sinal indicava um iminente ataque dos Estados Unidos.
+*Veredito:* Falso
+*Justificativa:* O vídeo que circula nas redes sociais desde abril de 2022 mostra imagens de Caracas à noite com sirenes ao fundo. No entanto, o áudio foi alterado para dar a impressão de um alerta de ataque aéreo iminente, associando-o a um suposto ataque dos Estados Unidos. A versão original do vídeo não possui esse áudio modificado e não está relacionada a nenhuma ameaça dos EUA. (https://www.agencialupa.org/noticias/2025/12/10/video-que-mostra-sirenes-de-guerra-em-caracas-foi-distorcido/?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 14
+================================================================================
+
+Text: Imagem mostra torcedores do São Paulo no estádio segurando uma faixa pedindo para que o time perca para o Internacional.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que torcedores do São Paulo seguraram uma faixa pedindo para que o time perca para o Internacional é falsa. A imagem que circula nas redes sociais é uma montagem, e a foto original exibia uma faixa com a inscrição 'FORA CASARES', direcionada à diretoria do clube. Portanto, não há evidências de que torcedores do São Paulo tenham feito tal pedido ao time.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/N8VuMCcItJ9X
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Torcedores do São Paulo no estádio seguram uma faixa pedindo para que o time perca para o Internacional.
+*Veredito:* Falso
+*Justificativa:* A imagem que circula nas redes sociais mostrando torcedores do São Paulo segurando uma faixa com os dizeres 'Perdam pro Inter' é uma montagem. A foto original exibia uma faixa com a inscrição 'FORA CASARES', direcionada à diretoria do clube. (https://www.cristalfm.webradios.net/news-e-fake-que-foto-mostre-torcedores-do-sao-paulo-com-faixa-que-diz-perdam-pro-inter-tratase-de-montagem?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 15
+================================================================================
+
+Text: Vídeo viral mostra operários 'tingindo' frutas, legumes e verduras com sprays e bacias de água colorida em uma fábrica na China, como se fosse uma prática real.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral:*
+
+Não foi possível verificar nenhuma das informações.
+
+A alegação de que operários estão tingindo frutas, legumes e verduras com sprays e bacias de água colorida em uma fábrica na China não pode ser confirmada nem refutada devido à falta de evidências confiáveis. As fontes consultadas apresentam informações sobre máquinas de lavagem de frutas e legumes, mas não mencionam o uso de tintas ou corantes na produção desses alimentos. Portanto, não há evidências suficientes para verificar essa alegação.
+
+Saiba mais sobre esse julgamento no nosso website:  
+https://tacertoissoai.com.br/verificacao/aAXTPlFYzIAt
+
+
+*Análise por afirmação:*
+
+*Afirmação 1:* Operários estão “tingindo” frutas, legumes e verduras com sprays e bacias de água colorida em uma fábrica na China.
+*Veredito:* Fontes insuficientes para verificar
+*Justificativa:* Não foram encontradas evidências confiáveis que confirmem ou refutem a alegação de que operários estão tingindo frutas, legumes e verduras com sprays e bacias de água colorida em uma fábrica na China. As fontes consultadas apresentam informações sobre máquinas de lavagem de frutas e legumes, mas não mencionam o uso de tintas ou corantes na produção desses alimentos. Portanto, não há evidências suficientes para verificar essa alegação.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 16
+================================================================================
+
+Text: Vídeo mostra Michelle Bolsonaro sorrindo e cumprimentando apoiadoras e é compartilhado como se ela estivesse feliz logo após a prisão de Jair Bolsonaro.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como fora de contexto.
+
+A análise revela que o vídeo mostrando Michelle Bolsonaro sorrindo e cumprimentando apoiadoras é autêntico, mas está sendo compartilhado fora de seu contexto temporal. A gravação ocorreu no início de novembro de 2025, antes da prisão de Jair Bolsonaro, e não como uma reação a esse evento. A descontextualização temporal é um elemento chave na disseminação de desinformação, pois a afirmação, embora verdadeira em si, é usada para criar uma narrativa enganosa.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/H0-6WAlUhUV9
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Michelle Bolsonaro foi filmada sorrindo e cumprimentando apoiadoras.
+*Veredito:* Fora de Contexto
+*Justificativa:* A ex-primeira-dama Michelle Bolsonaro foi de fato filmada sorrindo e cumprimentando apoiadoras [1], [2]. No entanto, o vídeo em questão foi gravado no início de novembro de 2025, durante um evento do PL Mulher no Paraná, e não após a prisão de Jair Bolsonaro, que ocorreu posteriormente [1], [2]. A alegação, embora descreva uma ação verdadeira, é apresentada fora de seu contexto temporal original, sendo utilizada para sugerir uma reação a um evento posterior, o que configura descontextualização temporal.
+
+*Fontes*:
+
+[1] Vídeo de Michelle Bolsonaro feliz é anterior à prisão de ex-presidente
+    Fonte: g1.globo.com
+    URL: https://g1.globo.com/fato-ou-fake/noticia/2025/12/03/e-fake-que-video-de-michelle-bolsonaro-sorrindo-foi-feito-apos-prisao-de-ex-presidente-gravacao-ocorreu-no-inicio-de-novembro.ghtml
+
+[2] A ex-primeira-dama Michelle Bolsonaro denunciou nas redes ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DPEXORaAN2g/
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 17
+================================================================================
+
+Text: Um cartaz que circula no WhatsApp diz que o Bolsa Família teve reajuste de 6,97%, quase o dobro do aumento dado aos aposentados, e pede que a mensagem seja compartilhada.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o Bolsa Família teve um reajuste de 6,97%, quase o dobro do aumento dado aos aposentados, é falsa. Múltiplas fontes de checagem de fatos, como Estadão e Aos Fatos, confirmam que essa informação é incorreta. As evidências apresentadas não sustentam a afirmação, indicando que se trata de desinformação.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/3FtUYfc3CNii
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O Bolsa Família teve reajuste de 6,97%, quase o dobro do aumento dado aos aposentados.
+*Veredito:* Falso
+*Justificativa:* A alegação de que o Bolsa Família teve um reajuste de 6,97%, quase o dobro do aumento dado aos aposentados, é falsa. Veículos de checagem de fatos como o Estadão [1] e o Aos Fatos [2] desmentiram essa afirmação, classificando-a como incorreta. As demais fontes fornecidas não apoiam a alegação ou são irrelevantes para a verificação do percentual de reajuste e sua comparação.
+
+*Fontes*:
+
+[1] É falso que Bolsa Família teve reajuste duas vezes maior que o da ...
+    Fonte: Estadão
+    URL: https://www.estadao.com.br/estadao-verifica/e-falso-que-bolsa-familia-teve-reajuste-duas-vezes-maior-que-o-da-aposentadoria/
+
+[2] É falso que Bolsa Família teve o dobro do reajuste dado a ...
+    Fonte: Aos Fatos
+    URL: https://www.aosfatos.org/noticias/falso-bolsa-familia-dobro-reajuste-aposentadorias/
+    Data: 2024-11-05T00:00:00Z
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 18
+================================================================================
+
+Text: Publicação afirma que o ministro Alexandre de Moraes determinou que cada ex-policial militar réu pelos atos de 8 de janeiro pague multa de R$ 6 milhões.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como fora de contexto.
+
+A alegação de que o ministro Alexandre de Moraes determinou uma multa de R$ 6 milhões para ex-policiais militares é classificada como Fora de Contexto. As evidências indicam que o ministro 'sugeriu' o valor da multa, e não 'determinou' a decisão final. Embora ele tenha participado da condenação dos policiais, a ação específica de 'determinar' a multa não é corroborada pelas fontes fornecidas.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/ISyHKJs5AT9e
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O ministro Alexandre de Moraes determinou que cada ex-policial militar réu pelos atos de 8 de janeiro pague multa de R$ 6 milhões.
+*Veredito:* Fora de Contexto
+*Justificativa:* A alegação de que o ministro Alexandre de Moraes 'determinou' uma multa de R$ 6 milhões para cada ex-policial militar réu pelos atos de 8 de janeiro é apresentada fora de contexto. Embora o ministro Alexandre de Moraes tenha se envolvido na votação pela condenação de policiais militares do Distrito Federal pelos atos de 8 de janeiro [1][5], a evidência mais direta sobre a multa de R$ 6 milhões indica que ele 'sugeriu' esse valor, e não 'determinou' [2]. A diferença entre 'sugerir' e 'determinar' é crucial, pois uma sugestão faz parte de um processo de votação ou proposta, enquanto uma determinação implica uma decisão final ou ordem. As outras fontes mencionam a condenação de PMs ou sugestões de pena para outros réus, mas não confirmam a determinação da multa de R$ 6 milhões por Moraes [3][4].
+
+*Fontes*:
+
+[1] LETALIDADE POLICIAL | O ministro do STF Alexandre de Moraes ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DQ5EML7CZ6t/
+
+[2] Ação em ato golpista - O ministro Alexandre de Moraes, do ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DLHl-EutqPG/
+
+[3] Após aparecer em vídeos sentado na cadeira do ministro Alexandre ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DLdSdJiu99s/
+
+[4] O ministro do Supremo Tribunal Federal (STF) Alexandre de Moraes ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DQsVsoWj3Wj/
+
+[5] A Primeira Turma do STF formou maioria para condenar cinco ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DR4W5nYDrjl/
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 19
+================================================================================
+
+Text: Um vídeo popular mostra supostos policiais descobrindo uma 'fábrica de visualizações' com fileiras de celulares simulando acessos para aumentar views de músicas no YouTube.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que um vídeo popular mostra policiais descobrindo uma "fábrica de visualizações" com fileiras de celulares simulando acessos para aumentar views de músicas no YouTube é falsa. O vídeo foi identificado como uma produção gerada por inteligência artificial, sem registros em veículos de imprensa ou órgãos de segurança pública confirmando tal operação, e com ferramentas de detecção de IA apontando uma alta probabilidade de criação artificial do conteúdo.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/VtOM8OoYVC5u
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Um vídeo popular mostra policiais descobrindo uma fábrica de visualizações com fileiras de celulares simulando acessos para aumentar views de músicas no YouTube.
+*Veredito:* Falso
+*Justificativa:* O vídeo em questão foi identificado como uma produção gerada por inteligência artificial (IA). Especialistas em detecção de conteúdo gerado por IA aplicaram ferramentas técnicas ao material e identificaram uma pontuação agregada de 99,6% de chances de que o vídeo tenha sido criado artificialmente. Além disso, a ausência de registros em veículos de imprensa, boletins policiais ou órgãos de segurança pública de uma operação similar em São Paulo, Ceará ou em qualquer outra parte do país, e a negativa das secretarias de segurança dessas unidades, apontadas em algumas versões do vídeo, reforçam a falsidade da alegação.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 20
+================================================================================
+
+Text: Publicação no TikTok afirma que o secretário de Guerra dos EUA, Pete Hegseth, desembarcou no Brasil em avião militar e mostra dois vídeos combinados como prova.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o secretário de Guerra dos EUA, Pete Hegseth, desembarcou no Brasil em um avião militar é falsa. Embora as fontes confirmem seu cargo e envolvimento em operações militares, nenhuma evidência suporta seu desembarque no Brasil. Pelo contrário, uma fonte o localiza no Caribe em período próximo, indicando que a afirmação é infundada.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/TbKk789IXj0T
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O secretário de Guerra dos EUA, Pete Hegseth, desembarcou no Brasil em um avião militar.
+*Veredito:* Falso
+*Justificativa:* As evidências fornecidas confirmam que Pete Hegseth é referido como Secretário de Guerra ou Defesa dos EUA e está envolvido em operações militares [1][2][3][4][5]. Contudo, nenhuma das fontes cita ou corrobora a alegação de que ele desembarcou no Brasil em um avião militar. Pelo contrário, uma das fontes indica que ele estava a bordo de um porta-aviões no Caribe em outubro de 2025 [3], o que contradiz a ideia de um desembarque no Brasil. Portanto, a alegação de seu desembarque no Brasil não é suportada pelas evidências.
+
+*Fontes*:
+
+[1] O Secretário de Defesa dos EUA, Pete Hegseth, fez duras críticas à ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DPPa_Z4jacw/
+
+[2] Jovem - O secretário de Guerra dos Estados Unidos, Pete Hegseth ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/jovempannews/photos/o-secret%C3%A1rio-de-guerra-dos-estados-unidos-pete-hegseth-anunciou-nesta-quinta-fei/1305937091567326/
+
+[3] O secretário de Defesa dos EUA, Pete Hegseth, anunciou nesta ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DQNyscHEpeS/
+
+[4] Cerco à Venezuela - O secretário de Guerra dos Estados Unidos ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DQNCZCdk60E/
+
+[5] O secretário de Guerra dos Estados Unidos, Pete Hegseth ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/jovempannews/posts/o-secret%C3%A1rio-de-guerra-dos-estados-unidos-pete-hegseth-anunciou-nesta-quinta-fei/1305937108233991/
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 21
+================================================================================
+
+Text: Vídeo nas redes apresenta áudio que seria de Lula parabenizando um ministro pela prisão de Bolsonaro, sugerindo que o presidente teria comentado o caso.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o presidente Lula parabenizou um ministro pela prisão de Bolsonaro em um áudio é falsa. Fontes de checagem de fatos refutam diretamente essa afirmação, indicando que o conteúdo é fabricado. O contexto geral aponta para a disseminação de desinformação através de áudios e vídeos manipulados por inteligência artificial nas redes sociais.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/HV7vl7YXStIY
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Lula parabenizou um ministro pela prisão de Bolsonaro em um áudio apresentado em um vídeo nas redes sociais.
+*Veredito:* Falso
+*Justificativa:* A alegação de que o presidente Lula parabenizou um ministro pela prisão de Bolsonaro em um áudio é falsa. Uma verificação de fatos do UOL Notícias afirma diretamente que "É falso áudio de Lula parabenizando Moraes por prisão de Bolsonaro" [6]. Outras fontes também alertam sobre a crescente sofisticação de criminosos virtuais que utilizam inteligência artificial para manipular áudios e vídeos nas redes sociais, distorcendo falas de figuras políticas [1][3][5], o que reforça a natureza enganosa do conteúdo em questão.
+
+*Fontes*:
+
+[1] Circulam nas redes vídeos em que o presidente Lula diz que ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DHljaX1NAPi/
+
+[3] VERIFICAÇÃO | Vídeo que circula no Facebook mostra Bolsonaro ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DPRqPgoDfpj/
+
+[5] #FAKE: circula nas redes um vídeo falso que distorce uma fala de ...
+    Fonte: www.facebook.com
+    URL: https://www.facebook.com/GloboNews/posts/fake-circula-nas-redes-um-v%C3%ADdeo-falso-que-distorce-uma-fala-de-lula-alegando-que/1171995071620661/
+
+[6] É falso áudio de Lula parabenizando Moraes por prisão de Bolsonaro
+    Fonte: UOL Notícias
+    URL: https://noticias.uol.com.br/confere/ultimas-noticias/2025/12/03/e-falso-suposto-audio-de-lula-parabenizando-moraes-por-prisao-de-bolsonaro.htm
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 22
+================================================================================
+
+Text: Circula um vídeo de um comício de Donald Trump em que um suposto manifestante grita 'Allahu Akbar', dando a entender que a cena ocorreu em 2025.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Não foi possível verificar nenhuma das informações.
+
+Não foram encontradas evidências específicas sobre um incidente em que um manifestante tenha gritado 'Allahu Akbar' durante um comício de Donald Trump em 2025. Um vídeo viral de 2016, que mostra Trump interrompendo seu discurso após ouvir 'Allahu Akbar', foi compartilhado como se fosse recente, mas foi comprovado que o vídeo foi adulterado e não corresponde a um evento de 2025. Portanto, a alegação de que um manifestante gritou 'Allahu Akbar' durante um comício de Trump em 2025 não pôde ser verificada com as fontes disponíveis.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/HiX8FZb0W0GX
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Um suposto manifestante gritou 'Allahu Akbar' durante um comício de Donald Trump em 2025.
+*Veredito:* Fontes insuficientes para verificar
+*Justificativa:* Não foram encontradas evidências específicas sobre um incidente em que um manifestante tenha gritado 'Allahu Akbar' durante um comício de Donald Trump em 2025. No entanto, um vídeo viral de 2016, que mostra Trump interrompendo seu discurso após ouvir 'Allahu Akbar', foi compartilhado como se fosse recente, mas foi comprovado que o vídeo foi adulterado e não corresponde a um evento de 2025. (https://checamos.afp.com/este-video-nao-mostra-trump-se-protegendo-apos-alguem-gritar-allahu-akbar-gravacao-foi-adulterada?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 23
+================================================================================
+
+Text: Jaques Wagner propôs adiar eleições de 2026 em entrevista à GloboNews
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A única afirmação analisada, que Jaques Wagner propôs adiar as eleições de 2026, foi classificada como Falsa. As evidências indicam que o senador não fez tal proposta, mas sim defendeu uma PEC para acabar com a reeleição. As fontes são coerentes em desmentir a alegação principal.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/DfMB0fmWUmer
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Jaques Wagner propôs adiar as eleições de 2026 em entrevista à GloboNews.
+*Veredito:* Falso
+*Justificativa:* A alegação de que Jaques Wagner propôs adiar as eleições de 2026 é falsa. Múltiplas fontes de checagem de fatos, incluindo Aos Fatos [8], Estadão [6] e publicações no Instagram [1][2], afirmam que o senador não fez tal proposta. Ele defendeu uma Proposta de Emenda à Constituição (PEC 12/2022) que visa acabar com a reeleição, o que é diferente de adiar o pleito de 2026 [1][6].
+
+*Fontes*:
+
+[1] Publicação que circula no Facebook mostra o senador Jaques ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DP39u43jKQn/
+
+[2] VERIFICAÇÃO | Circula no TikTok, no Facebook e no Instagram a ...
+    Fonte: www.instagram.com
+    URL: https://www.instagram.com/p/DPwPVblDFki/
+
+[6] Jaques Wagner não propôs adiar eleição de 2026; ele defendeu ...
+    Fonte: Estadão
+    URL: https://www.estadao.com.br/estadao-verifica/jaques-wagner-propoe-adiar-eleicao-2026-enganoso/
+
+[8] Jaques Wagner não defendeu adiar eleições de 2026
+    Fonte: Aos Fatos
+    URL: https://www.aosfatos.org/noticias/jaques-wagner-nao-defendeu-adiar-eleicoes-de-2026/
+    Data: 2025-10-07T00:00:00Z
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 24
+================================================================================
+
+Text: Vídeo mostra o ministro Luiz Fux afirmando que irá aprovar uma anistia para o ex-presidente Jair Bolsonaro.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que o ministro Luiz Fux afirmou que aprovaria uma anistia para o ex-presidente Jair Bolsonaro é falsa. Circulou um vídeo manipulado atribuindo essa declaração a Fux, mas o STF confirmou que a informação não procede e que o vídeo foi criado com inteligência artificial. (https://vitoriaagora.com.br/video-falso-luiz-fux-aprovando-anistia-bolsonaro-manipulado-ia/?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/m6Dpy2EQH19H
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O ministro Luiz Fux afirmou que irá aprovar uma anistia para o ex-presidente Jair Bolsonaro.
+*Veredito:* Falso
+*Justificativa:* Circulou um vídeo manipulado atribuindo ao ministro Luiz Fux a declaração de que ele aprovaria uma anistia para Jair Bolsonaro. O Supremo Tribunal Federal (STF) confirmou que a informação não procede e que o vídeo foi criado com inteligência artificial. (https://vitoriaagora.com.br/video-falso-luiz-fux-aprovando-anistia-bolsonaro-manipulado-ia/?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 25
+================================================================================
+
+Text: Vídeo de uma queima de fogos sobre uma cidade montanhosa circula como se mostrasse a comemoração no Rio pelo título do Flamengo na Libertadores de 2025.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como verdadeiras.
+
+A alegação de que a comemoração pelo título do Flamengo na Libertadores de 2025 ocorreu no Rio de Janeiro é verdadeira. Após conquistar o tetracampeonato em 29 de novembro de 2025, o Flamengo celebrou a vitória com uma festa no Centro do Rio de Janeiro no dia 30 de novembro de 2025. A comemoração contou com um desfile de trio elétrico que percorreu cerca de 850 metros, da Rua Primeiro de Março até a Avenida Presidente Antônio Carlos, reunindo aproximadamente 500 mil torcedores. (https://ge.globo.com/google/amp/futebol/times/flamengo/noticia/2025/11/29/comemoracao-do-treta-da-libertadores-do-flamengo-sera-no-centro-do-rio-com-desfile-em-trio-eletrico-veja-detalhes.ghtml?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/PEsTzjImq9Xw
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: A comemoração pelo título do Flamengo na Libertadores de 2025 ocorreu no Rio de Janeiro.
+*Veredito:* Verdadeiro
+*Justificativa:* Após conquistar o tetracampeonato da Libertadores em 29 de novembro de 2025, o Flamengo celebrou a vitória com uma festa no Centro do Rio de Janeiro no dia 30 de novembro de 2025. A comemoração contou com um desfile de trio elétrico que percorreu cerca de 850 metros, da Rua Primeiro de Março até a Avenida Presidente Antônio Carlos, reunindo aproximadamente 500 mil torcedores. (https://ge.globo.com/google/amp/futebol/times/flamengo/noticia/2025/11/29/comemoracao-do-treta-da-libertadores-do-flamengo-sera-no-centro-do-rio-com-desfile-em-trio-eletrico-veja-detalhes.ghtml?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 26
+================================================================================
+
+Text: Imagem viral traz Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo segurando uma faixa com a frase 'Somos todos Bolsonaro - Anistia já!', sugerindo apoio público dos ex-jogadores.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+As alegações sobre Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo segurando uma faixa com a frase 'Somos todos Bolsonaro - Anistia já!' são falsas. As imagens que sugerem apoio público dos ex-jogadores a Bolsonaro foram geradas por inteligência artificial e não correspondem a eventos reais. As celebridades representadas no vídeo declararam apoio ou elogiaram Bolsonaro nos últimos anos, mas não chegaram a se pronunciar sobre a proposta de anistia para o ex-presidente. (https://www.terra.com.br/noticias/checamos/fotos-de-famosos-pedindo-liberdade-de-bolsonaro-foram-criadas-por-inteligencia-artificial%2C7907dcb64f8adb0086bf8b0636eb8d24onzy8jz5.html?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/zROrmiK7-H5d
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo seguraram uma faixa com a frase 'Somos todos Bolsonaro - Anistia já!'
+*Veredito:* Falso
+*Justificativa:* Não há registros confiáveis de que Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo tenham segurado uma faixa com a frase 'Somos todos Bolsonaro - Anistia já!'. Pesquisas recentes indicam que imagens semelhantes envolvendo celebridades foram geradas por inteligência artificial, sem respaldo em eventos reais. (https://www.terra.com.br/noticias/checamos/fotos-de-famosos-pedindo-liberdade-de-bolsonaro-foram-criadas-por-inteligencia-artificial%2C7907dcb64f8adb0086bf8b0636eb8d24onzy8jz5.html?utm_source=openai)
+
+*Afirmação 2*: A imagem sugere apoio público dos ex-jogadores a Bolsonaro.
+*Veredito:* Falso
+*Justificativa:* As imagens que sugerem apoio público dos ex-jogadores Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo a Bolsonaro foram geradas por inteligência artificial e não correspondem a eventos reais. As celebridades representadas no vídeo declararam apoio ou elogiaram Bolsonaro nos últimos anos, mas não chegaram a se pronunciar sobre a proposta de anistia para o ex-presidente. (https://www.terra.com.br/noticias/checamos/fotos-de-famosos-pedindo-liberdade-de-bolsonaro-foram-criadas-por-inteligencia-artificial%2C7907dcb64f8adb0086bf8b0636eb8d24onzy8jz5.html?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 27
+================================================================================
+
+Text: Vídeo de motociclistas circulando em Brasília foi compartilhado como se mostrasse um protesto contra a prisão de Jair Bolsonaro em novembro de 2025.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que houve um protesto contra a prisão de Jair Bolsonaro em novembro de 2025 em Brasília é falsa. As manifestações em Brasília durante esse período estavam relacionadas a outros temas, como a PEC da Blindagem, que buscava anistiar envolvidos nos atos de 8 de janeiro de 2023. Além disso, vídeos compartilhados nas redes sociais que supostamente mostravam protestos contra a prisão de Bolsonaro foram verificados como sendo de eventos anteriores, como o de setembro de 2025 na Avenida Paulista, que não estavam relacionados à prisão do ex-presidente. (https://pt.wikipedia.org/wiki/PEC_da_Blindagem?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/g1IZezO-d4As
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Houve um protesto contra a prisão de Jair Bolsonaro em novembro de 2025 em Brasília.
+*Veredito:* Falso
+*Justificativa:* Não foram encontrados registros de protestos contra a prisão de Jair Bolsonaro em novembro de 2025 em Brasília. As manifestações em Brasília durante esse período estavam relacionadas a outros temas, como a PEC da Blindagem, que buscava anistiar envolvidos nos atos de 8 de janeiro de 2023. (https://pt.wikipedia.org/wiki/PEC_da_Blindagem?utm_source=openai) Além disso, vídeos compartilhados nas redes sociais que supostamente mostravam protestos contra a prisão de Bolsonaro foram verificados como sendo de eventos anteriores, como o de setembro de 2025 na Avenida Paulista, que não estavam relacionados à prisão do ex-presidente. (https://checamos.afp.com/doc.afp.com.86AG3CR?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 28
+================================================================================
+
+Text: notícia urgente. Trump mostra foto dele e do Bolsonaro quando ele estava nos EUA e fala que Bolsonaro é uma pessoa muito boa e não teria coragem de dar golpe no Brasil. Será?
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Não foi possível verificar nenhuma das informações.
+
+A alegação de que Donald Trump afirmou que Jair Bolsonaro é uma pessoa muito boa e não teria coragem de dar golpe no Brasil não pôde ser confirmada com base nas fontes disponíveis. Embora Trump tenha expressado apoio a Bolsonaro em diversas ocasiões, não foram encontradas declarações específicas que correspondam exatamente à alegação apresentada.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/rQc0uD_z7Z75
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Donald Trump afirmou que Jair Bolsonaro é uma pessoa muito boa e não teria coragem de dar golpe no Brasil.
+*Veredito:* Fontes insuficientes para verificar
+*Justificativa:* Após uma busca detalhada, não foram encontradas declarações específicas de Donald Trump afirmando que Jair Bolsonaro é uma pessoa muito boa e que não teria coragem de dar golpe no Brasil. Embora Trump tenha expressado apoio a Bolsonaro em diversas ocasiões, como em julho de 2025, quando pediu que as autoridades brasileiras "deixem Bolsonaro em paz" (https://noticias.uol.com.br/ultimas-noticias/afp/2025/07/07/trump-pede-que-autoridades-do-brasil-deixem-bolsonaro-em-paz.htm?utm_source=openai), não há registros públicos de Trump fazendo a afirmação exata mencionada na alegação.
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 29
+================================================================================
+
+Text: Imagem de post  mostra Daniel Vorcaro em registro com outros políticos feito em 7 de agosto.
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A alegação de que Daniel Vorcaro foi fotografado com outros políticos em 7 de agosto é falsa. A imagem que circula nas redes sociais é uma montagem, inserindo o rosto de Vorcaro no corpo do governador do Mato Grosso, Mauro Mendes. A foto original, publicada em 7 de agosto pela Agência Minas, mostra governadores de nove estados reunidos em Brasília, sem a presença de Vorcaro. (https://www.agencialupa.org/verificacao/2025/12/08/foto-de-ceo-do-banco-master-ao-lado-de-governadores-e-falsa/?utm_source=openai)
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/esLOMoSranWX
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: Daniel Vorcaro foi fotografado em um registro com outros políticos em 7 de agosto.
+*Veredito:* Falso
+*Justificativa:* A alegação de que Daniel Vorcaro foi fotografado com outros políticos em 7 de agosto é falsa. A imagem que circula nas redes sociais, mostrando Vorcaro ao lado de governadores, é uma montagem. A foto original, publicada em 7 de agosto pela Agência Minas, mostra governadores de nove estados reunidos em Brasília, sem a presença de Vorcaro. A manipulação inseriu o rosto de Vorcaro no corpo do governador do Mato Grosso, Mauro Mendes. (https://www.agencialupa.org/verificacao/2025/12/08/foto-de-ceo-do-banco-master-ao-lado-de-governadores-e-falsa/?utm_source=openai)
+--------------------------------------------------------------------------------
+
+================================================================================
+CLAIM 30
+================================================================================
+
+Text: eleitor perde voto se apertar tecla 'confirma' enquanto urna exibe 'confira seu voto'
+
+Status: SUCCESS
+
+Response:
+--------------------------------------------------------------------------------
+*Resumo Geral*:
+
+Todas as afirmações foram classificadas como Falsas.
+
+A afirmação de que o eleitor perde o voto ao apertar a tecla 'confirma' enquanto a urna exibe 'confira seu voto' é falsa. Múltiplas fontes de checagem de fatos desmentem essa alegação, indicando que o voto não é anulado nessas condições. As evidências fornecidas são coerentes e refutam a afirmação.
+
+Saiba mais sobre esse julgamento no nosso website:
+https://tacertoissoai.com.br/verificacao/ykMhjOSfbCAB
+
+
+*Análise por afirmação*:
+
+*Afirmação 1*: O eleitor perde o voto se apertar a tecla 'confirma' enquanto a urna exibe 'confira seu voto'.
+*Veredito:* Falso
+*Justificativa:* A alegação de que o eleitor perde o voto ao apertar a tecla 'confirma' enquanto a urna eletrônica exibe a mensagem 'confira seu voto' é falsa. Veículos de checagem de fatos como a Agência Tatu de Jornalismo de Dados [6] e a AFP Checamos [7] desmentiram essa informação, afirmando que o voto não é perdido nessas circunstâncias. As demais fontes apresentadas não contêm informações relevantes para verificar a veracidade da afirmação.
+
+*Fontes*:
+
+[6] Eleitor não perde voto ao apertar a tecla “Confirma” durante aviso ...
+    Fonte: Agência Tatu de Jornalismo de Dados
+    URL: https://www.agenciatatu.com.br/noticia/eleitor-nao-perde-voto-ao-apertar-confirma/
+    Data: 2024-09-09T00:00:00Z
+
+[7] Instrução para eleitor conferir dados nas urnas não apresenta ...
+    Fonte: AFP Checamos
+    URL: https://checamos.afp.com/doc.afp.com.36G63T2
+    Data: 2024-09-12T15:50:00Z
+--------------------------------------------------------------------------------
+
