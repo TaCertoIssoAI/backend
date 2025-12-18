@@ -924,6 +924,7 @@ Você DEVE retornar um objeto JSON com:
    Exemplo inválido: https://meusite.com.br (sem "" para a string do URL)
    Exemplo inválido: "https://meusi\\nte.com.br" (caracter especial \\n no meio do link)
    Exemplo inválido: "[Site](https://example.com)"  (markdown no lugar de uma string de URL)
+- Um campo overall_summary com um sumário geral sobre a checagem e como as afirmações se relacionam, não coloque links nesse sumário.
 
 IMPORTANTE:
 - O campo "verdict" DEVE ser exatamente um destes valores: "Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar"
@@ -932,6 +933,7 @@ IMPORTANTE:
 - Use o data_source_id exato fornecido no prompt para cada fonte
 - Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
 - Justificativas devem citar as fontes encontradas na busca do Google de forma clara
+- Não coloque links no sumário geral (overall_summary)
 
 ## REGRAS CRÍTICAS DE FORMATAÇÃO JSON:
 
