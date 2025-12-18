@@ -354,6 +354,8 @@ Se o texto mencionar, sugerir ou levantar dúvidas sobre:
 - artificialidade,
 - incoerências visuais,
 - aparência de geração por IA,
+- marcas d'água de IA (SORA watermark, Gemini sparkle, Meta Imagine watermark, etc.),
+- características típicas de imagens geradas por IA (dedos extras, distorções em mãos, texto ilegível, objetos fundidos),
 
 então você deve extrair alegações sobre a autenticidade ou origem da imagem, DESDE QUE tais alegações sejam explicitamente mencionadas ou claramente sugeridas pelo texto.
 
@@ -549,6 +551,8 @@ Se o texto mencionar, sugerir ou levantar dúvidas sobre:
 - artificialidade,
 - incoerências visuais,
 - aparência de geração por IA,
+- marcas d'água de IA (SORA watermark, Gemini sparkle, Meta Imagine watermark, etc.),
+- características típicas de imagens geradas por IA (dedos extras, distorções em mãos, texto ilegível, objetos fundidos),
 
 então você deve extrair alegações sobre a autenticidade ou origem da imagem, DESDE QUE tais alegações sejam explicitamente mencionadas ou claramente sugeridas pelo texto.
 
