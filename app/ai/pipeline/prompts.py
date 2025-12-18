@@ -15,6 +15,7 @@ Sua tarefa é identificar as alegações verificáveis presentes no texto fornec
 
 **Extraia alegações que:**
 - Podem ser verificadas como verdadeiras ou falsas com base em evidências.
+- Contenham afirmações sobre eventos, acontecimentos ou pessoas de forma a mais direta possível
 - Contenham todo o contexto necessário para verificação embutidos
 - Fazem afirmações sobre o mundo (eventos passados, presentes ou futuros).
 - Contêm entidades nomeadas, eventos ou detalhes específicos.
@@ -35,22 +36,102 @@ Sua tarefa é identificar as alegações verificáveis presentes no texto fornec
 - "O partido Y anunciou que vai apresentar um projeto de lei para proibir plásticos descartáveis"
 - "O sindicato planeja iniciar uma greve nacional na próxima semana"
 
+**CRÍTICO - Extraia O QUE está sendo alegado, NÃO COMO está sendo compartilhado:**
+
+Quando você vê frases como:
+- "circula como"
+- "é compartilhado como se"
+- "apresentado como"
+- "divulgado dizendo que"
+- "compartilhada como se fosse"
+
+Você DEVE extrair a ALEGAÇÃO SUBSTANTIVA (o que está sendo afirmado que aconteceu), NÃO o ato de compartilhamento.
+
+**Transformação OBRIGATÓRIA:**
+- Se o texto diz: "X é compartilhado como se fosse Y"
+- Extraia: "Y" (não "X é compartilhado")
+
+    ERRADO - Meta-alegações sobre compartilhamento:
+   - "A foto é compartilhada como se mostrasse um acidente"
+   - "O post circula dizendo que houve um terremoto"
+   - "O vídeo é apresentado como se fosse de 2024"
+   - "A paralisação foi compartilhada como se fosse em dezembro"
+
+    CORRETO - Alegações sobre o evento/fato substantivo:
+   - "Houve um acidente na rodovia X" (de: "Foto é compartilhada como se mostrasse um acidente na rodovia X")
+   - "Houve um terremoto na cidade Y" (de: "Post circula dizendo que houve um terremoto na cidade Y")
+   - "O vídeo mostra eventos que ocorreram em 2024" (de: "Vídeo é apresentado como se fosse de 2024")
+   - "Houve uma paralisação em dezembro" (de: "Paralisação foi compartilhada como se fosse em dezembro")
+
 **NÃO extraia:**
 - Perguntas sem alegações implícitas ("O que você acha?")
 - Afirmações cujo contexto esteja faltando ou que mencione entidades externas à afirmação em si (Ex: o evento ocorreu na cidade)
 - Cumprimentos ou conversa trivial
 - Trechos dos quais não é possível extrair nenhuma afirmação sobre algo, nenhum fato ou nenhum juízo de valor: (Ex: Olá, bom dia)
+- Meta-alegações sobre como a informação está sendo compartilhada ou apresentada, ao invés do fato substantivo em si
 
 
 ## Diretrizes:
 
-1. **Normalize e esclareça**: Reformule alegações para serem claras, específicas, autocontidas e independentes.
-   - Original: "Esse negócio da vacina é uma loucura!"
-   - Normalizada: "A vacina X tem efeitos colaterais perigosos"
-   - Original: "O estudo examinou 50.000 participantes"
-   - Normalizada: "O estudo de segurança da vacina X examinou 50.000 participantes"
+**PRIORIDADE: Extraia o MENOR número de alegações possível, com o MÁXIMO de contexto em cada uma.**
 
-2. **APENAS alegações autocontidas**: Extraia alegações que podem ser compreendidas completamente sozinhas e não alegações que mencionam acontecimentos de forma abstrata, sem um nome ou informação específica
+Prefira consolidar informações relacionadas em UMA alegação rica, ao invés de múltiplas alegações vagas.
+
+**REGRA DE OURO - NUNCA extraia alegações vagas:**
+- Se o texto menciona "o ataque", "o evento", "a vacina", "o acidente" SEM especificar QUAL/ONDE/QUANDO
+- Você DEVE procurar essas informações no texto e incluí-las na alegação
+- Se NÃO encontrar contexto suficiente no texto, NÃO extraia essa alegação
+
+ERRADO - Alegações vagas SEM contexto específico:
+   - "A imagem sugere que o ataque foi encenado" (QUAL ataque? ONDE? QUANDO?)
+   - "A imagem sugere que o ataque terrorista foi encenado" (QUAL ataque terrorista? ONDE? QUANDO?)
+   - "O evento aconteceu" (QUAL evento? ONDE? QUANDO?)
+   - "A vacina causa problemas" (QUAL vacina? QUE problemas?)
+   - "Houve uma paralisação" (ONDE? QUANDO? DE QUEM?)
+
+CORRETO - Alegações ricas com contexto completo:
+   - "A imagem sugere que o ataque terrorista ao shopping Westgate em Nairobi, Quênia, em setembro de 2013 foi encenado"
+   - "O terremoto de magnitude 7.0 aconteceu na cidade de Marrakech, Marrocos, em março de 2024"
+   - "Houve uma paralisação de caminhoneiros no Rodoanel de São Paulo em novembro de 2025"
+
+1. **Normalize e esclareça - MAXIMIZE O CONTEXTO**: Reformule alegações para serem claras, específicas, autocontidas e independentes. Inclua TODOS os detalhes relevantes (quem, o quê, quando, onde) em CADA alegação.
+
+   **OBRIGATÓRIO**: Antes de extrair qualquer alegação, pergunte-se:
+   - QUEM está envolvido? (pessoas específicas, organizações, grupos)
+   - O QUÊ aconteceu? (evento específico, não genérico)
+   - QUANDO aconteceu? (data, mês, ano - se mencionado)
+   - ONDE aconteceu? (local específico - cidade, país, endereço)
+
+   Se você não consegue responder a maioria dessas perguntas, a alegação está VAGA DEMAIS e não deve ser extraída.
+
+   Exemplos:
+   - VAGO: "Esse negócio da vacina é uma loucura!"
+   - ESPECÍFICO: "A vacina Pfizer contra COVID-19 tem efeitos colaterais perigosos"
+
+   - VAGO: "O estudo examinou 50.000 participantes"
+   - ESPECÍFICO: "O estudo de segurança da vacina Pfizer contra COVID-19 publicado em 2021 examinou 50.000 participantes"
+
+   - VAGO: "A imagem sugere que o ataque foi encenado"
+   - ESPECÍFICO: "A imagem sugere que o ataque terrorista ao shopping Westgate em Nairobi em setembro de 2013 foi encenado"
+
+   **Sempre pergunte**: Esta alegação pode ser compreendida por alguém que NÃO leu o texto original? Se não, adicione mais contexto.
+
+2. **Extraia o fato substantivo, não o meta-relato**: Quando o texto menciona como algo está sendo compartilhado ("circula como", "é compartilhado como se", "compartilhada como se fosse"),
+   extraia a alegação sobre o EVENTO ou FATO em si, não sobre o ato de compartilhamento.
+
+   **Regra de transformação**: "X é compartilhado como se fosse Y" → Extraia "Y aconteceu" (não "X é compartilhado")
+
+   Exemplos:
+   - Original: "Imagem circula mostrando explosão em fábrica"
+     -  ERRADO: "A imagem circula nas redes sociais"
+     -  CORRETO: "Houve uma explosão em uma fábrica de produtos químicos"
+
+   - Original: "Vídeo é compartilhado como se mostrasse paralisação em dezembro"
+     -  ERRADO: "O vídeo é compartilhado como se mostrasse paralisação em dezembro"
+     -  ERRADO: "A paralisação foi compartilhada como se fosse em dezembro"
+     -  CORRETO: "Houve uma paralisação em dezembro"
+
+3. **APENAS alegações autocontidas**: Extraia alegações que podem ser compreendidas completamente sozinhas e não alegações que mencionam acontecimentos de forma abstrata, sem um nome ou informação específica
 
 BOM - Autocontidas:
    - "Não há evidências ligando a vacina X a problemas de fertilidade em mulheres."
@@ -70,9 +151,17 @@ BOM - Autocontidas:
    normalize substituindo pelo sujeito real. Se você não conseguir identificar o sujeito
    a partir do texto, pule essa alegação.
 
-3. **Extraia todas as alegações distintas**: Um único texto pode conter múltiplas alegações. Extraia cada uma separadamente.
+4. **Consolide quando possível, separe quando necessário**: Prefira CONSOLIDAR informações relacionadas em UMA alegação rica. Apenas separe em múltiplas alegações quando tratarem de eventos/fatos completamente DIFERENTES e não-relacionados.
 
-4. **Preserve o idioma**: Mantenha o idioma original do texto. Texto em português → alegações em português.
+    RUIM - Fragmentação desnecessária:
+   - Alegação 1: "Houve um ataque"
+   - Alegação 2: "O ataque foi em janeiro"
+   - Alegação 3: "O ataque foi encenado"
+
+    BOM - Consolidação:
+   - Alegação única: "O ataque terrorista ao shopping X em janeiro de 2024 foi encenado"
+
+5. **Preserve o idioma**: Mantenha o idioma original do texto. Texto em português → alegações em português.
 
 6. **Forneça análise**: Para cada alegação, explique brevemente por que ela é verificável e o que a torna passível de checagem.
 
@@ -89,8 +178,14 @@ Você deve retornar um objeto JSON com um array "claims". Cada alegação deve t
 
 Se nenhuma alegação verificável for encontrada, retorne um array vazio de claims.
 
-IMPORTANTE: Extraia apenas alegações autocontidas que podem ser compreendidas sem
-ler o texto ao redor. Substitua pronomes e referências vagas por sujeitos específicos.
+**LEMBRE-SE - Checklist Final:**
+1. **Menos é mais**: Prefira POUCAS alegações RICAS a MUITAS alegações VAGAS
+2. **Contexto completo**: Cada alegação deve incluir QUEM, O QUÊ, QUANDO, ONDE (quando aplicável)
+3. **Autocontidas**: Alguém que NÃO leu o texto original deve conseguir entender completamente cada alegação
+4. **Consolidação**: Junte informações relacionadas em UMA alegação ao invés de fragmentar
+5. **Fatos, não meta-relatos**: Extraia "Y aconteceu", não "X é compartilhado como se fosse Y"
+
+Sempre pergunte: "Esta alegação pode ser verificada sem mais contexto? Posso consolidá-la com outra alegação relacionada?"
 
 Nota: NÃO inclua os campos 'id' ou 'source' - eles serão adicionados automaticamente."""
 
@@ -592,15 +687,34 @@ Após todas as afirmações individuais terem seu veredito, você irá analizar 
 a partir dessa análise geral, você irá emitir uma resumo/sumário geral de todos as informações enviadas. Esse sumário irá abordar o contexto geral e irá mencionar se
 as afirmações tem uma linha coerente de pensamento, ou se algumas delas estão desconexas.
 
+Sempre assuma que a afirmação pode estar sendo utiliza para promover a desinformação, seu julgamento deve partir desse contexto e ser rigoroso com quaisquer possíveis erros de interpretação, contexto
+que falta dentro da afirmaçào. Entre assumir que a afirmação tem o intuito de espalhar desinformação ou outra intenção, assuma que a afirmação é desinformação e faça o julgamento a partir disso.
+
+Ex: Afirmação: "Vídeo é compartilhado sobre o presidente X sendo corrupto". Contexto: "Presidente não é corrupto"
+Veredito: Falso
+Justificativa: o contexto apresentado não apoia as notícias que se espalham sobre o presidente
+
+Nesse caso você não deve julgar baseado no fato das notícias se espalharem ou não, e sim no contexto de que a afirmação sobre o presidente pode ser fake ou não
+
 ## Categorias de Veredito:
 
 Você deve classificar cada alegação em UMA das seguintes categorias:
 
-1. **Verdadeiro**: A alegação é comprovadamente verdadeira com base nas evidências apresentadas. As fontes são confiáveis e concordam que a alegação é factual.
+1. **Verdadeiro**: A alegação é comprovadamente verdadeira com base nas evidências apresentadas. As fontes são confiáveis e concordam que a alegação é factual. A afirmação não pode estar fora de contexto, interpretada de forma errada e faltando informações cruciais
 
 2. **Falso**: A alegação é comprovadamente falsa com base nas evidências apresentadas. As fontes confiáveis contradizem diretamente a alegação.
 
-3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas. Se a afirmação vor verdadeira, mas apresentada no contexto geral (todas as afirmações) de forma enganosa, ela deve ser dita como Fora de Contexto
+3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas.
+
+   **IMPORTANTE - Descontextualização Temporal/Espacial**: Se uma alegação é tecnicamente verdadeira MAS está sendo apresentada em um contexto temporal ou espacial DIFERENTE do original, classifique como "Fora de Contexto".
+
+   Exemplos comuns:
+   - Vídeo/foto de evento em novembro sendo compartilhado como se fosse de dezembro
+   - Evento da cidade A sendo apresentado como se fosse da cidade B
+   - Declaração de 2020 sendo compartilhada como se fosse recente
+   - Evento que aconteceu num contexto X apresentado como parte do contexto Y
+
+   **Como identificar**: Se o resumo geral (overall_summary) identifica que há uma desconexão temporal/espacial entre os fatos verdadeiros e como estão sendo apresentados, classifique as alegações envolvidas como "Fora de Contexto", MESMO que os fatos individuais sejam verdadeiros.
 
 4. **Fontes Insuficentes**: Não há evidências suficientes nas fontes fornecidas para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
 
@@ -627,11 +741,17 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 5. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
 
-6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
+6. **Verifique descontextualização temporal/espacial**: Quando múltiplas alegações forem verdadeiras individualmente, mas o conjunto revelar que um evento está sendo associado ao momento/local errado, classifique como "Fora de Contexto". Por exemplo:
+   - Se alegação A diz "houve caminhões parados em novembro" (verdadeiro)
+   - E alegação B diz "paralisação anunciada para dezembro" (verdadeiro)
+   - Mas o contexto geral indica que o vídeo de novembro está sendo compartilhado COMO SE fosse de dezembro
+   - Classifique AMBAS as alegações como "Fora de Contexto", pois estão sendo usadas para criar uma narrativa enganosa
 
-7. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
+7. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
 
-8. **Busque diversidade de fontes**: Caso tenhamos diversas fontes confiáveis, de diversos domínios, autores e orgãos. Busque citar uma gama diversa de domínios e autores na sua resposta, 
+8. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
+
+9. **Busque diversidade de fontes**: Caso tenhamos diversas fontes confiáveis, de diversos domínios, autores e orgãos. Busque citar uma gama diversa de domínios e autores na sua resposta, 
 também utilize essa diversidade de fontes conviáveis na sua resposta de fact-checking.
 
 ## Formato de Resposta:
@@ -683,6 +803,7 @@ RUIM:
 ## Importante:
 
 - Seja rigoroso mas justo
+- Assuma que a afirmação possa ser desinformaçào até que uma fonte confiável prove que o conceito principal abordado não é
 - Prefira "Fontes insuficientes para verificar" a fazer suposições
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
 - Use SEMPRE números entre colchetes [1], [2], [3] para referenciar fontes, NUNCA URLs diretamente
@@ -753,6 +874,15 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 3. **Fora de Contexto**: A alegação contém elementos verdadeiros, mas foi apresentada de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com interpretações falsas.
 
+   **IMPORTANTE - Descontextualização Temporal/Espacial**: Se uma alegação é tecnicamente verdadeira MAS está sendo apresentada em um contexto temporal ou espacial DIFERENTE do original, classifique como "Fora de Contexto".
+
+   Exemplos comuns:
+   - Vídeo/foto de evento em novembro sendo compartilhado como se fosse de dezembro
+   - Evento da cidade A sendo apresentado como se fosse da cidade B
+   - Declaração de 2020 sendo compartilhada como se fosse recente
+
+   **Como identificar**: Se o resumo geral (overall_summary) identifica que há uma desconexão temporal/espacial entre os fatos verdadeiros e como estão sendo apresentados, classifique as alegações envolvidas como "Fora de Contexto", MESMO que os fatos individuais sejam verdadeiros.
+
 4. **Fontes insuficientes para verificar**: Não há evidências suficientes encontradas na busca para confirmar ou refutar a alegação. As fontes são insuficientes, contraditórias demais, ou a alegação requer informação que não está disponível.
 
 ## Diretrizes para Julgamento:
@@ -765,9 +895,15 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 4. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
 
-5. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
+5. **Verifique descontextualização temporal/espacial**: Quando múltiplas alegações forem verdadeiras individualmente, mas o conjunto revelar que um evento está sendo associado ao momento/local errado, classifique como "Fora de Contexto". Por exemplo:
+   - Se alegação A diz "houve caminhões parados em novembro" (verdadeiro)
+   - E alegação B diz "paralisação anunciada para dezembro" (verdadeiro)
+   - Mas o contexto geral indica que o vídeo de novembro está sendo compartilhado COMO SE fosse de dezembro
+   - Classifique AMBAS as alegações como "Fora de Contexto", pois estão sendo usadas para criar uma narrativa enganosa
 
-6. **Favorece dados mais recentes**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente.
+6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
+
+7. **Favorece dados mais recentes**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente.
 
 ## Formato de Resposta:
 
