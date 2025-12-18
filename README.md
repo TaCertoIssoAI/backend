@@ -2,94 +2,53 @@
 
 WhatsApp chatbot que recebe conteúdo de usuários, extrai claims centrais e verifica contra fontes de informação externas.
 
-```
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
-```
----
-
-## Requisitos
-
-- **Docker** e **Docker Compose**
-- **Git**
-- Chaves de API:
-  - **OPENAI_API_KEY** (obrigatório)
-  - **APIFY_TOKEN** (obrigatório para scraping de links)
-
----
-
-## Configuração inicial
-
-
-### 1. Configure as variáveis de ambiente
-
-Copie o arquivo de exemplo:
+## 🚀 Início Rápido
 
 ```bash
-cp env.example .env
-```
-
-Edite o `.env` e configure as chaves de API obrigatórias:
-
-```bash
-# Obrigatório
-OPENAI_API_KEY=sk-...
-APIFY_TOKEN=apify_api_...
-
-```
-
-### 3. Dê permissão de execução aos scripts
-
-```bash
-chmod +x scripts/*.sh
-```
-
----
-
-## Executando o projeto
-
-### Iniciar o backend
-
-```bash
+# Iniciar o backend
 ./scripts/docker-start.sh
 ```
 
-Esse script:
-- Verifica se o `.env` existe
-- Constrói as imagens Docker
-- Inicia os containers
-- Mostra o status e logs iniciais
-
-Após inicialização, a API estará disponível em:
-
-- **API Backend**: http://localhost:8000
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
+A API estará disponível em: **http://localhost:8000** | [Documentação Interativa](http://localhost:8000/docs)
 
 
-### Parar o backend
 
-```bash
-./scripts/docker-stop.sh
-```
----
+## 📚 Documentação
 
-## Estrutura do projeto
+| Documento | Descrição |
+|-----------|-----------|
+| [📋 Requisitos](./docs/REQUISITOS.md) | Requisitos de sistema e chaves de API necessárias |
+| [⚙️ Configuração](./docs/CONFIGURACAO.md) | Configuração inicial e variáveis de ambiente |
+| [▶️ Execução](./docs/EXECUCAO.md) | Como iniciar, parar e acessar o backend |
+| [📁 Estrutura](./docs/ESTRUTURA.md) | Organização do projeto e arquitetura |
 
-```
-backend/
-├── app/
-│   ├── ai/                   # lógica de AI e fact-checking
-│   │   ├── context/          # Apify e enrichment
-│   │   ├── factchecking/     # evidence retrieval
-│   │   └── pipeline/         # claim extraction e judgment
-│   ├── api/                  # endpoints FastAPI
-│   │   └── endpoints/
-│   ├── core/                 # configuração
-│   └── models/               # schemas Pydantic
-├── scripts/                  # scripts de execução
-└── logs/                     # logs persistidos
-```
 
----
-Este projeto faz parte da iniciativa **Tá Certo Isso AI**.
 
+## 🎯 Sobre o Projeto
+
+Este backend faz parte da iniciativa **Tá Certo Isso AI**, um sistema de verificação de fatos que:
+
+- 🤖 Extrai claims centrais de mensagens recebidas
+- 🔍 Busca evidências em fontes confiáveis
+- ✅ Verifica a veracidade das informações
+- 💬 Retorna análises detalhadas via WhatsApp
+
+
+
+## 🛠️ Stack Tecnológico
+
+- **Framework**: FastAPI
+- **IA**: OpenAI GPT
+- **Scraping**: Apify
+- **Container**: Docker & Docker Compose
+- **Linguagem**: Python 3.11+
+
+
+
+## 📞 Suporte
+
+Para dúvidas ou problemas, consulte a [documentação detalhada](./docs/) ou abra uma issue no repositório.
+
+
+
+**Tá Certo Isso AI** - Combatendo desinformação com inteligência artificial 🤖✨

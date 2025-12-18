@@ -14,7 +14,7 @@ this document outlines the strategy for parallelizing the IO-heavy fact-checking
 - centralized async resource pool with semaphore limits
 - real-time progress tracking and observability
 
----
+
 
 ## current state analysis
 
@@ -46,7 +46,7 @@ TOTAL LATENCY: ~420s
 
 all three stages are IO-bound and can be parallelized.
 
----
+
 
 ## proposed architecture
 
@@ -84,7 +84,7 @@ TOTAL LATENCY: ~105s (4x improvement)
 - claim extraction: 4 concurrent LLM calls (rate limit protection)
 - evidence gathering: 5 concurrent claims, 3 gatherers per claim
 
----
+
 
 ## implementation plan
 
@@ -380,7 +380,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 ```
 
----
+
 
 ## testing strategy
 
@@ -429,7 +429,7 @@ app = FastAPI(lifespan=lifespan)
    - measure end-to-end latency
    - target: <120s (vs current ~420s)
 
----
+
 
 ## migration strategy
 
@@ -475,7 +475,7 @@ PARALLEL_EVIDENCE_GATHERING = os.getenv("PARALLEL_EVIDENCE_GATHERING", "false").
 
 fallback to sequential execution if flags are disabled.
 
----
+
 
 ## performance expectations
 
@@ -502,7 +502,7 @@ fallback to sequential execution if flags are disabled.
 - latency distribution: P50, P95, P99 per stage
 - semaphore saturation: track how often limits are hit
 
----
+
 
 ## risks and mitigations
 
@@ -544,7 +544,7 @@ fallback to sequential execution if flags are disabled.
 - structured logging with correlation IDs
 - keep sequential execution as fallback (feature flags)
 
----
+
 
 ## future optimizations
 
@@ -583,7 +583,7 @@ cache expanded link contexts and LLM responses:
 - database for long-term cache (similar claims)
 - cache key: hash of claim text + source type
 
----
+
 
 ## conclusion
 

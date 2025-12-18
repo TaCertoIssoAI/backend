@@ -2,7 +2,7 @@
 
 A concise, high-leverage reference for building **structured, modular, and observable LangChain pipelines** with OpenAI models. This guide assumes you're building **multi-stage LLM applications** (like claim checking or data validation), prioritizing **debuggability**, **structured output**, and **multi-model orchestration**.
 
----
+
 
 ## 1. Core Principles
 
@@ -59,7 +59,7 @@ pipeline = (
 )
 ```
 
----
+
 
 ## 2. Context Engineering
 
@@ -93,7 +93,7 @@ Is the claim true?
 """) | ChatOpenAI(model="gpt-4")
 ```
 
----
+
 
 ## 3. Prompt and Output Engineering
 
@@ -114,7 +114,7 @@ prompt = ChatPromptTemplate.from_messages([
 * Add canonical few-shot examples inline or use `FewShotPromptTemplate`.
 * Optionally use example selectors based on input similarity.
 
----
+
 
 ## 4. Observability and Debugging
 
@@ -139,7 +139,7 @@ parser = PydanticOutputParser(pydantic_object=Judgment)
 parsed_chain = (prompt | model | parser)
 ```
 
----
+
 
 ## 5. Practical Patterns
 
@@ -164,7 +164,7 @@ from langchain_core.callbacks import StreamingStdOutCallbackHandler
 model = ChatOpenAI(streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
 ```
 
----
+
 
 ## 6. Anti-Patterns to Avoid
 
@@ -173,7 +173,7 @@ model = ChatOpenAI(streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
 * ❌ Tight coupling to a context source — use tool abstractions.
 * ❌ Logging only at the end — trace every step.
 
----
+
 
 ## Summary
 
