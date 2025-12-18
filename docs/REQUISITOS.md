@@ -49,5 +49,5 @@ O sistema requer as seguintes chaves de API para funcionar corretamente:
 ## 📚 Documentação Relacionada
 
 - [⚙️ Configuração](./CONFIGURACAO.md) - Próximo passo: configure suas variáveis de ambiente
-- [▶️ Execução](./EXECUCAO.md) - Como iniciar e parar o backend
+- [🛠️ Execução](./EXECUCAO.md) - Como iniciar e parar o backend
 - [📁 Estrutura do Projeto](./ESTRUTURA.md) - Entenda a organização do código

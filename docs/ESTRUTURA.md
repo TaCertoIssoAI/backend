@@ -144,4 +144,4 @@ O sistema processa mensagens através de um pipeline que:
 
 - [📋 Requisitos](./REQUISITOS.md) - Requisitos do sistema
 - [⚙️ Configuração](./CONFIGURACAO.md) - Configure o ambiente
-- [▶️ Execução](./EXECUCAO.md) - Como executar o backend
+- [🛠️ Execução](./EXECUCAO.md) - Como executar o backend

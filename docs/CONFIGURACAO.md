@@ -64,5 +64,5 @@ Agora você está pronto para executar o projeto! Consulte a [documentação de 
 ## 📚 Documentação Relacionada
 
 - [📋 Requisitos](./REQUISITOS.md) - Verifique se você tem tudo instalado
-- [▶️ Execução](./EXECUCAO.md) - Próximo passo: inicie o backend
+- [🛠️ Execução](./EXECUCAO.md) - Próximo passo: inicie o backend
 - [📁 Estrutura do Projeto](./ESTRUTURA.md) - Entenda a organização do código

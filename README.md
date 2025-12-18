@@ -19,7 +19,7 @@ A API estará disponível em: **http://localhost:8000** | [Documentação Intera
 |-----------|-----------|
 | [📋 Requisitos](./docs/REQUISITOS.md) | Requisitos de sistema e chaves de API necessárias |
 | [⚙️ Configuração](./docs/CONFIGURACAO.md) | Configuração inicial e variáveis de ambiente |
-| [▶️ Execução](./docs/EXECUCAO.md) | Como iniciar, parar e acessar o backend |
+| [🛠️ Execução](./docs/EXECUCAO.md) | Como iniciar, parar e acessar o backend |
 | [📁 Estrutura](./docs/ESTRUTURA.md) | Organização do projeto e arquitetura |
 
 
