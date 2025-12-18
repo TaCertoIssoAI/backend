@@ -10,7 +10,7 @@ O objetivo é avaliar a capacidade de ambos os sistemas em verificar desinforma�
 
 Utilizamos fact-checkings do site G1 Fato ou Fake: https://g1.globo.com/fato-ou-fake/
 
-- **Total de fact-checks**: 31 casos
+- **Total de fact-checks**: 30 casos
 - **Fonte**: Todos os artigos estão linkados no CSV de resultados
 
 ## Metodologia
@@ -38,12 +38,12 @@ Quando o label é "Fake", consideramos bem-sucedidas **tanto respostas "Falso" q
 
 | Modelo | Run 1 | Run 2 | Taxa de Sucesso |
 |--------|-------|-------|-----------------|
-| Meta AI | 12/31 | 13/31 | **40,31%** |
-| TaCertoIssoAI | 26/31 | 24/31 | **80,63%** |
+| Meta AI | 12/30 | 12/30 | **40,0%** |
+| TaCertoIssoAI | 25/30 | 23/30 | **79,9%** |
 
 ### 4.1 Problema Crítico: Meta AI Gerando Imagens de Fake News
 
-Em **4 dos 31 casos**, o Meta AI não apenas falhou em fazer o fact-checking corretamente, mas **criou imagens que representavam as fake news**, potencialmente contribuindo para a disseminação de desinformação ao invés de combatê-la. É relevante mencionar que esses casos foram comuns, com prompts como:
+Em **4 dos 30 casos**, o Meta AI não apenas falhou em fazer o fact-checking corretamente, mas **criou imagens que representavam as fake news**, potencialmente contribuindo para a disseminação de desinformação ao invés de combatê-la. É relevante mencionar que esses casos foram comuns, com prompts como:
 *  'Imagem viral traz Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo segurando uma faixa com a frase 'Somos todos Bolsonaro - Anistia já!', sugerindo apoio público dos ex-jogadores.', '
 * Imagem de post  mostra Daniel Vorcaro  em registro com outros políticos feito em 7 de agosto.' 
 *  'Imagem mostra torcedores do São Paulo no estádio segurando uma faixa pedindo para que o time perca para o Internacional.' 
@@ -113,7 +113,7 @@ Esta abordagem reduz significativamente a utilidade do Meta AI para combater des
 
 Os resultados demonstram que:
 
-1. **TaCertoIssoAI teve desempenho 2x superior** ao Meta AI (80,63% vs 40,31%)
+1. **TaCertoIssoAI teve desempenho 2x superior** ao Meta AI (79,9% vs 40,0%)
 2. **Meta AI apresenta riscos de amplificação de desinformação** através da geração de imagens relacionadas a fake news
 3. **Meta AI limita utilidade em contextos eleitorais**, que são críticos para a democracia
 

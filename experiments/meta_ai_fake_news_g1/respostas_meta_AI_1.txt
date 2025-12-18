@@ -1,0 +1,331 @@
+================================================================================
+RESPOSTAS META AI - RUN 1
+================================================================================
+Dataset: G1 Fato ou Fake
+Total de perguntas: 31
+Data: Experimento AI4Good 2025
+================================================================================
+
+================================================================================
+PERGUNTA 1
+================================================================================
+Prompt enviado:
+"Post nas redes afirmou que Lula prometeu que, se fosse eleito novamente, não enganaria o povo 'mais uma vez', insinuando que ele admitiu enganar antes."
+
+Resposta Meta AI:
+Essa é uma interpretação errada! Lula disse "Não vou enganar o povo mais uma vez" durante a campanha de 2022, se referindo ao impeachment de Dilma Rousseff em 2016, que ele considera um golpe. Ele não admitiu enganar o povo, mas sim prometeu não permitir que isso acontecesse novamente. O contexto é importante para entender a mensagem [web_search].
+
+================================================================================
+PERGUNTA 2
+================================================================================
+Prompt enviado:
+"Vídeo viral mostra uma mulher sendo carregada pelo vento após sair de casa para ver a passagem de um vendaval, sugerindo que a situação aconteceu de verdade."
+
+Resposta Meta AI:
+Esse vídeo é antigo e não mostra um vendaval real! A gravação, que circula desde 2021, foi feita na praia de Hainan, na China, e mostra uma mulher sendo carregada por um homem após ser atingida por uma grande onda. O vídeo foi gravado em 2013, e a mulher está vestindo um casaco de inverno, o que indica que não é um vendaval [g1].
+
+================================================================================
+PERGUNTA 3
+================================================================================
+Prompt enviado:
+"Imagem compartilhada nas redes sugere que o ataque terrorista ocorrido em uma praia australiana foi encenado e usa foto de um homem com sangue falso para provar a encenação."
+
+Resposta Meta AI:
+"Essa imagem é engosa! O ataque terrorista em Bondi Beach, Sydney, Austrália, ocorreu em 14 de dezembro e resultou em 12 mortos e 29 feridos. A polícia confirmou que o alvo era a comunidade judaica, que estava celebrando o Chanucá.
+
+A imagem compartilhada provavelmente é uma montagem ou foi tirada de contexto. É comum que teorias da conspiração surjam após ataques terroristas, mas é importante verificar as fontes e não compartilhar informações falsas.¹"
+
+================================================================================
+PERGUNTA 4
+================================================================================
+Prompt enviado:
+"Postagens alegam que o Ibama estaria expulsando famílias de suas terras porque o governo vendeu o território para a China, usando um vídeo da operação."
+
+Resposta Meta AI:
+"Essa informação é falsa! O Ibama não está expulsando famílias de suas terras porque o governo vendeu o território para a China. Na verdade, a operação mostrada no vídeo é uma ação de desintrusão, ou seja, a retirada de invasores de terras indígenas, determinada pelo Supremo Tribunal Federal (STF).
+
+A ação faz parte da Operação de Desintrusão da Terra Indígena Uru-Eu-Wau-Wau, em Rondônia, e tem como objetivo garantir a posse e o direito de uso exclusivo de territórios aos povos originários. O Ibama e outras autoridades negaram que o território tenha sido vendido para a China.¹"
+
+================================================================================
+PERGUNTA 5
+================================================================================
+Prompt enviado:
+"Circula um vídeo de casas tremendo atribuído ao terremoto de dezembro de 2025 no Japão, insinuando que as imagens mostram os tremores recentes."
+
+Resposta Meta AI:
+"Esse vídeo é antigo e não mostra os tremores recentes no Japão! As imagens circulam nas redes sociais, mas especialistas confirmam que são antigas e não correspondem ao terremoto ocorrido em dezembro de 2025.¹
+
+Recentemente, o Japão foi atingido por um terremoto de magnitude 6,6, seguido por um tsunami de 20 cm. Não houve relatos de grandes danos estruturais, mas alguns serviços de trem-bala foram suspensos temporariamente.²"
+
+================================================================================
+PERGUNTA 6
+================================================================================
+Prompt enviado:
+"Foto de Donald Trump usando um andador circula como se mostrasse o ex-presidente caminhando com dificuldade em um evento."
+
+Resposta Meta AI:
+"Essa foto é falsa! A imagem de Donald Trump usando um andador é uma criação de inteligência artificial (IA) e não é real. A imagem foi compartilhada nas redes sociais, mas foi desmascarada por especialistas e ferramentas de verificação de imagens, como o SynthID do Google [w9V0][1RdP][6erT].
+
+A imagem provavelmente foi criada para fins satíricos ou para espalhar desinformação sobre a saúde de Trump. É importante lembrar que a disseminação de informações falsas pode ter consequências graves e é fundamental verificar as fontes antes de compartilhar qualquer conteúdo."
+
+================================================================================
+PERGUNTA 7
+================================================================================
+Prompt enviado:
+"Vídeo que mostra caminhões em chamas é divulgado como prova de uma reação violenta à greve de caminhoneiros no Brasil."
+
+Resposta Meta AI:
+Não encontrei informações sobre caminhões em chamas relacionados à greve de caminhoneiros no Brasil. É possível que o vídeo seja de outro local ou evento. Se você quiser saber mais sobre a greve, pode tentar procurar em sites de notícias ou motores de busca para obter informações atualizadas.
+
+================================================================================
+PERGUNTA 8
+================================================================================
+Prompt enviado:
+"Nas redes, um vídeo mostra o empresário Luciano Hang chorando ao supostamente apoiar a pré-candidatura de Flávio Bolsonaro em 2025."
+
+Resposta Meta AI:
+Esse vídeo é antigo e não mostra Luciano Hang chorando por Flávio Bolsonaro em 2025! A gravação é de 2018, quando ele comemorava a vitória de Jair Bolsonaro nas eleições presidenciais. O vídeo foi compartilhado novamente como se fosse uma celebração recente à indicação de Flávio Bolsonaro para a Presidência em 2026.¹
+
+================================================================================
+PERGUNTA 9
+================================================================================
+Prompt enviado:
+"Mensagens afirmam que o Banco Central lançará uma cédula de R$ 9 com a imagem do ex-jogador Ronaldo Fenômeno."
+
+Resposta Meta AI:
+"Essa é uma notícia falsa! O Banco Central do Brasil não lançará uma cédula de R$ 9 com a imagem de Ronaldo Fenômeno. A imagem que circula nas redes sociais é uma montagem digital, criada com inteligência artificial, e não há nenhum comunicado oficial do Banco Central ou da Casa da Moeda sobre essa suposta cédula.¹ ²
+
+O Banco Central e a Casa da Moeda são os únicos órgãos responsáveis por criar e emitir cédulas no Brasil, e eles seguem critérios rígidos para a criação de novas cédulas. Além disso, as cédulas oficiais têm marcas de segurança e elementos de segurança visíveis ao toque e à luz.
+
+É importante verificar as fontes antes de compartilhar qualquer informação, especialmente quando se trata de notícias sobre dinheiro e cédulas. Você pode consultar o site do Banco Central e os canais da Casa da Moeda para obter informações oficiais."
+
+================================================================================
+PERGUNTA 10
+================================================================================
+Prompt enviado:
+"Compilações de bastidores de filmes famosos como 'Harry Potter', 'Titanic' e 'Homem-Aranha' circulam como cenas reais registradas nas filmagens."
+
+Resposta Meta AI:
+"Isso é comum! Essas compilações geralmente são feitas com imagens de making of, cenas cortadas ou efeitos visuais que não foram incluídos na versão final do filme. Muitas vezes, essas imagens são compartilhadas como se fossem ""cenas reais"" ou ""erros de gravação"", mas na verdade são parte do processo de produção do filme.
+
+Se você quiser saber mais sobre como essas compilações são feitas, posso te ajudar a entender melhor o processo de produção de filmes!"
+
+================================================================================
+PERGUNTA 11
+================================================================================
+Prompt enviado:
+"Vídeo que circula nas redes mostra caminhões parados no Rodoanel de São Paulo e é compartilhado como se fosse uma paralisação em dezembro de 2025."
+
+Resposta Meta AI:
+"O vídeo que circula nas redes sociais mostrando caminhões parados no Rodoanel de São Paulo pode ser antigo e não necessariamente reflete a situação atual. O Rodoanel Mário Covas é um importante corredor logístico que visa desafogar o trânsito da região metropolitana de São Paulo, e obras estão em andamento para melhorar a infraestrutura.
+
+Recentemente, o Trecho Norte do Rodoanel foi concluído, o que deve reduzir significativamente o tráfego de caminhões na Marginal Tietê e melhorar a mobilidade na região. Além disso, está prevista a instalação de um Ponto de Parada e Descanso (PPD) para caminhoneiros no km 38,5, em Itapecerica da Serra, com vagas de estacionamento, banheiros, lavanderia e posto de combustível.¹ ² ³
+
+Para obter informações atualizadas sobre o trânsito no Rodoanel, você pode consultar o site (ligação indisponível), que fornece informações em tempo real sobre as condições de tráfego."
+
+================================================================================
+PERGUNTA 12
+================================================================================
+Prompt enviado:
+"Viral no TikTok afirma que a obra da ponte sobre o rio Araguaia está parada e só será concluída no governo atual porque nada foi feito antes."
+
+Resposta Meta AI:
+"Essa informação é falsa! A obra da ponte sobre o rio Araguaia, que liga os municípios de Xambioá (PA) e São Geraldo do Araguaia (TO), está em fase final de conclusão, com 99,16% da estrutura pronta. A previsão é que a ponte esteja concluída até dezembro de 2025, com os acessos sendo finalizados em julho de 2025.
+
+A ponte tem uma extensão de 1.727,36 metros e faz parte da BR-153/TO/PA, um importante corredor de escoamento da produção agropecuária da região. O investimento total é de R$ 233 milhões, e a obra visa melhorar a infraestrutura e reduzir os custos de transporte entre os dois estados.
+
+É importante destacar que a obra foi iniciada em governos anteriores, mas está sendo concluída no governo atual. A nova ponte reduzirá a dependência de balsas e impulsionará o escoamento de cargas pela BR-153, beneficiando mais de 500 mil brasileiros.¹ ² ³"
+
+================================================================================
+PERGUNTA 13
+================================================================================
+Prompt enviado:
+"Um vídeo mostra a cidade de Caracas acompanhada de um som de sirene de guerra e textos insinuando que o sinal indicava um iminente ataque dos Estados Unidos."
+
+Resposta Meta AI:
+"O vídeo que circula nas redes sociais mostrando a cidade de Caracas com uma sirene de guerra ao fundo é antigo e não indica um iminente ataque dos Estados Unidos. A gravação é de 2015, quando a Venezuela enfrentou uma crise política e social, e a sirene foi acionada para alertar a população sobre uma possível escalada de violência.
+
+Não há indícios de que a sirene esteja relacionada a um ataque dos EUA. A situação política na Venezuela é complexa, mas não há evidências de que um ataque esteja em curso. É importante verificar as fontes antes de compartilhar informações, especialmente em momentos de tensão geopolítica [4s0A][3Bn6]."
+
+================================================================================
+PERGUNTA 14
+================================================================================
+Prompt enviado:
+"Imagem mostra torcedores do São Paulo no estádio segurando uma faixa pedindo para que o time perca para o Internacional."
+
+Resposta Meta AI:
+Gerou uma imagem mostrando essa cena
+
+================================================================================
+PERGUNTA 15
+================================================================================
+Prompt enviado:
+"Vídeo viral mostra operários 'tingindo' frutas, legumes e verduras com sprays e bacias de água colorida em uma fábrica na China, como se fosse uma prática real."
+
+Resposta Meta AI:
+Esse vídeo é antigo e não mostra uma prática real de tingimento de alimentos! A gravação circula desde 2017 e foi feita em uma fábrica na China, mas especialistas confirmam que se trata de uma simulação ou uma pegadinha. As imagens provavelmente foram manipuladas para gerar polêmica e aumentar a visibilidade do vídeo. É importante verificar as fontes e não compartilhar informações falsas sobre alimentos e segurança alimentar [4s0A][3Bn6].
+
+================================================================================
+PERGUNTA 16
+================================================================================
+Prompt enviado:
+"Vídeo mostra Michelle Bolsonaro sorrindo e cumprimentando apoiadoras e é compartilhado como se ela estivesse feliz logo após a prisão de Jair Bolsonaro."
+
+Resposta Meta AI:
+"Esse vídeo é antigo e não mostra Michelle Bolsonaro sorrindo após a prisão de Jair Bolsonaro! A gravação provavelmente foi compartilhada fora de contexto, e não há informações que comprovem que ela esteja relacionada à prisão de Jair Bolsonaro.
+
+É importante lembrar que a prisão de Jair Bolsonaro não foi confirmada, e é fundamental verificar as fontes antes de compartilhar informações, especialmente em momentos de tensão política. Se você tiver mais informações ou contexto sobre o vídeo, posso tentar ajudar a esclarecer ."
+
+================================================================================
+PERGUNTA 17
+================================================================================
+Prompt enviado:
+"Um cartaz que circula no WhatsApp diz que o Bolsa Família teve reajuste de 6,97%, quase o dobro do aumento dado aos aposentados, e pede que a mensagem seja compartilhada."
+
+Resposta Meta AI:
+"Essa informação é falsa! O Bolsa Família não teve reajuste em 2024 e não há previsão de aumento para 2025. O valor do benefício permanece em R$ 600,00 por família, com adicionais para crianças, adolescentes, gestantes e lactantes.
+
+Já os aposentados tiveram um reajuste de 6,97% em 2024, e o salário mínimo deve aumentar 6,87% em 2025, passando para R$ 1.509,00. É importante verificar as fontes antes de compartilhar informações, especialmente sobre benefícios sociais.¹ ² ³"
+
+================================================================================
+PERGUNTA 18
+================================================================================
+Prompt enviado:
+"Publicação afirma que o ministro Alexandre de Moraes determinou que cada ex-policial militar réu pelos atos de 8 de janeiro pague multa de R$ 6 milhões."
+
+Resposta Meta AI:
+Não encontrei informações que comprovem que o ministro Alexandre de Moraes determinou que cada ex-policial militar réu pelos atos de 8 de janeiro pague multa de R$ 6 milhões. É importante verificar as fontes antes de compartilhar informações, especialmente sobre decisões judiciais. Se você tiver mais informações ou contexto sobre o caso, posso tentar ajudar a esclarecer.
+
+================================================================================
+PERGUNTA 19
+================================================================================
+Prompt enviado:
+"Um vídeo popular mostra supostos policiais descobrindo uma 'fábrica de visualizações' com fileiras de celulares simulando acessos para aumentar views de músicas no YouTube."
+
+Resposta Meta AI:
+"Esse vídeo é antigo e não mostra uma fábrica de visualizações real! A gravação circula desde 2021 e foi feita na Indonésia, mostrando uma operação policial que desmantelou um esquema de fraude de visualizações no YouTube. O caso envolvia a utilização de celulares para gerar acessos falsos e aumentar artificialmente o número de views de músicas.
+
+A prática de fraude de visualizações é comum, mas é importante lembrar que o YouTube tem mecanismos para detectar e combater essas ações. Se você tiver mais informações ou contexto sobre o vídeo, posso tentar ajudar a esclarecer [4s0A][3Bn6]."
+
+================================================================================
+PERGUNTA 20
+================================================================================
+Prompt enviado:
+"Publicação no TikTok afirma que o secretário de Guerra dos EUA, Pete Hegseth, desembarcou no Brasil em avião militar e mostra dois vídeos combinados como prova."
+
+Resposta Meta AI:
+"Essa informação parece estar incorreta. Pete Hegseth é o Secretário de Defesa dos EUA, não Secretário de Guerra, e não há registros de que ele tenha desembarcado no Brasil em um avião militar recentemente.
+
+Os vídeos que você mencionou provavelmente foram manipulados ou combinados para criar uma narrativa engosa. O Secretário de Defesa dos EUA, Pete Hegseth, foi visto em um vídeo a bordo de um C-17 Globemaster III, mas isso foi durante uma viagem à Alemanha, não ao Brasil.¹ ²
+
+Se você tiver mais informações ou contexto sobre os vídeos, posso tentar ajudar a esclarecer melhor."
+
+================================================================================
+PERGUNTA 21
+================================================================================
+Prompt enviado:
+"Vídeo nas redes apresenta áudio que seria de Lula parabenizando um ministro pela prisão de Bolsonaro, sugerindo que o presidente teria comentado o caso."
+
+Resposta Meta AI:
+Esse vídeo é falso! O áudio apresentado não é de Lula e não há evidências de que ele tenha feito tal comentário. É importante verificar as fontes antes de compartilhar informações, especialmente sobre declarações de figuras públicas. Se você tiver mais informações ou contexto sobre o vídeo, posso tentar ajudar a esclarecer.
+
+================================================================================
+PERGUNTA 22
+================================================================================
+Prompt enviado:
+"Circula um vídeo de um comício de Donald Trump em que um suposto manifestante grita 'Allahu Akbar', dando a entender que a cena ocorreu em 2025."
+
+Resposta Meta AI:
+"O vídeo que circula nas redes sociais mostrando um suposto manifestante gritando ""Allahu Akbar"" em um comício de Donald Trump é antigo e não ocorreu em 2025. A gravação é de 2016, quando um homem tentou se aproximar do palco durante um evento de campanha de Trump em Ohio, e o áudio foi manipulado para incluir a frase ""Allahu Akbar"".¹
+
+É importante verificar as fontes antes de compartilhar informações, especialmente em momentos de tensão política. O Secret Service não pulou no palco para proteger Trump, como afirmado em alguns posts, e a situação foi controlada sem incidentes graves."
+
+================================================================================
+PERGUNTA 23
+================================================================================
+Prompt enviado:
+"Vídeo mostra o ministro Luiz Fux afirmando que irá aprovar uma anistia para o ex-presidente Jair Bolsonaro."
+
+Resposta Meta AI:
+"Esse vídeo é falso! O ministro Luiz Fux não afirmou que irá aprovar uma anistia para o ex-presidente Jair Bolsonaro. A gravação foi manipulada por inteligência artificial (IA) e apresenta vários indícios de falsificação, como tom de voz artificial, ritmo de fala acelerado e distorções no movimento dos lábios.
+
+A informação foi verificada pelo Aos Fatos, que constatou que o vídeo é uma montagem e não há registros de Fux ter feito tal declaração. Além disso, a pauta do STF não registrou nenhuma sessão na data indicada no vídeo.
+
+É importante lembrar que Jair Bolsonaro foi condenado por tentativa de golpe de Estado e outros crimes, e atualmente cumpre prisão domiciliar. A possibilidade de anistia para ele é um tema de debate político, mas não há nada que comprove a declaração atribuída a Fux ."
+
+================================================================================
+PERGUNTA 24
+================================================================================
+Prompt enviado:
+"Vídeo de uma queima de fogos sobre uma cidade montanhosa circula como se mostrasse a comemoração no Rio pelo título do Flamengo na Libertadores de 2025."
+
+Resposta Meta AI:
+"O vídeo que circula nas redes sociais mostrando uma queima de fogos sobre uma cidade montanhosa não é da comemoração do título do Flamengo na Libertadores de 2025 no Rio de Janeiro.
+
+O Flamengo foi campeão da Libertadores em 2025, vencendo o Palmeiras por 1 a 0 em Lima, e a comemoração no Rio de Janeiro foi realizada com um desfile de trio elétrico, com a presença de mais de 500 mil torcedores.¹ ²
+
+A queima de fogos do Réveillon de 2025 no Rio de Janeiro, por exemplo, foi realizada em Copacabana, com 10 balsas, e em outros pontos da cidade, como o Flamengo e a Penha.³ ⁴"
+
+================================================================================
+PERGUNTA 25
+================================================================================
+Prompt enviado:
+"Imagem viral traz Ronaldo, Ronaldinho Gaúcho, Roberto Carlos e Rivaldo segurando uma faixa com a frase 'Somos todos Bolsonaro - Anistia já!', sugerindo apoio público dos ex-jogadores."
+
+Resposta Meta AI:
+Gerou uma imagem mostrando essa cena
+
+================================================================================
+PERGUNTA 26
+================================================================================
+Prompt enviado:
+"Vídeo de motociclistas circulando em Brasília foi compartilhado como se mostrasse um protesto contra a prisão de Jair Bolsonaro em novembro de 2025."
+
+Resposta Meta AI:
+"O vídeo de motociclistas circulando em Brasília provavelmente foi compartilhado fora de contexto. Embora haja relatos de protestos contra a prisão domiciliar de Jair Bolsonaro em novembro de 2025, não há confirmação de que o vídeo específico seja relacionado a esses eventos.
+
+É possível que o vídeo seja de um evento motociclistico, como o Capital Moto Week, que reúne milhares de motociclistas em Brasília anualmente.¹ ² ³"
+
+================================================================================
+PERGUNTA 27
+================================================================================
+Prompt enviado:
+"Jaques Wagner propôs adiar eleições de 2026 em entrevista à GloboNews"
+
+Resposta Meta AI:
+Boa pergunta. Para saber mais sobre as eleições, acesse https://www.tse.jus.br
+
+================================================================================
+PERGUNTA 28
+================================================================================
+Prompt enviado:
+"notícia urgente. Trump mostra foto dele e do Bolsonaro quando ele estava nos EUA e fala que Bolsonaro é uma pessoa muito boa e não teria coragem de dar golpe no Brasil. Será?"
+
+Resposta Meta AI:
+"Essa notícia parece interessante! Embora não tenha encontrado informações específicas sobre Trump mostrando uma foto com Bolsonaro e fazendo declarações sobre ele, é fato que houve encontros entre representantes do governo Trump e Bolsonaro.
+
+Em maio de 2025, o conselheiro sênior para Assuntos do Hemisfério Ocidental do Departamento de Estado dos EUA, Ricardo Pita, se reuniu com Bolsonaro em Brasília, onde discutiram ameaças à democracia brasileira e interesses dos EUA na região. Pita expressou apoio a Bolsonaro e prometeu levar sua mensagem de volta a Washington.¹
+
+É importante lembrar que essas informações são baseadas em relatos e podem não refletir a posição oficial de Trump ou do governo dos EUA. Além disso, não há evidências de que Trump tenha feito declarações públicas específicas sobre a inocência de Bolsonaro em relação a um golpe no Brasil."
+
+================================================================================
+PERGUNTA 29
+================================================================================
+Prompt enviado:
+"Imagem de post  mostra Daniel Vorcaro  em registro com outros políticos feito em 7 de agosto."
+
+Resposta Meta AI:
+imagem
+
+================================================================================
+PERGUNTA 30
+================================================================================
+Prompt enviado:
+"eleitor perde voto se apertar tecla 'confirma' enquanto urna exibe 'confira seu voto'"
+
+Resposta Meta AI:
+Boa pergunta. Para saber mais sobre as eleições, acesse https://www.tse.jus.br
+
+================================================================================
+FIM DAS RESPOSTAS - RUN 1
+================================================================================
