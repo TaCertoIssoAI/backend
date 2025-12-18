@@ -48,7 +48,8 @@ Módulos relacionados ao processamento de IA e verificação de fatos:
   
 - **`pipeline/`** - Pipeline de Processamento
   - Claim extraction (extração de afirmações)
-  - Judgment e classificação de veracidade
+  - Judgment e classificação de veracidade 
+  - Fallback quando nenhuma afirmação é extraída
 
 #### `app/ai/threads` - Sistema de processamento concorrente utilizando a Threadpool e filas do python
 
