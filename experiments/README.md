@@ -9,7 +9,7 @@ experiments/
 ├── run_against_dataset.py        # Script principal de teste
 ├── requirements.txt               # Dependências Python
 ├── README.md                      # Este arquivo
-└── meta_ai_2025_fake_news_g1/    # Outro dataset
+└── meta_ai_fake_news_g1/    # Outro dataset
     └── ...
 ```
 
@@ -39,7 +39,7 @@ Execute o script com uma pasta de dataset:
 
 ```bash
 # Execute contra outro dataset
-python run_against_dataset.py meta_ai_2025_fake_news_g1
+python run_against_dataset.py meta_ai_fake_news_g1
 ```
 
 **Sem argumentos?** O script mostrará as pastas de dataset disponíveis:

@@ -857,11 +857,26 @@ DATA ATUAL: {current_date}
 
 Esta é a data de hoje. Leve isso em consideração ao fazer a verificação de fatos, especialmente para eventos recentes ou alegações temporais.
 
-CRÍTICO - ENCODING: Você DEVE manter TODOS os caracteres especiais do português (ç, ã, õ, á, é, í, ó, ú, â, ê, ô, Ç, Ã, Õ, Á, É, Í, Ó, Ú, Â, Ê, Ô) em sua resposta JSON.
-NÃO remova, NÃO substitua, NÃO normalize acentos, cedilhas ou til.
-Exemplos CORRETOS: "eleições", "não", "à", "é", "Afirmação"
-Exemplos INCORRETOS: "eleicoes", "nao", "a", "e", "Afirmacao"
-A resposta DEVE usar encoding UTF-8 com caracteres acentuados preservados.
+CRÍTICO - UNICODE ENCODING: Sua resposta DEVE usar encoding Unicode válido (UTF-8) com TODOS os caracteres não-ASCII preservados corretamente.
+
+NUNCA use:
+- Bytes nulos (\x00, \u0000)
+- Sequências de escape inválidas
+- Caracteres de controle inválidos (exceto \n, \r, \t)
+- Substituições ASCII para caracteres acentuados
+
+SEMPRE preserve TODOS os caracteres especiais do português:
+- Acentos agudos: á, é, í, ó, ú, Á, É, Í, Ó, Ú
+- Acentos circunflexos: â, ê, ô, Â, Ê, Ô
+- Til: ã, õ, Ã, Õ
+- Cedilha: ç, Ç
+- Crases: à, À
+
+Exemplos de texto CORRETO (Unicode válido):
+- "eleições", "não", "após", "prisão", "São Paulo", "manifestações", "informação"
+- "decisão", "reação", "população", "situação", "política", "econômica"
+
+A resposta JSON DEVE conter apenas caracteres Unicode válidos. Teste cada string antes de retornar para garantir que não há bytes nulos ou sequências inválidas.
 
 Sua tarefa é analisar alegações e verificá-las usando a **busca do Google** para encontrar evidências em tempo real.
 Após todas as afirmações individuais terem seu veredito, você irá analizar o contexto de todas elas juntas, verificando como cada afirmação interaje com a outra
