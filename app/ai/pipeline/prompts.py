@@ -735,27 +735,29 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 2. **Avalie a qualidade das fontes**: Considere a confiabilidade do publicador (órgãos governamentais, instituições científicas, veículos de imprensa estabelecidos vs. sites desconhecidos).
 
-3. **Como referenciar fontes**:
+3. **Priorize fontes especializadas em fact-checking**: Quando disponíveis, dê preferência a fontes de organizações especializadas em verificação de fatos, como agências de fact-checking (Agência Lupa, Aos Fatos, Comprova, E-farsas, Boatos.org, Fato ou Fake), APIs de verificação de fatos (Google Fact Check Tool), e organizações internacionais de fact-checking. Essas fontes fornecem verificação especializada de alegações e devem ter peso maior na sua análise.
+
+4. **Como referenciar fontes**:
    - No resumo geral e nas justificativas de cada alegação, use APENAS números entre colchetes para referenciar fontes (exemplo: [1], [2], [3])
    - NÃO inclua URLs diretamente no texto do resumo geral ou das justificativas
    - NÃO escreva links como "https://..." ou "www..." no resumo ou justificativas
    - As fontes serão listadas separadamente ao final, então basta numerá-las
 
-4. **Seja claro e objetivo**: Explique seu raciocínio de forma concisa mas completa. O usuário precisa entender POR QUE você chegou àquela conclusão.
+5. **Seja claro e objetivo**: Explique seu raciocínio de forma concisa mas completa. O usuário precisa entender POR QUE você chegou àquela conclusão.
 
-5. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
+6. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
 
-6. **Verifique descontextualização temporal/espacial**: Quando múltiplas alegações forem verdadeiras individualmente, mas o conjunto revelar que um evento está sendo associado ao momento/local errado, classifique como "Fora de Contexto". Por exemplo:
+7. **Verifique descontextualização temporal/espacial**: Quando múltiplas alegações forem verdadeiras individualmente, mas o conjunto revelar que um evento está sendo associado ao momento/local errado, classifique como "Fora de Contexto". Por exemplo:
    - Se alegação A diz "houve caminhões parados em novembro" (verdadeiro)
    - E alegação B diz "paralisação anunciada para dezembro" (verdadeiro)
    - Mas o contexto geral indica que o vídeo de novembro está sendo compartilhado COMO SE fosse de dezembro
    - Classifique AMBAS as alegações como "Fora de Contexto", pois estão sendo usadas para criar uma narrativa enganosa
 
-7. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
+8. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
 
-8. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
+9. **Favorece Dados mais recente**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente
 
-9. **Busque diversidade de fontes**: Caso tenhamos diversas fontes confiáveis, de diversos domínios, autores e orgãos. Busque citar uma gama diversa de domínios e autores na sua resposta, 
+10. **Busque diversidade de fontes**: Caso tenhamos diversas fontes confiáveis, de diversos domínios, autores e orgãos. Busque citar uma gama diversa de domínios e autores na sua resposta,
 também utilize essa diversidade de fontes conviáveis na sua resposta de fact-checking.
 
 ## Formato de Resposta:
@@ -910,19 +912,21 @@ Você deve classificar cada alegação em UMA das seguintes categorias:
 
 2. **Avalie a qualidade das fontes**: Considere a confiabilidade do publicador (órgãos governamentais, instituições científicas, veículos de imprensa estabelecidos vs. sites desconhecidos).
 
-3. **Seja claro e objetivo**: Explique seu raciocínio de forma concisa mas completa. O usuário precisa entender POR QUE você chegou àquela conclusão, citando as fontes encontradas.
+3. **Priorize fontes especializadas em fact-checking**: Ao buscar evidências, dê preferência a fontes de organizações especializadas em verificação de fatos, como agências de fact-checking (Agência Lupa, Aos Fatos, Comprova, E-farsas, Boatos.org, Fato ou Fake), e organizações internacionais de fact-checking. Essas fontes fornecem verificação especializada de alegações e devem ter peso maior na sua análise quando disponíveis nos resultados da busca.
 
-4. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
+4. **Seja claro e objetivo**: Explique seu raciocínio de forma concisa mas completa. O usuário precisa entender POR QUE você chegou àquela conclusão, citando as fontes encontradas.
 
-5. **Verifique descontextualização temporal/espacial**: Quando múltiplas alegações forem verdadeiras individualmente, mas o conjunto revelar que um evento está sendo associado ao momento/local errado, classifique como "Fora de Contexto". Por exemplo:
+5. **Identifique contexto faltante**: Se uma alegação é tecnicamente verdadeira mas apresentada de forma enganosa, classifique como "Fora de Contexto" e explique o que está faltando.
+
+6. **Verifique descontextualização temporal/espacial**: Quando múltiplas alegações forem verdadeiras individualmente, mas o conjunto revelar que um evento está sendo associado ao momento/local errado, classifique como "Fora de Contexto". Por exemplo:
    - Se alegação A diz "houve caminhões parados em novembro" (verdadeiro)
    - E alegação B diz "paralisação anunciada para dezembro" (verdadeiro)
    - Mas o contexto geral indica que o vídeo de novembro está sendo compartilhado COMO SE fosse de dezembro
    - Classifique AMBAS as alegações como "Fora de Contexto", pois estão sendo usadas para criar uma narrativa enganosa
 
-6. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
+7. **Reconheça limitações**: Se as evidências são insuficientes ou contraditórias demais, seja honesto e classifique como "Fontes insuficientes para verificar".
 
-7. **Favorece dados mais recentes**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente.
+8. **Favorece dados mais recentes**: Se tivermos 2 evidências contraditórias sobre a mesma afirmação, favoreça a mais recente.
 
 ## Formato de Resposta:
 
