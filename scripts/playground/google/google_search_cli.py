@@ -35,7 +35,11 @@ from app.ai.context.web.google_search import google_search, GoogleSearchError
 
 # ─── configuration (edit here) ────────────────────────────────────────────────
 
-SITE_FILTER: str | None = "g1.globo.com"   # e.g. "g1.globo.com" or None for open web
+# estadao.com.br
+# folha.uol.com.br
+# g1.globo.com
+# aosfatos.org
+SITE_FILTER: str | None = "aosfatos.org"   # e.g. "g1.globo.com" or None for open web
 NUM_RESULTS: int = 10                        # 1–10
 DATE_RESTRICT: str | None = None            # e.g. "d7", "m3", "y1" or None
 
@@ -107,6 +111,7 @@ async def _run_query(query: str) -> None:
             site_search=SITE_FILTER,
             site_search_filter="i" if SITE_FILTER else None,
             date_restrict=DATE_RESTRICT,
+            sort="date",
         )
         _print_results(items, query)
     except GoogleSearchError as e:
