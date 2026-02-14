@@ -10,7 +10,8 @@
       "WebSearch",
       "WebFetch(domain:g1.globo.com)",
       "Bash(python:*)",
-      "Bash(set:*)"
+      "Bash(set:*)",
+      "Bash(printf:*)"
     ],
     "deny": [],
     "ask": []
