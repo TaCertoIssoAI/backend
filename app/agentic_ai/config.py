@@ -44,3 +44,6 @@ DOMAIN_SEARCHES: dict[str, dict] = {
 
 # default LLM model for the context agent
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
+
+# model for the adjudication step (can be stronger than the context agent model)
+ADJUDICATION_MODEL = "gemini-2.5-flash"
