@@ -55,6 +55,7 @@ class WebSearchTool:
                         domain_key=domain_key,
                         site_search=domain_cfg["site_search"],
                         site_search_filter=domain_cfg["site_search_filter"],
+                        query_suffix=domain_cfg.get("query_suffix"),
                         reliability=domain_cfg["reliability"],
                         max_results=max_results_per_search,
                     )
@@ -77,6 +78,7 @@ class WebSearchTool:
         domain_key: str,
         site_search: str | None,
         site_search_filter: str | None,
+        query_suffix: str | None,
         reliability: SourceReliability,
         max_results: int,
     ) -> list[GoogleSearchContext]:
@@ -86,6 +88,10 @@ class WebSearchTool:
             effective_query = query
             if domain_key == "geral":
                 effective_query = _build_query_with_trusted_domains(query)
+
+            # append query_suffix (e.g. multi-domain site: filters)
+            if query_suffix:
+                effective_query = f"{effective_query} {query_suffix}"
 
             items = await google_search(
                 query=effective_query,
