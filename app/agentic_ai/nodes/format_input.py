@@ -12,7 +12,7 @@ from __future__ import annotations
 import uuid
 
 from app.agentic_ai.state import ContextAgentState
-from app.agentic_ai.nodes.link_expander import (
+from app.agentic_ai.utils.link_expander import (
     expand_all_links,
     fire_link_expansion,
 )

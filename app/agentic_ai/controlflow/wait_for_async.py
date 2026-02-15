@@ -15,7 +15,7 @@ from langchain_core.messages import HumanMessage
 
 from app.agentic_ai.state import ContextAgentState
 from app.agentic_ai.nodes.format_input import _format_data_sources
-from app.agentic_ai.nodes.link_expander import await_link_expansion
+from app.agentic_ai.utils.link_expander import await_link_expansion
 
 logger = logging.getLogger(__name__)
 

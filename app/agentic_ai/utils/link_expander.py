@@ -18,13 +18,24 @@ from typing import Optional
 from uuid import uuid4
 
 from app.agentic_ai.config import LINK_SCRAPE_TIMEOUT_PER_URL, MAX_LINKS_TO_EXPAND
-from app.ai.pipeline.link_context_expander import expand_link_context, extract_links
+from app.ai.context.web.apify_utils import scrapeGenericUrl
+from app.ai.context.web.models import WebContentResult
 from app.models.commondata import DataSource
 
 logger = logging.getLogger(__name__)
 
 # side-channel: run_id → asyncio.Task mapping (not serializable into state)
 _pending_link_tasks: dict[str, asyncio.Task] = {}
+
+
+async def expand_link_context(url: str) -> WebContentResult:
+    """expand a link and extract its content using web scraping.
+
+    detects platform automatically, tries simple HTTP first for generic
+    sites, falls back to Apify actor with browser if needed.
+    """
+    result_dict = await scrapeGenericUrl(url)
+    return WebContentResult.from_dict(data=result_dict, url=url)
 
 
 async def _scrape_single_url(

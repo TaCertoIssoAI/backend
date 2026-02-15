@@ -5,9 +5,10 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 import pytest
 
-from app.agentic_ai.nodes.link_expander import (
+from app.agentic_ai.utils.link_expander import (
     _scrape_single_url,
     expand_all_links,
+    expand_link_context,
     fire_link_expansion,
     await_link_expansion,
     _pending_link_tasks,
@@ -30,7 +31,7 @@ def _make_web_result(success=True, content="article text", url="https://example.
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_scrape_single_url_success(mock_expand):
     mock_expand.return_value = _make_web_result()
     ds = await _scrape_single_url("https://example.com", "parent-1", "pt-BR", None)
@@ -44,7 +45,7 @@ async def test_scrape_single_url_success(mock_expand):
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_scrape_single_url_timeout(mock_expand):
     async def slow_expand(url):
         await asyncio.sleep(10)
@@ -56,7 +57,7 @@ async def test_scrape_single_url_timeout(mock_expand):
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_scrape_single_url_exception(mock_expand):
     mock_expand.side_effect = RuntimeError("network error")
     ds = await _scrape_single_url("https://example.com", "p-1", "pt-BR", None)
@@ -64,7 +65,7 @@ async def test_scrape_single_url_exception(mock_expand):
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_scrape_single_url_no_content(mock_expand):
     mock_expand.return_value = _make_web_result(success=True, content="")
     ds = await _scrape_single_url("https://example.com", "p-1", "pt-BR", None)
@@ -75,7 +76,7 @@ async def test_scrape_single_url_no_content(mock_expand):
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_expand_all_links_concurrent(mock_expand):
     mock_expand.return_value = _make_web_result()
 
@@ -88,7 +89,7 @@ async def test_expand_all_links_concurrent(mock_expand):
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_expand_all_links_partial_failure(mock_expand):
     """1 of 2 links fails, the successful one is still returned."""
 
@@ -110,7 +111,7 @@ async def test_expand_all_links_partial_failure(mock_expand):
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_fire_and_await_roundtrip(mock_expand):
     mock_expand.return_value = _make_web_result()
 
@@ -156,7 +157,7 @@ def test_fire_with_no_urls():
 
 
 @pytest.mark.asyncio
-@patch("app.agentic_ai.nodes.link_expander.expand_link_context")
+@patch("app.agentic_ai.utils.link_expander.expand_link_context")
 async def test_max_links_respected(mock_expand):
     mock_expand.return_value = _make_web_result()
 
@@ -165,3 +166,48 @@ async def test_max_links_respected(mock_expand):
 
     assert len(results) == MAX_LINKS_TO_EXPAND
     assert mock_expand.call_count == MAX_LINKS_TO_EXPAND
+
+
+# --- expand_link_context (integration — real network calls) ---
+
+
+@pytest.mark.asyncio
+async def test_expand_link_context_g1_article():
+    """should scrape real G1 article and return structured content."""
+    url = "https://g1.globo.com/sp/sao-paulo/noticia/2025/11/16/policia-encontra-arsenal-de-guerra-na-zona-sul-de-sp.ghtml"
+
+    result = await expand_link_context(url)
+
+    assert result.success is True, f"scraping failed with error: {result.error}"
+    assert result.url == url
+    assert result.content != ""
+    assert result.content_length > 0
+    assert result.error is None
+
+
+@pytest.mark.asyncio
+async def test_expand_link_context_cnn_brasil_article():
+    """should scrape real CNN Brasil article and return structured content."""
+    url = "https://www.cnnbrasil.com.br/nacional/em-belem-cupula-dos-povos-cobra-participacao-popular-nas-acoes-climaticas/"
+
+    result = await expand_link_context(url)
+
+    assert result.success is True, f"scraping failed with error: {result.error}"
+    assert result.url == url
+    assert result.content != ""
+    assert result.content_length > 0
+    assert result.error is None
+
+
+@pytest.mark.asyncio
+async def test_expand_link_context_bbc_article():
+    """should scrape real BBC article and return structured content."""
+    url = "https://www.bbc.com/culture/article/20251112-why-this-1768-painting-could-be-the-real-birth-of-modern-art"
+
+    result = await expand_link_context(url)
+
+    assert result.success is True, f"scraping failed with error: {result.error}"
+    assert result.url == url
+    assert result.content != ""
+    assert result.content_length > 0
+    assert result.error is None

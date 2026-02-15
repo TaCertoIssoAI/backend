@@ -5,7 +5,6 @@ pytest_plugins = ('pytest_asyncio',)
 
 from app.ai.pipeline.link_context_expander import (
     extract_links,
-    expand_link_context,
     expand_link_contexts,
 )
 from app.models import DataSource
@@ -150,83 +149,7 @@ def test_real_world_whatsapp_message():
 
 
 # ===== INTEGRATION TESTS FOR WEB SCRAPING =====
-# These tests make REAL network calls to scrape actual websites.
-# They do NOT mock the web scraping functionality.
-
-@pytest.mark.asyncio
-async def test_expand_link_context_g1_article():
-    """should scrape real G1 article and return structured content"""
-    url = "https://g1.globo.com/sp/sao-paulo/noticia/2025/11/16/policia-encontra-arsenal-de-guerra-na-zona-sul-de-sp.ghtml"
-
-    result = await expand_link_context(url)
-
-    # validate structure
-    assert result.success is True, f"Scraping failed with error: {result.error}"
-    assert result.url == url
-    assert result.content != "", "Content should not be empty"
-    assert result.content_length > 0
-    assert result.error is None
-
-    # print for debugging
-    print(f"\n{'=' * 80}")
-    print(f"TEST: G1 Article Scraping")
-    print(f"{'=' * 80}")
-    print(f"URL: {result.url}")
-    print(f"Success: {result.success}")
-    print(f"Content length: {result.content_length} chars")
-    print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
-    print(f"{'=' * 80}\n")
-
-
-@pytest.mark.asyncio
-async def test_expand_link_context_cnn_brasil_article():
-    """should scrape real CNN Brasil article and return structured content"""
-    url = "https://www.cnnbrasil.com.br/nacional/em-belem-cupula-dos-povos-cobra-participacao-popular-nas-acoes-climaticas/"
-
-    result = await expand_link_context(url)
-
-    # validate structure
-    assert result.success is True, f"Scraping failed with error: {result.error}"
-    assert result.url == url
-    assert result.content != "", "Content should not be empty"
-    assert result.content_length > 0
-    assert result.error is None
-
-    # print for debugging
-    print(f"\n{'=' * 80}")
-    print(f"TEST: CNN Brasil Article Scraping")
-    print(f"{'=' * 80}")
-    print(f"URL: {result.url}")
-    print(f"Success: {result.success}")
-    print(f"Content length: {result.content_length} chars")
-    print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
-    print(f"{'=' * 80}\n")
-
-
-@pytest.mark.asyncio
-async def test_expand_link_context_bbc_article():
-    """should scrape real BBC article and return structured content"""
-    url = "https://www.bbc.com/culture/article/20251112-why-this-1768-painting-could-be-the-real-birth-of-modern-art"
-
-    result = await expand_link_context(url)
-
-    # validate structure
-    assert result.success is True, f"Scraping failed with error: {result.error}"
-    assert result.url == url
-    assert result.content != "", "Content should not be empty"
-    assert result.content_length > 0
-    assert result.error is None
-
-    # print for debugging
-    print(f"\n{'=' * 80}")
-    print(f"TEST: BBC Article Scraping")
-    print(f"{'=' * 80}")
-    print(f"URL: {result.url}")
-    print(f"Success: {result.success}")
-    print(f"Content length: {result.content_length} chars")
-    print(f"Content preview (first 200 chars):\n{result.content[:200]}...")
-    print(f"{'=' * 80}\n")
-
+# expand_link_context tests moved to app/agentic_ai/tests/nodes/test_link_expander.py
 
 @pytest.mark.asyncio
 async def test_expand_link_contexts_with_multiple_real_urls():

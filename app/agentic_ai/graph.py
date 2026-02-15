@@ -29,7 +29,7 @@ from app.agentic_ai.nodes.context_agent import make_context_agent_node
 from app.agentic_ai.nodes.adjudication import make_adjudication_node
 from app.agentic_ai.nodes.check_edges import check_edges as check_edges_router
 from app.agentic_ai.nodes.format_input import format_input_node
-from app.agentic_ai.nodes.wait_for_async import wait_for_async_node
+from app.agentic_ai.controlflow.wait_for_async import wait_for_async_node
 from app.agentic_ai.tools.protocols import (
     FactCheckSearchProtocol,
     WebSearchProtocol,
