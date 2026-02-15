@@ -50,8 +50,9 @@ MAX_LINKS_TO_EXPAND = 5
 # default LLM model for the context agent
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
 
-# model for the adjudication step (can be stronger than the context agent model)
-ADJUDICATION_MODEL = "gemini-2.5-flash"
+# model for the adjudication step
+ADJUDICATION_MODEL = "gemini-2.5-flash-lite"
+ADJUDICATION_THINKING_BUDGET = 1024
 
 
 # suppress verbose debug logs from trafilatura (HTML processing library)

@@ -32,7 +32,7 @@ from uuid import uuid4
 from app.models.agenticai import ContextNodeOutput
 from app.models.commondata import DataSource
 from app.models.factchecking import FactCheckResult
-from app.agentic_ai.config import MAX_ITERATIONS, DEFAULT_MODEL, ADJUDICATION_MODEL
+from app.agentic_ai.config import MAX_ITERATIONS, DEFAULT_MODEL, ADJUDICATION_MODEL, ADJUDICATION_THINKING_BUDGET
 
 
 def _make_data_source_from_text(text: str) -> DataSource:
@@ -53,7 +53,9 @@ def _build_graph():
     from app.agentic_ai.tools.page_scraper import PageScraperTool
 
     model = ChatGoogleGenerativeAI(model=DEFAULT_MODEL, temperature=0)
-    adj_model = ChatGoogleGenerativeAI(model=ADJUDICATION_MODEL, temperature=0)
+    adj_model = ChatGoogleGenerativeAI(
+        model=ADJUDICATION_MODEL, temperature=0, thinking_budget=ADJUDICATION_THINKING_BUDGET,
+    )
     fact_checker = FactCheckSearchTool()
     web_searcher = WebSearchTool()
     page_scraper = PageScraperTool()
