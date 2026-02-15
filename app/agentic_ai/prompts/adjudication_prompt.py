@@ -8,9 +8,8 @@ the LLM must extract claims AND adjudicate them in a single pass.
 
 from __future__ import annotations
 
-from datetime import datetime
-
 from app.agentic_ai.prompts.context_formatter import format_context
+from app.agentic_ai.prompts.utils import get_current_date
 from app.models.agenticai import (
     FactCheckApiContext,
     GoogleSearchContext,
@@ -125,7 +124,7 @@ def build_adjudication_prompt(
     scraped_pages: list[WebScrapeContext],
 ) -> tuple[str, str]:
     """build the (system_prompt, user_prompt) pair for the adjudication LLM."""
-    current_date = datetime.now().strftime("%d-%m-%Y")
+    current_date = get_current_date()
 
     formatted_context = format_context(
         fact_check_results, search_results, scraped_pages

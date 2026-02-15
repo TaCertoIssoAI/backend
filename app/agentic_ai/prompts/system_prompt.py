@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from app.agentic_ai.config import MAX_ITERATIONS
 from app.agentic_ai.prompts.context_formatter import format_context
+from app.agentic_ai.prompts.utils import get_current_date
 from app.models.agenticai import (
     FactCheckApiContext,
     GoogleSearchContext,
@@ -16,6 +17,8 @@ SYSTEM_PROMPT_TEMPLATE = """\
 Você é um agente de pesquisa para verificação de fatos. Sua tarefa é reunir \
 fontes suficientes para que um agente juiz possa emitir um veredito \
 sobre o conteúdo recebido.
+
+DATA ATUAL: {current_date}
 
 ## Ferramentas disponíveis
 
@@ -77,6 +80,7 @@ def build_system_prompt(
     formatted = format_context(fact_check_results, search_results, scraped_pages)
 
     return SYSTEM_PROMPT_TEMPLATE.format(
+        current_date=get_current_date(),
         iteration_count=iteration_count,
         max_iterations=max_iterations,
         formatted_data_sources=formatted_data_sources,
