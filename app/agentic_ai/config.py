@@ -20,7 +20,7 @@ DOMAIN_SEARCHES: dict[str, dict] = {
         "reliability": SourceReliability.NEUTRO,
     },
     "g1": {
-        "site_search": "g1.globo.com",
+        "site_search": "globo.com",
         "site_search_filter": "i",
         "reliability": SourceReliability.MUITO_CONFIAVEL,
     },
