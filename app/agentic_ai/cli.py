@@ -79,8 +79,11 @@ def display_result(output: FactCheckResult | ContextNodeOutput) -> None:
         _display_context_output(output)
 
 
-def _display_fact_check_result(result: FactCheckResult) -> None:
-    """display a FactCheckResult with verdicts and summary."""
+def _display_fact_check_result(
+    result: FactCheckResult,
+    source_refs: list[tuple[int, str, str]] | None = None,
+) -> None:
+    """display a FactCheckResult with verdicts, summary, and source references."""
     print_section("Adjudication Result")
 
     for ds_result in result.results:
@@ -95,14 +98,27 @@ def _display_fact_check_result(result: FactCheckResult) -> None:
             print(f"      Verdict: {verdict_color}{Colors.BOLD}{cv.verdict}{Colors.END}")
             print(f"      {cv.justification}")
 
-            if cv.citations_used:
-                print(f"      {Colors.CYAN}Citations:{Colors.END}")
-                for c in cv.citations_used:
-                    print(f"        - {c.title} ({c.publisher}): {c.url}")
-
     if result.overall_summary:
         print_section("Overall Summary")
         print(f"  {result.overall_summary}")
+
+    if source_refs:
+        from app.agentic_ai.prompts.context_formatter import filter_cited_references
+
+        # collect all justification texts + overall summary
+        cited_texts = [result.overall_summary or ""]
+        for ds_result in result.results:
+            for cv in ds_result.claim_verdicts:
+                cited_texts.append(cv.justification)
+
+        cited_refs = filter_cited_references(source_refs, *cited_texts)
+        total_sources = len(source_refs)
+        cited_count = len(cited_refs)
+
+        print_section(f"Cited Sources ({cited_count} of {total_sources})")
+        for num, title, url in cited_refs:
+            print(f"  [{num}] {title}")
+            print(f"       {Colors.CYAN}{url}{Colors.END}")
 
 
 def _display_context_output(output: ContextNodeOutput) -> None:
@@ -215,6 +231,17 @@ def _make_empty_state() -> dict:
         "formatted_data_sources": "",
         "adjudication_result": None,
     }
+
+
+def _build_source_refs(session_state: dict) -> list[tuple[int, str, str]]:
+    """build numbered source references from session state."""
+    from app.agentic_ai.prompts.context_formatter import build_source_reference_list
+
+    return build_source_reference_list(
+        session_state.get("fact_check_results", []),
+        session_state.get("search_results", {}),
+        session_state.get("scraped_pages", []),
+    )
 
 
 def _handle_cmd_state(session_state: dict) -> None:
@@ -402,7 +429,8 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                 adj_result = update.get("adjudication_result")
                 if adj_result:
                     print(f"\n{Colors.BOLD}[adjudication]{Colors.END}")
-                    _display_fact_check_result(adj_result)
+                    refs = _build_source_refs(session_state)
+                    _display_fact_check_result(adj_result, source_refs=refs)
 
     print(f"\n{Colors.GREEN}Done ({iteration} iterations){Colors.END}")
 
@@ -413,7 +441,8 @@ def _handle_cmd_verdict(session_state: dict) -> None:
     if not adj_result:
         print_info("No adjudication result yet. Run a query first.")
         return
-    _display_fact_check_result(adj_result)
+    refs = _build_source_refs(session_state)
+    _display_fact_check_result(adj_result, source_refs=refs)
 
 
 def _print_session_help() -> None:
