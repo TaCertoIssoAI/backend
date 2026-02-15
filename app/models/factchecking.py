@@ -26,6 +26,7 @@ ClaimSourceType = Literal[
 CitationSource = Literal[
     "google_fact_checking_api",
     "google_web_search",
+    "web_page_scrapping",
 ]
 
 

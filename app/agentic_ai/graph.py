@@ -23,8 +23,10 @@ from app.models.agenticai import (
     ScrapeTarget,
     WebScrapeContext,
 )
+from app.models.factchecking import FactCheckResult
 from app.agentic_ai.state import ContextAgentState
 from app.agentic_ai.nodes.context_agent import make_context_agent_node
+from app.agentic_ai.nodes.adjudication import make_adjudication_node
 from app.agentic_ai.nodes.check_edges import check_edges as check_edges_router
 from app.agentic_ai.nodes.wait_for_async import wait_for_async_node
 from app.agentic_ai.tools.protocols import (
@@ -230,6 +232,7 @@ def build_graph(
     fact_checker: FactCheckSearchProtocol,
     web_searcher: WebSearchProtocol,
     page_scraper: PageScraperProtocol,
+    adjudication_model: Any = None,
 ):
     """
     build and compile the context search loop graph.
@@ -239,6 +242,7 @@ def build_graph(
         fact_checker: fact-check search implementation
         web_searcher: web search implementation
         page_scraper: page scraper implementation
+        adjudication_model: optional LLM for adjudication (defaults to model)
 
     returns:
         compiled LangGraph graph
@@ -250,6 +254,7 @@ def build_graph(
     tool_node = _make_tool_node_with_state_update(
         tools, fact_checker, web_searcher, page_scraper
     )
+    adjudication_node = make_adjudication_node(adjudication_model or model)
 
     def _route_after_agent(state: ContextAgentState) -> str:
         """combined router: check for tool calls first, then check_edges logic."""
@@ -265,13 +270,14 @@ def build_graph(
         edge = check_edges_router(state)
         if edge == "wait_for_async":
             return "wait_for_async"
-        return "__end__"
+        return "adjudication"
 
     graph = StateGraph(ContextAgentState)
 
     graph.add_node("context_agent", context_agent_node)
     graph.add_node("tools", tool_node)
     graph.add_node("wait_for_async", wait_for_async_node)
+    graph.add_node("adjudication", adjudication_node)
 
     graph.add_edge(START, "context_agent")
 
@@ -282,7 +288,7 @@ def build_graph(
         {
             "tools": "tools",
             "wait_for_async": "wait_for_async",
-            "__end__": END,
+            "adjudication": "adjudication",
         },
     )
 
@@ -292,11 +298,17 @@ def build_graph(
     # after wait_for_async: go back to context_agent
     graph.add_edge("wait_for_async", "context_agent")
 
+    # adjudication is the terminal node
+    graph.add_edge("adjudication", END)
+
     return graph.compile()
 
 
-def extract_output(state: dict) -> ContextNodeOutput:
-    """extract the ContextNodeOutput from final graph state."""
+def extract_output(state: dict) -> FactCheckResult | ContextNodeOutput:
+    """extract the adjudication result or raw context from final graph state."""
+    if state.get("adjudication_result"):
+        return state["adjudication_result"]
+    # fallback to raw context output for backwards compatibility
     return ContextNodeOutput(
         fact_check_results=state.get("fact_check_results", []),
         search_results=state.get("search_results", {}),

@@ -97,3 +97,55 @@ def format_context(
         return "(nenhuma fonte coletada ainda)"
 
     return "\n\n".join(sections)
+
+
+def build_source_reference_list(
+    fact_check_results: list[FactCheckApiContext],
+    search_results: dict[str, list[GoogleSearchContext]],
+    scraped_pages: list[WebScrapeContext],
+) -> list[tuple[int, str, str]]:
+    """build a compact (number, title, url) list using the same ordering as format_context.
+
+    the numbering matches the [N] references the LLM uses in adjudication justifications.
+    """
+    refs: list[tuple[int, str, str]] = []
+    counter = 1
+
+    for entry in fact_check_results:
+        title = f"{entry.publisher}: {entry.claim_text[:80]}" if entry.claim_text else entry.publisher
+        refs.append((counter, title, entry.url))
+        counter += 1
+
+    for domain_key in ("aosfatos", "g1", "estadao", "folha"):
+        for entry in search_results.get(domain_key, []):
+            refs.append((counter, entry.title, entry.url))
+            counter += 1
+
+    for entry in search_results.get("geral", []):
+        refs.append((counter, entry.title, entry.url))
+        counter += 1
+
+    for entry in scraped_pages:
+        refs.append((counter, entry.title, entry.url))
+        counter += 1
+
+    return refs
+
+
+def filter_cited_references(
+    source_refs: list[tuple[int, str, str]],
+    *texts: str,
+) -> list[tuple[int, str, str]]:
+    """filter source references to only those cited in the given texts.
+
+    scans each text for [N] patterns and returns only the references
+    whose number appears in at least one text. order is preserved.
+    """
+    import re
+
+    cited_numbers: set[int] = set()
+    for text in texts:
+        if text:
+            cited_numbers.update(int(m) for m in re.findall(r"\[(\d+)\]", text))
+
+    return [ref for ref in source_refs if ref[0] in cited_numbers]

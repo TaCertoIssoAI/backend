@@ -9,6 +9,15 @@ from app.models.agenticai import (
     ScrapeTarget,
     WebScrapeContext,
     SourceReliability,
+    ContextNodeOutput,
+)
+from app.models.factchecking import (
+    FactCheckResult,
+    DataSourceResult,
+    ClaimVerdict,
+    LLMAdjudicationOutput,
+    LLMDataSourceResult,
+    LLMClaimVerdict,
 )
 from app.agentic_ai.graph import build_graph, extract_output
 
@@ -69,9 +78,38 @@ def _make_mock_model():
     return model
 
 
+def _make_mock_adjudication_model():
+    """create a mock adjudication LLM that returns structured output."""
+    model = MagicMock()
+
+    adjudication_output = LLMAdjudicationOutput(
+        results=[
+            LLMDataSourceResult(
+                data_source_id=None,
+                claim_verdicts=[
+                    LLMClaimVerdict(
+                        claim_id=None,
+                        claim_text="Test claim",
+                        verdict="Falso",
+                        justification="Contradicted by sources [1].",
+                        citations_used=[],
+                    )
+                ],
+            )
+        ],
+        overall_summary="Test claim is false.",
+    )
+
+    structured = AsyncMock()
+    structured.ainvoke = AsyncMock(return_value=adjudication_output)
+    model.with_structured_output = MagicMock(return_value=structured)
+    return model
+
+
 def test_graph_compiles():
     model = _make_mock_model()
-    graph = build_graph(model, MockFactChecker(), MockWebSearcher(), MockScraper())
+    adj_model = _make_mock_adjudication_model()
+    graph = build_graph(model, MockFactChecker(), MockWebSearcher(), MockScraper(), adj_model)
     assert graph is not None
 
 
@@ -80,7 +118,8 @@ async def test_graph_runs_to_completion():
     from langchain_core.messages import HumanMessage
 
     model = _make_mock_model()
-    graph = build_graph(model, MockFactChecker(), MockWebSearcher(), MockScraper())
+    adj_model = _make_mock_adjudication_model()
+    graph = build_graph(model, MockFactChecker(), MockWebSearcher(), MockScraper(), adj_model)
 
     initial_state = {
         "messages": [HumanMessage(content="Test claim")],
@@ -90,15 +129,50 @@ async def test_graph_runs_to_completion():
         "iteration_count": 0,
         "pending_async_count": 0,
         "formatted_data_sources": "Test claim",
+        "adjudication_result": None,
     }
 
     final_state = await graph.ainvoke(initial_state)
 
     assert final_state["iteration_count"] >= 1
     assert len(final_state["messages"]) >= 2
+    # adjudication node should have produced a result
+    assert final_state["adjudication_result"] is not None
+    assert isinstance(final_state["adjudication_result"], FactCheckResult)
 
 
-def test_extract_output():
+def test_extract_output_with_adjudication():
+    """extract_output returns FactCheckResult when adjudication_result is present."""
+    adj_result = FactCheckResult(
+        results=[
+            DataSourceResult(
+                data_source_id="ds-1",
+                source_type="original_text",
+                claim_verdicts=[
+                    ClaimVerdict(
+                        claim_id="c-1",
+                        claim_text="test",
+                        verdict="Falso",
+                        justification="reason",
+                    )
+                ],
+            )
+        ],
+        overall_summary="summary",
+    )
+    state = {
+        "fact_check_results": [],
+        "search_results": {},
+        "scraped_pages": [],
+        "adjudication_result": adj_result,
+    }
+    output = extract_output(state)
+    assert isinstance(output, FactCheckResult)
+    assert output.overall_summary == "summary"
+
+
+def test_extract_output_fallback():
+    """extract_output returns ContextNodeOutput when no adjudication_result."""
     state = {
         "fact_check_results": [
             FactCheckApiContext(
@@ -110,7 +184,9 @@ def test_extract_output():
         ],
         "search_results": {"geral": []},
         "scraped_pages": [],
+        "adjudication_result": None,
     }
     output = extract_output(state)
+    assert isinstance(output, ContextNodeOutput)
     assert len(output.fact_check_results) == 1
     assert "geral" in output.search_results

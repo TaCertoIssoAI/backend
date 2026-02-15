@@ -8,7 +8,7 @@ and control-flow counters.
 from __future__ import annotations
 
 import operator
-from typing import Annotated, Any
+from typing import Annotated, Any, Optional
 
 from langgraph.graph import MessagesState
 
@@ -17,6 +17,7 @@ from app.models.agenticai import (
     GoogleSearchContext,
     WebScrapeContext,
 )
+from app.models.factchecking import FactCheckResult
 
 
 def _merge_search_results(
@@ -49,3 +50,6 @@ class ContextAgentState(MessagesState):
 
     # formatted data sources text (set once at graph entry)
     formatted_data_sources: str
+
+    # adjudication output (set once by the adjudication node)
+    adjudication_result: Optional[FactCheckResult]

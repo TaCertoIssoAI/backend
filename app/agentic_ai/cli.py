@@ -28,7 +28,8 @@ from scripts.playground.common import (
 )
 
 from app.models.agenticai import ContextNodeOutput
-from app.agentic_ai.config import MAX_ITERATIONS, DEFAULT_MODEL
+from app.models.factchecking import FactCheckResult
+from app.agentic_ai.config import MAX_ITERATIONS, DEFAULT_MODEL, ADJUDICATION_MODEL
 
 
 def _build_graph():
@@ -40,14 +41,15 @@ def _build_graph():
     from app.agentic_ai.tools.page_scraper import PageScraperTool
 
     model = ChatGoogleGenerativeAI(model=DEFAULT_MODEL, temperature=0)
+    adj_model = ChatGoogleGenerativeAI(model=ADJUDICATION_MODEL, temperature=0)
     fact_checker = FactCheckSearchTool()
     web_searcher = WebSearchTool()
     page_scraper = PageScraperTool()
 
-    return build_graph(model, fact_checker, web_searcher, page_scraper)
+    return build_graph(model, fact_checker, web_searcher, page_scraper, adj_model)
 
 
-async def run_context_agent(text: str) -> ContextNodeOutput:
+async def run_context_agent(text: str) -> FactCheckResult | ContextNodeOutput:
     """run the full context search loop on a text input."""
     from app.agentic_ai.graph import extract_output
     from langchain_core.messages import HumanMessage
@@ -62,15 +64,65 @@ async def run_context_agent(text: str) -> ContextNodeOutput:
         "iteration_count": 0,
         "pending_async_count": 0,
         "formatted_data_sources": text,
+        "adjudication_result": None,
     }
 
     final_state = await graph.ainvoke(initial_state)
     return extract_output(final_state)
 
 
-def display_result(output: ContextNodeOutput) -> None:
-    """display the context agent output in a formatted way."""
+def display_result(output: FactCheckResult | ContextNodeOutput) -> None:
+    """display the output in a formatted way."""
+    if isinstance(output, FactCheckResult):
+        _display_fact_check_result(output)
+    else:
+        _display_context_output(output)
 
+
+def _display_fact_check_result(
+    result: FactCheckResult,
+    source_refs: list[tuple[int, str, str]] | None = None,
+) -> None:
+    """display a FactCheckResult with verdicts, summary, and source references."""
+    print_section("Adjudication Result")
+
+    for ds_result in result.results:
+        for i, cv in enumerate(ds_result.claim_verdicts, 1):
+            verdict_color = {
+                "Verdadeiro": Colors.GREEN,
+                "Falso": Colors.RED,
+                "Fora de Contexto": Colors.YELLOW,
+            }.get(cv.verdict, Colors.BLUE)
+
+            print(f"\n  {Colors.BOLD}[Claim {i}]{Colors.END} {cv.claim_text}")
+            print(f"      Verdict: {verdict_color}{Colors.BOLD}{cv.verdict}{Colors.END}")
+            print(f"      {cv.justification}")
+
+    if result.overall_summary:
+        print_section("Overall Summary")
+        print(f"  {result.overall_summary}")
+
+    if source_refs:
+        from app.agentic_ai.prompts.context_formatter import filter_cited_references
+
+        # collect all justification texts + overall summary
+        cited_texts = [result.overall_summary or ""]
+        for ds_result in result.results:
+            for cv in ds_result.claim_verdicts:
+                cited_texts.append(cv.justification)
+
+        cited_refs = filter_cited_references(source_refs, *cited_texts)
+        total_sources = len(source_refs)
+        cited_count = len(cited_refs)
+
+        print_section(f"Cited Sources ({cited_count} of {total_sources})")
+        for num, title, url in cited_refs:
+            print(f"  [{num}] {title}")
+            print(f"       {Colors.CYAN}{url}{Colors.END}")
+
+
+def _display_context_output(output: ContextNodeOutput) -> None:
+    """display the raw context agent output."""
     # fact-check results
     print_section("Fact-Check API Results")
     if output.fact_check_results:
@@ -155,7 +207,8 @@ def handle_url_input() -> None:
 def show_config() -> None:
     """display current configuration."""
     print_section("Configuration")
-    print(f"  Model: {DEFAULT_MODEL}")
+    print(f"  Context model: {DEFAULT_MODEL}")
+    print(f"  Adjudication model: {ADJUDICATION_MODEL}")
     print(f"  Max iterations: {MAX_ITERATIONS}")
     print(f"  GOOGLE_API_KEY: {'set' if os.getenv('GOOGLE_API_KEY') else 'NOT SET'}")
     print(f"  GOOGLE_SEARCH_API_KEY: {'set' if os.getenv('GOOGLE_SEARCH_API_KEY') else 'NOT SET'}")
@@ -176,7 +229,19 @@ def _make_empty_state() -> dict:
         "iteration_count": 0,
         "pending_async_count": 0,
         "formatted_data_sources": "",
+        "adjudication_result": None,
     }
+
+
+def _build_source_refs(session_state: dict) -> list[tuple[int, str, str]]:
+    """build numbered source references from session state."""
+    from app.agentic_ai.prompts.context_formatter import build_source_reference_list
+
+    return build_source_reference_list(
+        session_state.get("fact_check_results", []),
+        session_state.get("search_results", {}),
+        session_state.get("scraped_pages", []),
+    )
 
 
 def _handle_cmd_state(session_state: dict) -> None:
@@ -293,6 +358,7 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
         "iteration_count": session_state["iteration_count"],
         "pending_async_count": session_state["pending_async_count"],
         "formatted_data_sources": session_state["formatted_data_sources"],
+        "adjudication_result": session_state.get("adjudication_result"),
     }
 
     iteration = 0
@@ -314,6 +380,8 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                 session_state["iteration_count"] = update["iteration_count"]
             if "pending_async_count" in update:
                 session_state["pending_async_count"] = update["pending_async_count"]
+            if "adjudication_result" in update:
+                session_state["adjudication_result"] = update["adjudication_result"]
 
             # display
             if node_name == "context_agent":
@@ -357,12 +425,30 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
             elif node_name == "wait_for_async":
                 print(f"{Colors.BLUE}[wait_for_async]{Colors.END} waiting for pending operations...")
 
+            elif node_name == "adjudication":
+                adj_result = update.get("adjudication_result")
+                if adj_result:
+                    print(f"\n{Colors.BOLD}[adjudication]{Colors.END}")
+                    refs = _build_source_refs(session_state)
+                    _display_fact_check_result(adj_result, source_refs=refs)
+
     print(f"\n{Colors.GREEN}Done ({iteration} iterations){Colors.END}")
+
+
+def _handle_cmd_verdict(session_state: dict) -> None:
+    """re-display the last adjudication result from state."""
+    adj_result = session_state.get("adjudication_result")
+    if not adj_result:
+        print_info("No adjudication result yet. Run a query first.")
+        return
+    refs = _build_source_refs(session_state)
+    _display_fact_check_result(adj_result, source_refs=refs)
 
 
 def _print_session_help() -> None:
     """display available session commands."""
     print(f"  {Colors.BOLD}/state{Colors.END}     — show collected sources")
+    print(f"  {Colors.BOLD}/verdict{Colors.END}   — show last adjudication verdict")
     print(f"  {Colors.BOLD}/prompt{Colors.END}    — show current system prompt")
     print(f"  {Colors.BOLD}/messages{Colors.END}  — show message history")
     print(f"  {Colors.BOLD}/config{Colors.END}    — show configuration")
@@ -400,6 +486,9 @@ async def _interactive_session_async() -> None:
         # slash commands
         if user_input == "/state":
             _handle_cmd_state(session_state)
+            continue
+        if user_input == "/verdict":
+            _handle_cmd_verdict(session_state)
             continue
         if user_input == "/prompt":
             _handle_cmd_prompt(session_state)
