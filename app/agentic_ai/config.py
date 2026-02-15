@@ -3,6 +3,7 @@ configuration constants for the agentic context search loop.
 """
 
 from app.models.agenticai import SourceReliability
+import logging
 
 # iteration limits
 MAX_ITERATIONS = 5
@@ -51,3 +52,11 @@ DEFAULT_MODEL = "gemini-2.5-flash-lite"
 
 # model for the adjudication step (can be stronger than the context agent model)
 ADJUDICATION_MODEL = "gemini-2.5-flash"
+
+
+# suppress verbose debug logs from trafilatura (HTML processing library)
+logging.getLogger("trafilatura").setLevel(logging.WARNING)
+logging.getLogger("trafilatura.htmlprocessing").setLevel(logging.WARNING)
+logging.getLogger("trafilatura.main_extractor").setLevel(logging.WARNING)
+
+logging.getLogger("grpc._cython.cygrpc").setLevel(logging.WARNING)
