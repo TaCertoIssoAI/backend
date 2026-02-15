@@ -23,13 +23,14 @@ def check_edges(state: ContextAgentState) -> str:
     iteration_count = state.get("iteration_count", 0)
     pending = state.get("pending_async_count", 0)
 
-    if iteration_count >= MAX_ITERATIONS:
-        logger.info(f"max iterations ({MAX_ITERATIONS}) reached, ending")
-        return "end"
-
+    # always collect async results first — never discard pending work
     if pending > 0:
         logger.info(f"{pending} async data sources pending, waiting")
         return "wait_for_async"
+
+    if iteration_count >= MAX_ITERATIONS:
+        logger.info(f"max iterations ({MAX_ITERATIONS}) reached, ending")
+        return "end"
 
     logger.info("no pending async, context gathering complete")
     return "end"

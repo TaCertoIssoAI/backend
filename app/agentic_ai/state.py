@@ -17,6 +17,7 @@ from app.models.agenticai import (
     GoogleSearchContext,
     WebScrapeContext,
 )
+from app.models.commondata import DataSource
 from app.models.factchecking import FactCheckResult
 
 
@@ -48,8 +49,14 @@ class ContextAgentState(MessagesState):
     iteration_count: int
     pending_async_count: int
 
-    # formatted data sources text (set once at graph entry)
+    # structured input data sources (append-only so wait_for_async can add link sources)
+    data_sources: Annotated[list[DataSource], operator.add]
+
+    # formatted data sources text (populated by format_input node)
     formatted_data_sources: str
+
+    # unique id linking format_input (fires task) to wait_for_async (awaits task)
+    run_id: str
 
     # adjudication output (set once by the adjudication node)
     adjudication_result: Optional[FactCheckResult]

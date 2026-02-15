@@ -26,9 +26,15 @@ def test_routes_to_wait_when_async_pending():
     assert check_edges(state) == "wait_for_async"
 
 
-def test_routes_to_end_when_max_iterations_reached():
-    state = _make_state(iteration_count=MAX_ITERATIONS, pending_async_count=3)
+def test_routes_to_end_when_max_iterations_reached_no_pending():
+    state = _make_state(iteration_count=MAX_ITERATIONS, pending_async_count=0)
     assert check_edges(state) == "end"
+
+
+def test_pending_async_takes_priority_over_max_iterations():
+    """even at max iterations, pending async results must be collected first."""
+    state = _make_state(iteration_count=MAX_ITERATIONS, pending_async_count=3)
+    assert check_edges(state) == "wait_for_async"
 
 
 def test_routes_to_end_on_zero_iteration_no_pending():
