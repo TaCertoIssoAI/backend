@@ -11,7 +11,10 @@
       "WebFetch(domain:g1.globo.com)",
       "Bash(python:*)",
       "Bash(set:*)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "Bash(pip3 list:*)",
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python:*)",
+      "Bash(venv/bin/python -m pytest:*)"
     ],
     "deny": [],
     "ask": []
