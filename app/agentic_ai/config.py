@@ -42,4 +42,4 @@ DOMAIN_SEARCHES: dict[str, dict] = {
 }
 
 # default LLM model for the context agent
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = "gemini-2.5-flash-lite"

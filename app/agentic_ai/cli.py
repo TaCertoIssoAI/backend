@@ -34,13 +34,13 @@ from app.agentic_ai.config import MAX_ITERATIONS, DEFAULT_MODEL
 
 def _build_graph():
     """build the context agent graph with real tool implementations."""
-    from langchain_openai import ChatOpenAI
+    from langchain_google_genai import ChatGoogleGenerativeAI
     from app.agentic_ai.graph import build_graph
     from app.agentic_ai.tools.fact_check_search import FactCheckSearchTool
     from app.agentic_ai.tools.web_search import WebSearchTool
     from app.agentic_ai.tools.page_scraper import PageScraperTool
 
-    model = ChatOpenAI(model=DEFAULT_MODEL, temperature=0)
+    model = ChatGoogleGenerativeAI(model=DEFAULT_MODEL, temperature=0)
     fact_checker = FactCheckSearchTool()
     web_searcher = WebSearchTool()
     page_scraper = PageScraperTool()
