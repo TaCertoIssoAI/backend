@@ -331,6 +331,7 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
         "iteration_count": session_state["iteration_count"],
         "pending_async_count": session_state["pending_async_count"],
         "formatted_data_sources": session_state["formatted_data_sources"],
+        "adjudication_result": session_state.get("adjudication_result"),
     }
 
     iteration = 0
