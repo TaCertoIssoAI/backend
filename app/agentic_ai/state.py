@@ -49,11 +49,14 @@ class ContextAgentState(MessagesState):
     iteration_count: int
     pending_async_count: int
 
-    # structured input data sources (set at graph entry)
-    data_sources: list[DataSource]
+    # structured input data sources (append-only so wait_for_async can add link sources)
+    data_sources: Annotated[list[DataSource], operator.add]
 
     # formatted data sources text (populated by format_input node)
     formatted_data_sources: str
+
+    # unique id linking format_input (fires task) to wait_for_async (awaits task)
+    run_id: str
 
     # adjudication output (set once by the adjudication node)
     adjudication_result: Optional[FactCheckResult]

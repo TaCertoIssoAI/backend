@@ -1,9 +1,15 @@
 """tests for the format_input node."""
 
+from unittest.mock import patch, AsyncMock
+
 import pytest
 
 from app.models.commondata import DataSource
-from app.agentic_ai.nodes.format_input import _format_data_sources, format_input_node
+from app.agentic_ai.nodes.format_input import (
+    _format_data_sources,
+    _is_links_only,
+    format_input_node,
+)
 
 
 # --- _format_data_sources ---
@@ -54,6 +60,30 @@ def test_different_source_types():
         assert ds.source_type in result
 
 
+def test_format_data_sources_link_context_priority_header():
+    ds_text = DataSource(id="t-1", source_type="original_text", original_text="text")
+    ds_link = DataSource(id="l-1", source_type="link_context", original_text="link content")
+    result = _format_data_sources([ds_text, ds_link])
+    assert "PRIORIDADE ALTA" in result
+    # original_text source should NOT have priority header
+    assert result.index("PRIORIDADE ALTA") > result.index("=== Fonte 1 ===")
+
+
+# --- _is_links_only ---
+
+
+def test_is_links_only_true():
+    assert _is_links_only("https://a.com https://b.com", ["https://a.com", "https://b.com"])
+
+
+def test_is_links_only_true_with_whitespace():
+    assert _is_links_only("  https://a.com  ", ["https://a.com"])
+
+
+def test_is_links_only_false():
+    assert not _is_links_only("check this https://a.com", ["https://a.com"])
+
+
 # --- format_input_node (async) ---
 
 @pytest.mark.asyncio
@@ -78,3 +108,73 @@ async def test_format_input_node_missing_key():
     state = {}
     result = await format_input_node(state)
     assert result["formatted_data_sources"] == "(nenhum conteudo fornecido)"
+
+
+@pytest.mark.asyncio
+@patch("app.agentic_ai.nodes.format_input.fire_link_expansion", return_value=1)
+@patch("app.agentic_ai.nodes.format_input.extract_links", return_value=["https://a.com"])
+async def test_format_input_fires_link_expansion(mock_extract, mock_fire):
+    ds = DataSource(
+        id="ds-1", source_type="original_text",
+        original_text="some claim https://a.com",
+    )
+    state = {"data_sources": [ds]}
+    result = await format_input_node(state)
+
+    mock_fire.assert_called_once()
+    assert result.get("pending_async_count") == 1
+    assert "run_id" in result
+
+
+@pytest.mark.asyncio
+async def test_format_input_no_links_no_pending():
+    ds = DataSource(id="ds-1", source_type="original_text", original_text="just text")
+    state = {"data_sources": [ds]}
+    result = await format_input_node(state)
+
+    assert "pending_async_count" not in result
+    assert "formatted_data_sources" in result
+
+
+@pytest.mark.asyncio
+@patch(
+    "app.agentic_ai.nodes.format_input.expand_all_links",
+    new_callable=AsyncMock,
+    return_value=[
+        DataSource(
+            id="link-1", source_type="link_context",
+            original_text="expanded content",
+            metadata={"url": "https://a.com"},
+        )
+    ],
+)
+@patch("app.agentic_ai.nodes.format_input.extract_links", return_value=["https://a.com"])
+async def test_format_input_links_only_blocks(mock_extract, mock_expand):
+    ds = DataSource(
+        id="ds-1", source_type="original_text",
+        original_text="https://a.com",
+    )
+    state = {"data_sources": [ds]}
+    result = await format_input_node(state)
+
+    mock_expand.assert_called_once()
+    # links-only should NOT set pending_async_count
+    assert "pending_async_count" not in result
+    # should have data_sources with expanded content
+    assert len(result.get("data_sources", [])) == 1
+    assert result["data_sources"][0].source_type == "link_context"
+
+
+@pytest.mark.asyncio
+@patch("app.agentic_ai.nodes.format_input.fire_link_expansion", return_value=1)
+@patch("app.agentic_ai.nodes.format_input.extract_links", return_value=["https://a.com"])
+async def test_format_input_text_plus_links_fires(mock_extract, mock_fire):
+    ds = DataSource(
+        id="ds-1", source_type="original_text",
+        original_text="claim text https://a.com",
+    )
+    state = {"data_sources": [ds]}
+    result = await format_input_node(state)
+
+    mock_fire.assert_called_once()
+    assert result.get("pending_async_count") == 1

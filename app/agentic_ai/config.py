@@ -42,6 +42,10 @@ DOMAIN_SEARCHES: dict[str, dict] = {
     },
 }
 
+# link expansion settings
+LINK_SCRAPE_TIMEOUT_PER_URL = 30.0
+MAX_LINKS_TO_EXPAND = 5
+
 # default LLM model for the context agent
 DEFAULT_MODEL = "gemini-2.5-flash-lite"
 

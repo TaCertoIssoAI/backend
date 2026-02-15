@@ -131,6 +131,7 @@ async def test_graph_runs_to_completion():
         "iteration_count": 0,
         "pending_async_count": 0,
         "formatted_data_sources": "",
+        "run_id": "test-run",
         "adjudication_result": None,
     }
 
