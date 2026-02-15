@@ -37,7 +37,7 @@ class WebSearchTool:
         self.timeout = timeout
 
     async def search(
-        self, queries: list[str], max_results_per_search: int = 5
+        self, queries: list[str], max_results_per_search: int = 3
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
         merged: dict[str, list[GoogleSearchContext]] = {

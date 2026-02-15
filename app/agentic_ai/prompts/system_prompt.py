@@ -29,6 +29,13 @@ já domínios específicos (G1, Estadão, Aos Fatos, Folha) são consideradas "M
 web. Utilize apenas para extrair URLs de fontes confiáveis (G1, Estadão, Aos Fatos, Folha) \
 Caso o contexto existente da primeira busca na web seja insuficiente.
 
+## IMPORTANTE — Chame múltiplas ferramentas em paralelo
+
+Você PODE e DEVE chamar várias ferramentas ao mesmo tempo em uma única resposta. \
+Na primeira iteração, SEMPRE chame search_fact_check_api E search_web simultaneamente \
+para maximizar a cobertura e economizar iterações. Não espere o resultado de uma \
+ferramenta para chamar outra quando ambas podem rodar em paralelo.
+
 
 ## Critérios para considerar fontes SUFICIENTES
 
