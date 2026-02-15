@@ -27,9 +27,21 @@ from scripts.playground.common import (
     with_spinner,
 )
 
+from uuid import uuid4
+
 from app.models.agenticai import ContextNodeOutput
+from app.models.commondata import DataSource
 from app.models.factchecking import FactCheckResult
 from app.agentic_ai.config import MAX_ITERATIONS, DEFAULT_MODEL, ADJUDICATION_MODEL
+
+
+def _make_data_source_from_text(text: str) -> DataSource:
+    """create a DataSource from raw text input."""
+    return DataSource(
+        id=str(uuid4()),
+        source_type="original_text",
+        original_text=text,
+    )
 
 
 def _build_graph():
@@ -58,12 +70,13 @@ async def run_context_agent(text: str) -> FactCheckResult | ContextNodeOutput:
 
     initial_state = {
         "messages": [HumanMessage(content=text)],
+        "data_sources": [_make_data_source_from_text(text)],
         "fact_check_results": [],
         "search_results": {},
         "scraped_pages": [],
         "iteration_count": 0,
         "pending_async_count": 0,
-        "formatted_data_sources": text,
+        "formatted_data_sources": "",
         "adjudication_result": None,
     }
 
@@ -223,6 +236,7 @@ def _make_empty_state() -> dict:
     """create a fresh empty state for the context agent graph."""
     return {
         "messages": [],
+        "data_sources": [],
         "fact_check_results": [],
         "search_results": {},
         "scraped_pages": [],
@@ -345,13 +359,16 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
     from app.agentic_ai.state import _merge_search_results
 
     # prepare state for this run
+    data_source = _make_data_source_from_text(text)
     session_state["messages"].append(HumanMessage(content=text))
-    session_state["formatted_data_sources"] = text
+    session_state["data_sources"] = [data_source]
+    session_state["formatted_data_sources"] = ""
     session_state["iteration_count"] = 0
 
     # snapshot the input state so the graph gets a clean copy
     run_input = {
         "messages": list(session_state["messages"]),
+        "data_sources": list(session_state["data_sources"]),
         "fact_check_results": list(session_state["fact_check_results"]),
         "search_results": {k: list(v) for k, v in session_state["search_results"].items()},
         "scraped_pages": list(session_state["scraped_pages"]),
@@ -380,11 +397,16 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                 session_state["iteration_count"] = update["iteration_count"]
             if "pending_async_count" in update:
                 session_state["pending_async_count"] = update["pending_async_count"]
+            if "formatted_data_sources" in update:
+                session_state["formatted_data_sources"] = update["formatted_data_sources"]
             if "adjudication_result" in update:
                 session_state["adjudication_result"] = update["adjudication_result"]
 
             # display
-            if node_name == "context_agent":
+            if node_name == "format_input":
+                pass  # silent — formatting happens internally
+
+            elif node_name == "context_agent":
                 iteration += 1
                 print(f"\n{Colors.BOLD}[iteration {iteration}]{Colors.END} {Colors.CYAN}context_agent{Colors.END}")
 

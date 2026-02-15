@@ -11,6 +11,7 @@
       "Bash(pyenv versions:*)",
       "Bash(python3.12 -m pytest:*)",
       "Bash(PYENV_VERSION=3.12.6 pyenv exec python -m pytest:*)",
+      "Bash(venv/bin/python -m pytest:*)"
     ],
     "deny": [],
     "ask": []

@@ -19,6 +19,7 @@ from app.models.factchecking import (
     LLMDataSourceResult,
     LLMClaimVerdict,
 )
+from app.models.commondata import DataSource
 from app.agentic_ai.graph import build_graph, extract_output
 
 
@@ -123,12 +124,13 @@ async def test_graph_runs_to_completion():
 
     initial_state = {
         "messages": [HumanMessage(content="Test claim")],
+        "data_sources": [DataSource(id="ds-1", source_type="original_text", original_text="Test claim")],
         "fact_check_results": [],
         "search_results": {},
         "scraped_pages": [],
         "iteration_count": 0,
         "pending_async_count": 0,
-        "formatted_data_sources": "Test claim",
+        "formatted_data_sources": "",
         "adjudication_result": None,
     }
 

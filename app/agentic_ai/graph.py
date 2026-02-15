@@ -28,6 +28,7 @@ from app.agentic_ai.state import ContextAgentState
 from app.agentic_ai.nodes.context_agent import make_context_agent_node
 from app.agentic_ai.nodes.adjudication import make_adjudication_node
 from app.agentic_ai.nodes.check_edges import check_edges as check_edges_router
+from app.agentic_ai.nodes.format_input import format_input_node
 from app.agentic_ai.nodes.wait_for_async import wait_for_async_node
 from app.agentic_ai.tools.protocols import (
     FactCheckSearchProtocol,
@@ -274,12 +275,14 @@ def build_graph(
 
     graph = StateGraph(ContextAgentState)
 
+    graph.add_node("format_input", format_input_node)
     graph.add_node("context_agent", context_agent_node)
     graph.add_node("tools", tool_node)
     graph.add_node("wait_for_async", wait_for_async_node)
     graph.add_node("adjudication", adjudication_node)
 
-    graph.add_edge(START, "context_agent")
+    graph.add_edge(START, "format_input")
+    graph.add_edge("format_input", "context_agent")
 
     # after context_agent: route based on tool calls + check_edges
     graph.add_conditional_edges(
