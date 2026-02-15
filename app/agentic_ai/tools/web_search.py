@@ -1,0 +1,127 @@
+"""
+web search tool — runs parallel searches across general + domain-specific sources.
+
+reuses google_search() from app.ai.context.web.google_search
+and trusted domains from app.config.trusted_domains.
+"""
+
+import asyncio
+import logging
+from uuid import uuid4
+
+from app.models.agenticai import GoogleSearchContext, SourceReliability
+from app.ai.context.web.google_search import google_search, GoogleSearchError
+from app.config.trusted_domains import get_trusted_domains
+
+from app.agentic_ai.config import DOMAIN_SEARCHES, SEARCH_TIMEOUT_PER_QUERY
+
+logger = logging.getLogger(__name__)
+
+
+def _build_query_with_trusted_domains(query: str) -> str:
+    """append trusted domain site: filters to the general search query."""
+    domains = get_trusted_domains()
+    if not domains:
+        return query
+    valid = [d.strip() for d in domains if d and d.strip()]
+    if not valid:
+        return query
+    domain_filters = " OR ".join(f"site:{d}" for d in valid)
+    return f"{query} ({domain_filters})"
+
+
+class WebSearchTool:
+    """runs 5 parallel searches per query: general + 4 domain-specific."""
+
+    def __init__(self, timeout: float = SEARCH_TIMEOUT_PER_QUERY):
+        self.timeout = timeout
+
+    async def search(
+        self, queries: list[str], max_results_per_search: int = 5
+    ) -> dict[str, list[GoogleSearchContext]]:
+        """search all queries across all domain groups concurrently."""
+        merged: dict[str, list[GoogleSearchContext]] = {
+            key: [] for key in DOMAIN_SEARCHES
+        }
+
+        tasks = []
+        task_keys = []
+
+        for query in queries:
+            for domain_key, domain_cfg in DOMAIN_SEARCHES.items():
+                tasks.append(
+                    self._search_single(
+                        query=query,
+                        domain_key=domain_key,
+                        site_search=domain_cfg["site_search"],
+                        site_search_filter=domain_cfg["site_search_filter"],
+                        reliability=domain_cfg["reliability"],
+                        max_results=max_results_per_search,
+                    )
+                )
+                task_keys.append(domain_key)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        for key, result in zip(task_keys, results):
+            if isinstance(result, list):
+                merged[key].extend(result)
+            elif isinstance(result, Exception):
+                logger.error(f"web search error for {key}: {result}")
+
+        return merged
+
+    async def _search_single(
+        self,
+        query: str,
+        domain_key: str,
+        site_search: str | None,
+        site_search_filter: str | None,
+        reliability: SourceReliability,
+        max_results: int,
+    ) -> list[GoogleSearchContext]:
+        """execute a single search against one domain configuration."""
+        try:
+            # for general search, use trusted domain filters in query
+            effective_query = query
+            if domain_key == "geral":
+                effective_query = _build_query_with_trusted_domains(query)
+
+            items = await google_search(
+                query=effective_query,
+                num=min(max_results, 10),
+                site_search=site_search,
+                site_search_filter=site_search_filter,
+                date_restrict="m3",
+                language="lang_pt",
+                timeout=self.timeout,
+            )
+
+            results: list[GoogleSearchContext] = []
+            for position, item in enumerate(items, 1):
+                url = item.get("link", "")
+                title = item.get("title", "")
+                if not url:
+                    continue
+
+                results.append(
+                    GoogleSearchContext(
+                        id=str(uuid4()),
+                        url=url,
+                        parent_id=None,
+                        reliability=reliability,
+                        title=title,
+                        snippet=item.get("snippet", ""),
+                        domain=item.get("displayLink", ""),
+                        position=position,
+                    )
+                )
+
+            return results
+
+        except GoogleSearchError as e:
+            logger.error(f"google search error ({domain_key}): {e}")
+            return []
+        except Exception as e:
+            logger.error(f"web search unexpected error ({domain_key}): {e}")
+            return []
