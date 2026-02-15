@@ -8,13 +8,9 @@
       "Bash(python3:*)",
       "Bash(find:*)",
       "WebSearch",
-      "WebFetch(domain:g1.globo.com)",
-      "Bash(python:*)",
-      "Bash(set:*)",
-      "Bash(printf:*)",
-      "Bash(pip3 list:*)",
-      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python:*)",
-      "Bash(venv/bin/python -m pytest:*)"
+      "Bash(pyenv versions:*)",
+      "Bash(python3.12 -m pytest:*)",
+      "Bash(PYENV_VERSION=3.12.6 pyenv exec python -m pytest:*)",
     ],
     "deny": [],
     "ask": []

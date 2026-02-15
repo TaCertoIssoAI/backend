@@ -2,6 +2,7 @@
 apify integration utilities for web scraping
 """
 
+import asyncio
 import os
 import re
 import logging
@@ -12,6 +13,13 @@ from enum import Enum
 import httpx
 from bs4 import BeautifulSoup
 from apify_client import ApifyClientAsync
+
+from app.ai.context.web.news_scrapers import (
+    scrape_g1_article,
+    scrape_estadao_article,
+    scrape_folha_article,
+    scrape_aosfatos_article,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +44,10 @@ class PlatformType(Enum):
     INSTAGRAM = "instagram"
     TWITTER = "twitter"
     TIKTOK = "tiktok"
+    G1 = "g1"
+    ESTADAO = "estadao"
+    FOLHA = "folha"
+    AOSFATOS = "aosfatos"
     GENERIC = "generic"
 
 
@@ -151,7 +163,28 @@ def detectPlatform(url: str) -> PlatformType:
     for pattern in tiktok_patterns:
         if re.search(pattern, url_lower):
             return PlatformType.TIKTOK
-    
+
+    g1_patterns = [r'g1\.globo\.com']
+    estadao_patterns = [r'estadao\.com\.br']
+    folha_patterns = [r'folha\.uol\.com\.br']
+    aosfatos_patterns = [r'aosfatos\.org']
+
+    for pattern in g1_patterns:
+        if re.search(pattern, url_lower):
+            return PlatformType.G1
+
+    for pattern in estadao_patterns:
+        if re.search(pattern, url_lower):
+            return PlatformType.ESTADAO
+
+    for pattern in folha_patterns:
+        if re.search(pattern, url_lower):
+            return PlatformType.FOLHA
+
+    for pattern in aosfatos_patterns:
+        if re.search(pattern, url_lower):
+            return PlatformType.AOSFATOS
+
     return PlatformType.GENERIC
 
 
@@ -603,15 +636,33 @@ async def scrapeGenericUrl(url: str, maxChars: Optional[int] = None) -> dict:
         return await scrapeTwitterPost(url, maxChars)
     elif platform == PlatformType.TIKTOK:
         return await scrapeTikTokPost(url, maxChars)
-    else:
-        # for generic websites: try simple scraping first (no browser, no apify credits)
-        logger.info("trying simple scraping first for generic website")
-        result = await scrapeGenericSimple(url, maxChars)
-        
+    elif platform in (PlatformType.G1, PlatformType.ESTADAO, PlatformType.FOLHA, PlatformType.AOSFATOS):
+        # domain-specific news scrapers (sync, run in thread)
+        scraper_map = {
+            PlatformType.G1: scrape_g1_article,
+            PlatformType.ESTADAO: scrape_estadao_article,
+            PlatformType.FOLHA: scrape_folha_article,
+            PlatformType.AOSFATOS: scrape_aosfatos_article,
+        }
+        scraper_fn = scraper_map[platform]
+        logger.info(f"using domain-specific scraper for {platform.value}")
+        result = await asyncio.to_thread(scraper_fn, url)
+
         if result["success"]:
-            logger.info("simple scraping succeeded - no apify credits used")
+            logger.info(f"{platform.value} scraper succeeded")
             return result
-        
-        # if simple scraping failed, fallback to apify actor with browser
-        logger.info(f"simple scraping failed ({result.get('error')}), falling back to apify actor")
-        return await scrapeGenericWebsite(url, maxChars)
+
+        # fallback to generic path if domain scraper fails
+        logger.info(f"{platform.value} scraper failed ({result.get('error')}), falling back to generic")
+
+    # for generic websites: try simple scraping first (no browser, no apify credits)
+    logger.info("trying simple scraping first for generic website")
+    result = await scrapeGenericSimple(url, maxChars)
+
+    if result["success"]:
+        logger.info("simple scraping succeeded - no apify credits used")
+        return result
+
+    # if simple scraping failed, fallback to apify actor with browser
+    logger.info(f"simple scraping failed ({result.get('error')}), falling back to apify actor")
+    return await scrapeGenericWebsite(url, maxChars)
