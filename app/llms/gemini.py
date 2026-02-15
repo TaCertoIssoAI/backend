@@ -207,11 +207,8 @@ class GeminiChatModel(BaseChatModel):
 
         for attempt in range(max_retries):
             try:
-                # create HTTP client with robust settings
-                http_client = self._create_http_client()
-
-                # initialize client with api key and custom http client
-                client_kwargs = {"http_options": {"client": http_client}}
+                # initialize gemini client
+                client_kwargs = {}
                 if self.google_api_key:
                     client_kwargs["api_key"] = self.google_api_key
                 client = genai.Client(**client_kwargs)
@@ -240,14 +237,10 @@ class GeminiChatModel(BaseChatModel):
                 message = AIMessage(content=response.text)
                 generation = ChatGeneration(message=message)
 
-                # close http client
-                http_client.close()
-
                 return ChatResult(generations=[generation])
 
             except (httpx.ConnectError, httpx.RemoteProtocolError, ssl.SSLError, ServerError) as e:
                 last_exception = e
-                http_client.close()
 
                 if attempt < max_retries - 1:
                     # exponential backoff
@@ -268,8 +261,6 @@ class GeminiChatModel(BaseChatModel):
             except Exception as e:
                 # for non-connection errors, fail immediately
                 logger.error(f"gemini API error: {str(e)}")
-                if 'http_client' in locals():
-                    http_client.close()
                 raise
 
         # if we get here, all retries failed
