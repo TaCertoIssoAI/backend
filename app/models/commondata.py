@@ -62,7 +62,6 @@ class DataSource(BaseModel):
         
         # Always add source header with type and ID
         parts.append(f"Tipo da fonte: {self.source_type}")
-        parts.append(f"ID da fonte: {self.id}")
 
         # prominent URL for link_context sources
         if self.source_type == "link_context" and self.metadata.get("url"):
