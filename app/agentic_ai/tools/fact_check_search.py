@@ -54,6 +54,10 @@ class FactCheckSearchTool:
             if entry.url not in seen_urls:
                 seen_urls.add(entry.url)
                 unique.append(entry)
+
+        dropped = len(merged) - len(unique)
+        logger.debug(f"fact-check search: {len(unique)} result(s) (dedup removed {dropped})")
+
         return unique
 
     async def _search_single(self, query: str) -> list[FactCheckApiContext]:

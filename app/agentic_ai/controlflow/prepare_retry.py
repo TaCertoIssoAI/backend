@@ -7,6 +7,7 @@ with different queries or end the graph.
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Optional
 
@@ -56,7 +57,26 @@ def _extract_used_queries(messages: list) -> list[str]:
     return queries
 
 
-def _build_retry_context(result: FactCheckResult, used_queries: list[str]) -> str:
+def _extract_tool_summaries(messages: list) -> list[dict]:
+    """extract _summary from tool response messages."""
+    summaries = []
+    for msg in messages:
+        if not hasattr(msg, "name") or not hasattr(msg, "content"):
+            continue
+        if hasattr(msg, "tool_calls"):
+            continue
+        if msg.name not in ("search_web", "search_fact_check_api"):
+            continue
+        try:
+            data = json.loads(msg.content) if isinstance(msg.content, str) else msg.content
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if isinstance(data, dict) and "_summary" in data:
+            summaries.append({"tool": msg.name, **data["_summary"]})
+    return summaries
+
+
+def _build_retry_context(result: FactCheckResult, used_queries: list[str], tool_summaries: list[dict]) -> str:
     """format adjudication justifications + used queries for the retry prompt."""
     parts = []
 
@@ -64,6 +84,13 @@ def _build_retry_context(result: FactCheckResult, used_queries: list[str]) -> st
         parts.append("## Queries ja utilizadas — NAO repita estas buscas\n")
         for i, q in enumerate(used_queries, 1):
             parts.append(f"{i}. {q}")
+        parts.append("")
+
+    if tool_summaries:
+        parts.append("## Resultados das buscas anteriores\n")
+        for s in tool_summaries:
+            items = [f"{k}={v}" for k, v in s.items() if k != "tool"]
+            parts.append(f"- {s['tool']}: {', '.join(items)}")
         parts.append("")
 
     parts.append("## Resultado do julgamento anterior\n")
@@ -163,7 +190,8 @@ async def prepare_retry_node(state: ContextAgentState) -> dict:
 
     messages = state.get("messages", [])
     used_queries = _extract_used_queries(messages)
-    retry_context = _build_retry_context(result, used_queries)
+    tool_summaries = _extract_tool_summaries(messages)
+    retry_context = _build_retry_context(result, used_queries, tool_summaries)
 
     # clear message history and seed with a HumanMessage so the retry agent
     # starts the same way as the normal context_agent

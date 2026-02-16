@@ -36,23 +36,25 @@ web. Utilize apenas para URLs de fontes confiaveis.
 Voce PODE e DEVE chamar varias ferramentas ao mesmo tempo em uma unica resposta. \
 SEMPRE chame search_fact_check_api E search_web simultaneamente.
 
-## Estrategias para esta tentativa — SEJA MAIS ESPECIFICO
+## Estrategias para esta tentativa — ADAPTE COM BASE NOS RESULTADOS
 
-A tentativa anterior falhou porque as buscas foram GENERICAS DEMAIS. \
-Desta vez voce DEVE usar queries significativamente mais especificas e direcionadas:
+A tentativa anterior falhou. Analise POR QUE olhando o _summary dos tool calls:
 
-- Inclua nomes completos de pessoas, organizacoes e locais envolvidos
-- Adicione datas exatas ou periodos especificos (mes/ano) nas queries
-- Use citacoes literais de trechos da alegacao entre aspas na busca
-- Combine entidade + evento + data em uma unica query
-- Busque em fontes especializadas no tema (ex: economia -> portais financeiros)
-- Tente queries em ingles se o tema for internacional
-- Considere buscar o contexto mais amplo da noticia, nao apenas a alegacao exata
-- Aumente max_results_general (ex: 8-10) e reduza max_results_per_domain (ex: 2) \
-para priorizar fontes diversas em vez de dominios especificos que ja nao tinham resultados
+1. Se retornaram POUCOS resultados, as queries estavam ESPECIFICAS DEMAIS:
+   - Use queries mais AMPLAS e gerais sobre o tema
+   - Remova aspas e termos muito restritivos
+   - Busque o contexto mais amplo da noticia, nao a alegacao literal
+   - Tente nomes parciais ou apenas sobrenome + evento
+   - Aumente max_results_general (ex: 8-10)
 
-NAO repita queries vagas ou amplas. Cada query deve conter ao menos 2 termos \
-especificos (nome, data, local ou evento concreto).
+2. Se retornaram resultados mas IRRELEVANTES, as queries capturaram o tema errado:
+   - Inclua nomes completos de pessoas, organizacoes e locais
+   - Adicione datas exatas ou periodos especificos
+   - Use citacoes literais entre aspas de trechos-chave
+   - Combine entidade + evento + data
+   - Tente queries em ingles se o tema for internacional
+
+3. Varie a estrategia: NAO repita o mesmo tipo de abordagem que ja falhou.
 
 ## Criterios para considerar fontes SUFICIENTES
 

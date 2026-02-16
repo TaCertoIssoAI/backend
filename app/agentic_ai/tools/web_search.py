@@ -81,6 +81,7 @@ class WebSearchTool:
                 logger.error(f"web search error for {key}: {result}")
 
         # dedup by URL within each domain key — keeps first occurrence
+        total_before = sum(len(v) for v in merged.values())
         for key in merged:
             seen_urls: set[str] = set()
             unique: list[GoogleSearchContext] = []
@@ -89,6 +90,13 @@ class WebSearchTool:
                     seen_urls.add(entry.url)
                     unique.append(entry)
             merged[key] = unique
+        total_after = sum(len(v) for v in merged.values())
+
+        per_key = {k: len(v) for k, v in merged.items() if v}
+        logger.debug(
+            f"web search: {total_after} result(s) across {len(per_key)} domain(s) "
+            f"(dedup removed {total_before - total_after}): {per_key}"
+        )
 
         return merged
 

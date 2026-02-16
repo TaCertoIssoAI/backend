@@ -51,7 +51,7 @@ def get_trusted_domains() -> List[str]:
             logger.warning(f"unexpected json structure in {json_path}, returning empty list")
             return []
 
-        logger.info(f"loaded {len(domains)} trusted domain(s) from {json_path}")
+        logger.debug(f"loaded {len(domains)} trusted domain(s) from {json_path}")
         return domains
 
     except json.JSONDecodeError as e:

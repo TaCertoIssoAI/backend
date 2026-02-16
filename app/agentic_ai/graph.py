@@ -58,19 +58,23 @@ def _make_tools(
         returns results classified as 'Muito confiável'.
         queries: list of search query strings."""
         results = await fact_checker.search(queries)
+        items = [
+            {
+                "id": r.id,
+                "title": r.title,
+                "publisher": r.publisher,
+                "rating": r.rating,
+                "claim_text": r.claim_text,
+                "url": r.url,
+                "review_date": r.review_date,
+            }
+            for r in results
+        ]
         return json.dumps(
-            [
-                {
-                    "id": r.id,
-                    "title": r.title,
-                    "publisher": r.publisher,
-                    "rating": r.rating,
-                    "claim_text": r.claim_text,
-                    "url": r.url,
-                    "review_date": r.review_date,
-                }
-                for r in results
-            ],
+            {
+                "results": items,
+                "_summary": {"total_results": len(items)},
+            },
             ensure_ascii=False,
         )
 
@@ -98,6 +102,9 @@ def _make_tools(
                 }
                 for e in entries
             ]
+        total = sum(len(entries) for entries in output.values())
+        per_domain = {k: len(v) for k, v in output.items() if v}
+        output["_summary"] = {"total_results": total, "per_domain": per_domain}
         return json.dumps(output, ensure_ascii=False)
 
     @tool
@@ -163,10 +170,11 @@ def _make_tool_node_with_state_update(
                 continue
 
             if msg.name == "search_fact_check_api":
-                if isinstance(data, list):
+                items = data.get("results", data) if isinstance(data, dict) else data
+                if isinstance(items, list):
                     from app.models.agenticai import SourceReliability as SR
 
-                    for item in data:
+                    for item in items:
                         new_fact_checks.append(
                             FactCheckApiContext(
                                 id=item.get("id", str(uuid4())),
@@ -187,6 +195,8 @@ def _make_tool_node_with_state_update(
                     from app.agentic_ai.config import DOMAIN_SEARCHES
 
                     for domain_key, entries in data.items():
+                        if domain_key == "_summary":
+                            continue
                         reliability = DOMAIN_SEARCHES.get(
                             domain_key, {}
                         ).get("reliability", SourceReliability.NEUTRO)
@@ -223,10 +233,22 @@ def _make_tool_node_with_state_update(
                             )
                         )
 
+        # count actual new items (not just truthy dict with empty lists)
+        new_search_count = sum(len(v) for v in new_search_results.values())
+        existing_fc = len(state.get("fact_check_results", []))
+        existing_search = sum(len(v) for v in state.get("search_results", {}).values())
+        existing_scraped = len(state.get("scraped_pages", []))
+
+        logger.debug(
+            f"tool_node parsed: {len(new_fact_checks)} new fact_check, "
+            f"{new_search_count} new search, {len(new_scraped)} new scraped "
+            f"(state has {existing_fc} fc, {existing_search} search, {existing_scraped} scraped)"
+        )
+
         update: dict[str, Any] = {"messages": messages}
         if new_fact_checks:
             update["fact_check_results"] = state.get("fact_check_results", []) + new_fact_checks
-        if new_search_results:
+        if new_search_count:
             update["search_results"] = _merge_search_results(
                 state.get("search_results", {}), new_search_results
             )

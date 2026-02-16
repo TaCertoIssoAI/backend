@@ -9,6 +9,7 @@ from app.agentic_ai.config import MAX_RETRY_COUNT
 from app.agentic_ai.controlflow.prepare_retry import (
     _all_verdicts_insufficient,
     _extract_used_queries,
+    _extract_tool_summaries,
     _build_retry_context,
     _get_cited_numbers,
     _filter_to_cited_sources,
@@ -163,14 +164,14 @@ def test_build_retry_context_includes_justifications():
     result.results[0].claim_verdicts[0].claim_text = "Earth is flat"
     result.results[0].claim_verdicts[0].justification = "No sources found"
 
-    context = _build_retry_context(result, [])
+    context = _build_retry_context(result, [], [])
     assert "Earth is flat" in context
     assert "No sources found" in context
 
 
 def test_build_retry_context_includes_queries():
     result = _make_fact_check_result(["Fontes insuficientes para verificar"])
-    context = _build_retry_context(result, ["old query 1", "old query 2"])
+    context = _build_retry_context(result, ["old query 1", "old query 2"], [])
     assert "NAO repita" in context
     assert "old query 1" in context
     assert "old query 2" in context
@@ -181,8 +182,28 @@ def test_build_retry_context_includes_summary():
         ["Fontes insuficientes para verificar"],
         summary="Not enough evidence found",
     )
-    context = _build_retry_context(result, [])
+    context = _build_retry_context(result, [], [])
     assert "Not enough evidence found" in context
+
+
+def test_build_retry_context_includes_tool_summaries():
+    result = _make_fact_check_result(["Fontes insuficientes para verificar"])
+    summaries = [
+        {"tool": "search_web", "total_results": 2, "per_domain": {"geral": 1, "folha": 1}},
+        {"tool": "search_fact_check_api", "total_results": 0},
+    ]
+    context = _build_retry_context(result, [], summaries)
+    assert "Resultados das buscas anteriores" in context
+    assert "search_web" in context
+    assert "total_results=2" in context
+    assert "search_fact_check_api" in context
+    assert "total_results=0" in context
+
+
+def test_build_retry_context_omits_tool_summaries_when_empty():
+    result = _make_fact_check_result(["Fontes insuficientes para verificar"])
+    context = _build_retry_context(result, [], [])
+    assert "Resultados das buscas anteriores" not in context
 
 
 # --- prepare_retry_node tests ---
@@ -477,5 +498,64 @@ async def test_prepare_retry_overwrites_sources():
     assert len(result["fact_check_results"]) == 1
     assert result["search_results"]["geral"] == []
     assert result["scraped_pages"] == []
+
+
+# --- _extract_tool_summaries tests ---
+
+import json
+
+
+def _make_tool_msg(name: str, content: str) -> MagicMock:
+    """simulate a ToolMessage (has name + content, no tool_calls)."""
+    msg = MagicMock(spec=["name", "content", "id"])
+    msg.name = name
+    msg.content = content
+    msg.id = f"tool-{name}"
+    return msg
+
+
+def test_extract_tool_summaries_from_messages():
+    web_content = json.dumps({
+        "results": [],
+        "_summary": {"total_results": 2, "per_domain": {"geral": 1, "folha": 1}},
+    })
+    fc_content = json.dumps({
+        "results": [],
+        "_summary": {"total_results": 0},
+    })
+    messages = [
+        _make_tool_msg("search_web", web_content),
+        _make_tool_msg("search_fact_check_api", fc_content),
+    ]
+    summaries = _extract_tool_summaries(messages)
+    assert len(summaries) == 2
+    assert summaries[0] == {"tool": "search_web", "total_results": 2, "per_domain": {"geral": 1, "folha": 1}}
+    assert summaries[1] == {"tool": "search_fact_check_api", "total_results": 0}
+
+
+def test_extract_tool_summaries_skips_ai_messages():
+    ai_msg = _make_ai_msg_with_tool_calls([
+        {"name": "search_web", "args": {"queries": ["q1"]}},
+    ])
+    summaries = _extract_tool_summaries([ai_msg])
+    assert summaries == []
+
+
+def test_extract_tool_summaries_skips_irrelevant_tools():
+    msg = _make_tool_msg("scrape_pages", json.dumps({"_summary": {"total": 1}}))
+    summaries = _extract_tool_summaries([msg])
+    assert summaries == []
+
+
+def test_extract_tool_summaries_skips_messages_without_summary():
+    msg = _make_tool_msg("search_web", json.dumps({"results": []}))
+    summaries = _extract_tool_summaries([msg])
+    assert summaries == []
+
+
+def test_extract_tool_summaries_handles_invalid_json():
+    msg = _make_tool_msg("search_web", "not valid json {{{")
+    summaries = _extract_tool_summaries([msg])
+    assert summaries == []
 
 

@@ -55,7 +55,11 @@ Se esses critérios estão atendidos, NÃO chame mais ferramentas. Em vez disso,
 SEMPRE responda com um resumo breve explicando: Quais as fontes mais relevantes para realizar \
 a checagem da afirmação e por que você as considera suficiente para uma análise
 
-Se NÃO estão atendidos, faça mais buscas com queries diferentes ou mais específicas.
+Se NAO estao atendidos, analise o campo _summary no retorno de cada ferramenta:
+- POUCOS resultados (< 3 por dominio): suas queries podem estar especificas demais — \
+tente queries mais AMPLAS e gerais sobre o tema.
+- MUITOS resultados mas nenhum relevante: reformule com termos mais especificos.
+- Varie a estrategia: se queries especificas falharam, tente gerais e vice-versa.
 
 ## Iteração atual: {iteration_count}/{max_iterations}
 

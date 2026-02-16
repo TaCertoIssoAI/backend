@@ -32,3 +32,15 @@ def test_retry_prompt_omits_collected_sources():
     )
     assert "Fontes ja coletadas" not in prompt
     assert "SEGUNDA TENTATIVA" in prompt
+
+
+def test_retry_prompt_contains_adaptive_strategy():
+    """retry prompt should use adaptive guidance instead of always 'be more specific'."""
+    prompt = build_retry_system_prompt(
+        iteration_count=1,
+        retry_context="context",
+        max_iterations=3,
+    )
+    assert "ADAPTE COM BASE" in prompt
+    assert "SEJA MAIS ESPECIFICO" not in prompt
+    assert "_summary" in prompt

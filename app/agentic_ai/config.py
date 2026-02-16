@@ -9,7 +9,7 @@ import logging
 MAX_ITERATIONS = 5
 
 # retry on insufficient sources
-MAX_RETRY_COUNT = 1
+MAX_RETRY_COUNT = 2
 MAX_RETRY_ITERATIONS = 3
 
 # timeouts (seconds)
