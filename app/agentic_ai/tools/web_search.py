@@ -126,8 +126,7 @@ class WebSearchTool:
                 num=min(max_results, 10),
                 site_search=site_search,
                 site_search_filter=site_search_filter,
-                date_restrict="m3",
-                language="lang_pt",
+               # language="lang_pt" this leads to better sources but they sometimes come in english, however if there are portuguese sources they will come first due to the query language
                 timeout=self.timeout,
             )
 

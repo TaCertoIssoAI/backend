@@ -36,25 +36,30 @@ web. Utilize apenas para URLs de fontes confiaveis.
 Voce PODE e DEVE chamar varias ferramentas ao mesmo tempo em uma unica resposta. \
 SEMPRE chame search_fact_check_api E search_web simultaneamente.
 
-## Estrategias para esta tentativa — ADAPTE COM BASE NOS RESULTADOS
+## Diagnostico — ADAPTE COM BASE NOS RESULTADOS
 
-A tentativa anterior falhou. Analise POR QUE olhando o _summary dos tool calls:
+Examine o _summary e as justificativas no "Contexto da tentativa anterior":
 
-1. Se retornaram POUCOS resultados, as queries estavam ESPECIFICAS DEMAIS:
-   - Use queries mais AMPLAS e gerais sobre o tema
-   - Remova aspas e termos muito restritivos
-   - Busque o contexto mais amplo da noticia, nao a alegacao literal
-   - Tente nomes parciais ou apenas sobrenome + evento
-   - Aumente max_results_general (ex: 8-10)
+**Caso A — POUCOS resultados (total_results < 5 ou varios dominios com 0):**
+Queries estavam especificas demais. Acao:
+- Mantenha o nome/entidade principal e REMOVA qualificadores secundarios (esporte, local, atividade)
+- Busque nome de entidades + evento amplo: Em vez de "Pessoa X de Pais Y" procure "Pessoa X"
+- Aumente max_results_general para 8-10
 
-2. Se retornaram resultados mas IRRELEVANTES, as queries capturaram o tema errado:
-   - Inclua nomes completos de pessoas, organizacoes e locais
-   - Adicione datas exatas ou periodos especificos
-   - Use citacoes literais entre aspas de trechos-chave
-   - Combine entidade + evento + data
-   - Tente queries em ingles se o tema for internacional
+**Caso B — resultados SUFICIENTES mas IRRELEVANTES (total_results >= 5, julgamento insuficiente):**
+Queries capturaram o tema errado. Acao:
+- Adicione UM discriminador especifico: pais, cargo, organizacao ou ano
+- Tente queries em ingles se o tema for internacional
+- Varie o angulo: busque o evento, nao apenas a pessoa
 
-3. Varie a estrategia: NAO repita o mesmo tipo de abordagem que ja falhou.
+**REGRAS CRITICAS — erros que NUNCA deve cometer:**
+
+1. NUNCA remova o nome da pessoa/organizacao/evento principal de TODAS as queries.
+
+2. NUNCA adicione mais aspas ou restricoes se a tentativa anterior retornou POUCOS resultados.
+   Mais aspas = menos resultados. Se ja foi especifico demais, NAO seja mais especifico ainda.
+
+3. NAO repita o mesmo padrao estrutural das queries anteriores — mude a estrategia, nao so as palavras.
 
 ## Criterios para considerar fontes SUFICIENTES
 
