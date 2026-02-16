@@ -480,8 +480,8 @@ async def test_prepare_retry_overwrites_sources():
 
 
 @pytest.mark.asyncio
-async def test_prepare_retry_rebuilds_seen_source_keys():
-    """seen_source_keys is rebuilt from cited sources only, allowing uncited URLs to be re-found."""
+async def test_prepare_retry_clears_seen_source_keys():
+    """seen_source_keys is fully cleared on retry so the agent starts dedup fresh."""
     fc = _make_fc("fc-1")
     gs = _make_gs("ge-1", "geral", "bbc.com")
     sc = _make_sc("sc-1")
@@ -492,19 +492,13 @@ async def test_prepare_retry_rebuilds_seen_source_keys():
         search_results={"geral": [gs]},
         scraped_pages=[sc],
     )
-    # pre-populate seen keys as if all three were discovered
     state["seen_source_keys"] = {
         ("fact_check", fc.url),
         ("search", gs.url),
         ("scraped", sc.url),
     }
-    # cite only [1] (fact check)
     state["adjudication_result"].results[0].claim_verdicts[0].justification = "See [1]."
 
     result = await prepare_retry_node(state)
 
-    # only the cited source's key survives
-    assert result["seen_source_keys"] == {("fact_check", fc.url)}
-    # uncited URLs are no longer blocked — retry agent can re-find them
-    assert ("search", gs.url) not in result["seen_source_keys"]
-    assert ("scraped", sc.url) not in result["seen_source_keys"]
+    assert result["seen_source_keys"] == set()

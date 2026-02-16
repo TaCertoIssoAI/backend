@@ -37,7 +37,7 @@ class WebSearchTool:
         self.timeout = timeout
 
     async def search(
-        self, queries: list[str], max_results_per_search: int = 3
+        self, queries: list[str], max_results_per_search: int = 4
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
         merged: dict[str, list[GoogleSearchContext]] = {
@@ -49,6 +49,11 @@ class WebSearchTool:
 
         for query in queries:
             for domain_key, domain_cfg in DOMAIN_SEARCHES.items():
+                final_max_results = max_results_per_search
+                max_cfg = domain_cfg.get("max_results_per_call", "")
+                if max_cfg :
+                    final_max_results = max_cfg
+
                 tasks.append(
                     self._search_single(
                         query=query,
@@ -57,7 +62,7 @@ class WebSearchTool:
                         site_search_filter=domain_cfg["site_search_filter"],
                         query_suffix=domain_cfg.get("query_suffix"),
                         reliability=domain_cfg["reliability"],
-                        max_results=max_results_per_search,
+                        max_results=final_max_results,
                     )
                 )
                 task_keys.append(domain_key)
