@@ -8,6 +8,10 @@ import logging
 # iteration limits
 MAX_ITERATIONS = 5
 
+# retry on insufficient sources
+MAX_RETRY_COUNT = 1
+MAX_RETRY_ITERATIONS = 3
+
 # timeouts (seconds)
 SEARCH_TIMEOUT_PER_QUERY = 15.0
 SCRAPE_TIMEOUT_PER_PAGE = 30.0

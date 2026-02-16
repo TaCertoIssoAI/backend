@@ -60,3 +60,7 @@ class ContextAgentState(MessagesState):
 
     # adjudication output (set once by the adjudication node)
     adjudication_result: Optional[FactCheckResult]
+
+    # retry control (last-write-wins)
+    retry_count: int
+    retry_context: Optional[str]

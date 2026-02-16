@@ -131,6 +131,8 @@ async def test_graph_runs_to_completion():
         "formatted_data_sources": "",
         "run_id": "test-run",
         "adjudication_result": None,
+        "retry_count": 0,
+        "retry_context": None,
     }
 
     final_state = await graph.ainvoke(initial_state)
@@ -191,3 +193,91 @@ def test_extract_output_fallback():
     assert isinstance(output, ContextNodeOutput)
     assert len(output.fact_check_results) == 1
     assert "geral" in output.search_results
+
+
+def _make_mock_adjudication_model_with_retry():
+    """create adjudication model that returns insufficient on first call, Falso on second."""
+    model = MagicMock()
+    call_count = 0
+
+    insufficient_output = LLMAdjudicationOutput(
+        results=[
+            LLMDataSourceResult(
+                data_source_id=None,
+                claim_verdicts=[
+                    LLMClaimVerdict(
+                        claim_id=None,
+                        claim_text="Test claim",
+                        verdict="Fontes insuficientes para verificar",
+                        justification="No reliable sources found.",
+                        citations_used=[],
+                    )
+                ],
+            )
+        ],
+        overall_summary="Insufficient sources.",
+    )
+
+    falso_output = LLMAdjudicationOutput(
+        results=[
+            LLMDataSourceResult(
+                data_source_id=None,
+                claim_verdicts=[
+                    LLMClaimVerdict(
+                        claim_id=None,
+                        claim_text="Test claim",
+                        verdict="Falso",
+                        justification="Contradicted by new sources.",
+                        citations_used=[],
+                    )
+                ],
+            )
+        ],
+        overall_summary="Claim is false after retry.",
+    )
+
+    async def _invoke(messages):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return insufficient_output
+        return falso_output
+
+    structured = AsyncMock()
+    structured.ainvoke = _invoke
+    model.with_structured_output = MagicMock(return_value=structured)
+    return model
+
+
+@pytest.mark.asyncio
+async def test_graph_retries_on_all_insufficient():
+    """graph retries when first adjudication returns all-insufficient verdicts."""
+    from langchain_core.messages import AIMessage
+
+    model = _make_mock_model()
+    adj_model = _make_mock_adjudication_model_with_retry()
+    graph = build_graph(model, MockFactChecker(), MockWebSearcher(), MockScraper(), adj_model)
+
+    initial_state = {
+        "messages": [AIMessage(content="Test")],
+        "data_sources": [DataSource(id="ds-1", source_type="original_text", original_text="Test claim")],
+        "fact_check_results": [],
+        "search_results": {},
+        "scraped_pages": [],
+        "iteration_count": 0,
+        "pending_async_count": 0,
+        "formatted_data_sources": "Test claim text",
+        "run_id": "test-run",
+        "adjudication_result": None,
+        "retry_count": 0,
+        "retry_context": None,
+    }
+
+    final_state = await graph.ainvoke(initial_state)
+
+    assert final_state["retry_count"] == 1
+    assert final_state["adjudication_result"] is not None
+    result = final_state["adjudication_result"]
+    assert isinstance(result, FactCheckResult)
+    # second adjudication should produce "Falso"
+    assert result.results[0].claim_verdicts[0].verdict == "Falso"

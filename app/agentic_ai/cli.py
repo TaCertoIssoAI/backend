@@ -79,6 +79,8 @@ async def run_context_agent(text: str) -> FactCheckResult | ContextNodeOutput:
         "pending_async_count": 0,
         "formatted_data_sources": "",
         "adjudication_result": None,
+        "retry_count": 0,
+        "retry_context": None,
     }
 
     final_state = await graph.ainvoke(initial_state)
@@ -245,6 +247,8 @@ def _make_empty_state() -> dict:
         "pending_async_count": 0,
         "formatted_data_sources": "",
         "adjudication_result": None,
+        "retry_count": 0,
+        "retry_context": None,
     }
 
 
@@ -375,12 +379,17 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
         "pending_async_count": session_state["pending_async_count"],
         "formatted_data_sources": session_state["formatted_data_sources"],
         "adjudication_result": session_state.get("adjudication_result"),
+        "retry_count": session_state.get("retry_count", 0),
+        "retry_context": session_state.get("retry_context"),
     }
 
     iteration = 0
 
     async for event in graph.astream(run_input, stream_mode="updates"):
         for node_name, update in event.items():
+            if not update:
+                continue
+
             # accumulate streamed updates into session_state
             if "messages" in update:
                 session_state["messages"].extend(update["messages"])
@@ -400,6 +409,10 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                 session_state["formatted_data_sources"] = update["formatted_data_sources"]
             if "adjudication_result" in update:
                 session_state["adjudication_result"] = update["adjudication_result"]
+            if "retry_count" in update:
+                session_state["retry_count"] = update["retry_count"]
+            if "retry_context" in update:
+                session_state["retry_context"] = update["retry_context"]
 
             # display
             if node_name == "format_input":
@@ -452,6 +465,31 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                     print(f"\n{Colors.BOLD}[adjudication]{Colors.END}")
                     refs = _build_source_refs(session_state)
                     _display_fact_check_result(adj_result, source_refs=refs)
+
+            elif node_name == "prepare_retry":
+                retry_count = update.get("retry_count", 0)
+                if retry_count > 0 and update.get("adjudication_result") is None:
+                    print(f"\n{Colors.YELLOW}[prepare_retry]{Colors.END} all verdicts insufficient, retrying")
+                else:
+                    print(f"\n{Colors.GREEN}[prepare_retry]{Colors.END} accepting result")
+
+            elif node_name == "retry_context_agent":
+                iteration += 1
+                print(f"\n{Colors.BOLD}[retry iteration {iteration}]{Colors.END} "
+                      f"{Colors.CYAN}retry_context_agent{Colors.END}")
+
+                for msg in update.get("messages", []):
+                    if isinstance(msg, AIMessage):
+                        has_tools = hasattr(msg, "tool_calls") and msg.tool_calls
+                        if has_tools:
+                            _print_tool_calls(msg.tool_calls)
+                        else:
+                            print(f"  {Colors.GREEN}-> no tool calls, ending{Colors.END}")
+
+            elif node_name == "retry_tools":
+                tool_msgs = update.get("messages", [])
+                count = len(tool_msgs)
+                print(f"{Colors.YELLOW}[retry_tools]{Colors.END} executed {count} tool call{'s' if count != 1 else ''}")
 
     print(f"\n{Colors.GREEN}Done ({iteration} iterations){Colors.END}")
 

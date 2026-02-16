@@ -1,7 +1,8 @@
 """
 LangGraph state graph definition for the context search loop.
 
-compiles the graph with: context_agent → check_edges → (wait_for_async | END).
+compiles the graph with: context_agent → check_edges → (wait_for_async | adjudication).
+after adjudication, prepare_retry decides whether to retry with different queries.
 tool calls are handled by the built-in LangGraph ToolNode.
 """
 
@@ -29,7 +30,12 @@ from app.agentic_ai.nodes.context_agent import make_context_agent_node
 from app.agentic_ai.nodes.adjudication import make_adjudication_node
 from app.agentic_ai.nodes.check_edges import check_edges as check_edges_router
 from app.agentic_ai.nodes.format_input import format_input_node
+from app.agentic_ai.nodes.retry_context_agent import make_retry_context_agent_node
 from app.agentic_ai.controlflow.wait_for_async import wait_for_async_node
+from app.agentic_ai.controlflow.prepare_retry import (
+    prepare_retry_node,
+    route_after_prepare_retry,
+)
 from app.agentic_ai.tools.protocols import (
     FactCheckSearchProtocol,
     WebSearchProtocol,
@@ -73,7 +79,7 @@ def _make_tools(
         queries: list[str], max_results_per_search: int = 5
     ) -> str:
         """search the web across general and domain-specific sources (G1, Estadão, Aos Fatos, Folha).
-        queries: list of search query strings. 
+        queries: list of search query strings.
         max_results_per_search: max results per domain per query (default 5).
         Try to use the default max result and only increase it when strictly necessary
         """
@@ -228,6 +234,26 @@ def _make_tool_node_with_state_update(
     return tool_node_with_state_update
 
 
+def _make_route_after_agent(tools_node_name: str):
+    """create a router for an agent node that directs to the correct tools node."""
+
+    def router(state: ContextAgentState) -> str:
+        last_msg = state["messages"][-1] if state.get("messages") else None
+        has_tool_calls = (
+            hasattr(last_msg, "tool_calls") and last_msg.tool_calls
+        ) if last_msg else False
+
+        if has_tool_calls:
+            return tools_node_name
+
+        edge = check_edges_router(state)
+        if edge == "wait_for_async":
+            return "wait_for_async"
+        return "adjudication"
+
+    return router
+
+
 def build_graph(
     model: Any,
     fact_checker: FactCheckSearchProtocol,
@@ -256,22 +282,7 @@ def build_graph(
         tools, fact_checker, web_searcher, page_scraper
     )
     adjudication_node = make_adjudication_node(adjudication_model or model)
-
-    def _route_after_agent(state: ContextAgentState) -> str:
-        """combined router: check for tool calls first, then check_edges logic."""
-        last_msg = state["messages"][-1] if state.get("messages") else None
-        has_tool_calls = (
-            hasattr(last_msg, "tool_calls") and last_msg.tool_calls
-        ) if last_msg else False
-
-        if has_tool_calls:
-            return "tools"
-
-        # no tool calls — apply check_edges routing
-        edge = check_edges_router(state)
-        if edge == "wait_for_async":
-            return "wait_for_async"
-        return "adjudication"
+    retry_context_agent_node = make_retry_context_agent_node(model_with_tools)
 
     graph = StateGraph(ContextAgentState)
 
@@ -280,6 +291,9 @@ def build_graph(
     graph.add_node("tools", tool_node)
     graph.add_node("wait_for_async", wait_for_async_node)
     graph.add_node("adjudication", adjudication_node)
+    graph.add_node("prepare_retry", prepare_retry_node)
+    graph.add_node("retry_context_agent", retry_context_agent_node)
+    graph.add_node("retry_tools", tool_node)  # same function, different graph name
 
     graph.add_edge(START, "format_input")
     graph.add_edge("format_input", "context_agent")
@@ -287,7 +301,7 @@ def build_graph(
     # after context_agent: route based on tool calls + check_edges
     graph.add_conditional_edges(
         "context_agent",
-        _route_after_agent,
+        _make_route_after_agent("tools"),
         {
             "tools": "tools",
             "wait_for_async": "wait_for_async",
@@ -301,8 +315,25 @@ def build_graph(
     # after wait_for_async: go back to context_agent
     graph.add_edge("wait_for_async", "context_agent")
 
-    # adjudication is the terminal node
-    graph.add_edge("adjudication", END)
+    # adjudication -> prepare_retry -> (retry_context_agent | END)
+    graph.add_edge("adjudication", "prepare_retry")
+    graph.add_conditional_edges(
+        "prepare_retry",
+        route_after_prepare_retry,
+        {"retry_context_agent": "retry_context_agent", END: END},
+    )
+
+    # retry agent loop (mirrors context_agent loop)
+    graph.add_conditional_edges(
+        "retry_context_agent",
+        _make_route_after_agent("retry_tools"),
+        {
+            "retry_tools": "retry_tools",
+            "wait_for_async": "wait_for_async",
+            "adjudication": "adjudication",
+        },
+    )
+    graph.add_edge("retry_tools", "retry_context_agent")
 
     return graph.compile()
 
