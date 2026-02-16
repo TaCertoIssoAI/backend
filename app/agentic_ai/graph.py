@@ -221,7 +221,38 @@ def _make_tool_node_with_state_update(
                             )
                         )
 
-        update: dict[str, Any] = {"messages": messages}
+        # deduplicate new results against already-seen (context_type, url) pairs
+        seen = set(state.get("seen_source_keys", set()))
+        total_before = (
+            len(new_fact_checks)
+            + sum(len(v) for v in new_search_results.values())
+            + len(new_scraped)
+        )
+
+        def _filter_new(entries, context_type):
+            filtered = []
+            for entry in entries:
+                key = (context_type, entry.url)
+                if key not in seen:
+                    seen.add(key)
+                    filtered.append(entry)
+            return filtered
+
+        new_fact_checks = _filter_new(new_fact_checks, "fact_check")
+        for domain_key in new_search_results:
+            new_search_results[domain_key] = _filter_new(new_search_results[domain_key], "search")
+        new_scraped = _filter_new(new_scraped, "scraped")
+
+        total_after = (
+            len(new_fact_checks)
+            + sum(len(v) for v in new_search_results.values())
+            + len(new_scraped)
+        )
+        dropped = total_before - total_after
+        if dropped:
+            logger.debug(f"tool_node dedup: dropped {dropped} duplicate source(s) out of {total_before}")
+
+        update: dict[str, Any] = {"messages": messages, "seen_source_keys": seen}
         if new_fact_checks:
             update["fact_check_results"] = state.get("fact_check_results", []) + new_fact_checks
         if new_search_results:

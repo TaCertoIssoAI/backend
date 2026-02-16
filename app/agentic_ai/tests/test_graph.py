@@ -1,5 +1,6 @@
 """tests for graph compilation and structure."""
 
+import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -133,6 +134,7 @@ async def test_graph_runs_to_completion():
         "adjudication_result": None,
         "retry_count": 0,
         "retry_context": None,
+        "seen_source_keys": set(),
     }
 
     final_state = await graph.ainvoke(initial_state)
@@ -271,6 +273,7 @@ async def test_graph_retries_on_all_insufficient():
         "adjudication_result": None,
         "retry_count": 0,
         "retry_context": None,
+        "seen_source_keys": set(),
     }
 
     final_state = await graph.ainvoke(initial_state)
@@ -281,3 +284,107 @@ async def test_graph_retries_on_all_insufficient():
     assert isinstance(result, FactCheckResult)
     # second adjudication should produce "Falso"
     assert result.results[0].claim_verdicts[0].verdict == "Falso"
+
+
+# ── dedup tests ──────────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_tool_node_deduplicates_by_url(monkeypatch):
+    """tool_node drops results whose (context_type, url) is already in seen_source_keys."""
+    from langchain_core.messages import ToolMessage
+    from app.agentic_ai.graph import _make_tool_node_with_state_update, _make_tools
+
+    search_json = json.dumps({
+        "geral": [{"id": "gs-1", "title": "Dup", "url": "https://dup.com", "snippet": "s", "domain": "dup.com"}]
+    })
+    tool_msg = ToolMessage(content=search_json, name="search_web", tool_call_id="tc-1")
+
+    mock_tool_node = AsyncMock()
+    mock_tool_node.ainvoke = AsyncMock(return_value={"messages": [tool_msg]})
+    monkeypatch.setattr("app.agentic_ai.graph.ToolNode", lambda tools: mock_tool_node)
+
+    tools = _make_tools(MockFactChecker(), MockWebSearcher(), MockScraper())
+    tool_node_fn = _make_tool_node_with_state_update(
+        tools, MockFactChecker(), MockWebSearcher(), MockScraper(),
+    )
+
+    # first call: empty seen set → url is kept
+    state1 = {
+        "messages": [], "fact_check_results": [], "search_results": {},
+        "scraped_pages": [], "seen_source_keys": set(),
+    }
+    result1 = await tool_node_fn(state1)
+    assert ("search", "https://dup.com") in result1["seen_source_keys"]
+    assert len(result1["search_results"]["geral"]) == 1
+
+    # second call: url already seen → duplicate dropped
+    state2 = {
+        "messages": [], "fact_check_results": [],
+        "search_results": result1["search_results"],
+        "scraped_pages": [], "seen_source_keys": result1["seen_source_keys"],
+    }
+    result2 = await tool_node_fn(state2)
+    total = sum(len(v) for v in result2.get("search_results", {}).values())
+    # merged result still has exactly the original 1 entry, no growth
+    assert total == 1
+
+
+@pytest.mark.asyncio
+async def test_tool_node_allows_same_url_different_context_type(monkeypatch):
+    """same URL as fact_check and scraped are both kept because (context_type, url) differs."""
+    from langchain_core.messages import ToolMessage
+    from app.agentic_ai.graph import _make_tool_node_with_state_update, _make_tools
+
+    shared_url = "https://shared.com/article"
+    fc_msg = ToolMessage(
+        content=json.dumps([{
+            "id": "fc-1", "title": "FC", "url": shared_url,
+            "publisher": "P", "rating": "Falso", "claim_text": "c", "review_date": None,
+        }]),
+        name="search_fact_check_api", tool_call_id="tc-1",
+    )
+    scrape_msg = ToolMessage(
+        content=json.dumps([{
+            "id": "sc-1", "title": "SC", "url": shared_url,
+            "content_preview": "text", "extraction_status": "success",
+        }]),
+        name="scrape_pages", tool_call_id="tc-2",
+    )
+
+    call_count = 0
+
+    async def _mock_ainvoke(state):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return {"messages": [fc_msg]}
+        return {"messages": [scrape_msg]}
+
+    mock_tool_node = MagicMock()
+    mock_tool_node.ainvoke = _mock_ainvoke
+    monkeypatch.setattr("app.agentic_ai.graph.ToolNode", lambda tools: mock_tool_node)
+
+    tools = _make_tools(MockFactChecker(), MockWebSearcher(), MockScraper())
+    tool_node_fn = _make_tool_node_with_state_update(
+        tools, MockFactChecker(), MockWebSearcher(), MockScraper(),
+    )
+
+    # first call: fact_check result
+    state1 = {
+        "messages": [], "fact_check_results": [], "search_results": {},
+        "scraped_pages": [], "seen_source_keys": set(),
+    }
+    result1 = await tool_node_fn(state1)
+    assert ("fact_check", shared_url) in result1["seen_source_keys"]
+    assert len(result1.get("fact_check_results", [])) == 1
+
+    # second call: scraped result with same URL, different context type → kept
+    state2 = {
+        "messages": [], "fact_check_results": result1["fact_check_results"],
+        "search_results": {}, "scraped_pages": [],
+        "seen_source_keys": result1["seen_source_keys"],
+    }
+    result2 = await tool_node_fn(state2)
+    assert ("scraped", shared_url) in result2["seen_source_keys"]
+    assert len(result2.get("scraped_pages", [])) == 1

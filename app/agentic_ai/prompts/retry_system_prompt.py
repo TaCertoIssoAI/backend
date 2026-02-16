@@ -35,14 +35,21 @@ web. Utilize apenas para URLs de fontes confiaveis.
 Voce PODE e DEVE chamar varias ferramentas ao mesmo tempo em uma unica resposta. \
 SEMPRE chame search_fact_check_api E search_web simultaneamente.
 
-## Estrategias para esta tentativa
+## Estrategias para esta tentativa — SEJA MAIS ESPECIFICO
 
-- Reformule as queries com sinonimos ou termos mais especificos
-- Busque pelo nome das entidades envolvidas
-- Use datas ou periodos especificos
-- Busque em fontes especializadas no tema
+A tentativa anterior falhou porque as buscas foram GENERICAS DEMAIS. \
+Desta vez voce DEVE usar queries significativamente mais especificas e direcionadas:
+
+- Inclua nomes completos de pessoas, organizacoes e locais envolvidos
+- Adicione datas exatas ou periodos especificos (mes/ano) nas queries
+- Use citacoes literais de trechos da alegacao entre aspas na busca
+- Combine entidade + evento + data em uma unica query
+- Busque em fontes especializadas no tema (ex: economia -> portais financeiros)
 - Tente queries em ingles se o tema for internacional
 - Considere buscar o contexto mais amplo da noticia, nao apenas a alegacao exata
+
+NAO repita queries vagas ou amplas. Cada query deve conter ao menos 2 termos \
+especificos (nome, data, local ou evento concreto).
 
 ## Criterios para considerar fontes SUFICIENTES
 

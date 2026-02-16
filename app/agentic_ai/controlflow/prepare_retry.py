@@ -178,6 +178,32 @@ async def prepare_retry_node(state: ContextAgentState) -> dict:
     cited = _get_cited_numbers(fc, sr, sp, result)
     retained_fc, retained_search, retained_scraped = _filter_to_cited_sources(fc, sr, sp, cited)
 
+    # rebuild seen_source_keys from only the retained (cited) sources
+    # so the retry agent can re-discover previously uncited URLs
+    seen_keys: set[tuple[str, str]] = set()
+    for entry in retained_fc:
+        seen_keys.add(("fact_check", entry.url))
+    for entries in retained_search.values():
+        for entry in entries:
+            seen_keys.add(("search", entry.url))
+    for entry in retained_scraped:
+        seen_keys.add(("scraped", entry.url))
+
+    total_prev = (
+        len(fc)
+        + sum(len(v) for v in sr.values())
+        + len(sp)
+    )
+    retained_total = (
+        len(retained_fc)
+        + sum(len(v) for v in retained_search.values())
+        + len(retained_scraped)
+    )
+    logger.debug(
+        f"prepare_retry: carrying {retained_total} cited source(s) "
+        f"out of {total_prev} into retry context"
+    )
+
     logger.info(
         f"prepare_retry: triggering retry (count={retry_count + 1}), "
         f"clearing {len(removals) - 1} messages, {len(used_queries)} queries to avoid, "
@@ -195,6 +221,7 @@ async def prepare_retry_node(state: ContextAgentState) -> dict:
         "fact_check_results": retained_fc,
         "search_results": retained_search,
         "scraped_pages": retained_scraped,
+        "seen_source_keys": seen_keys,
     }
 
 

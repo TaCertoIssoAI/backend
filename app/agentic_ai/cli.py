@@ -81,6 +81,7 @@ async def run_context_agent(text: str) -> FactCheckResult | ContextNodeOutput:
         "adjudication_result": None,
         "retry_count": 0,
         "retry_context": None,
+        "seen_source_keys": set(),
     }
 
     final_state = await graph.ainvoke(initial_state)
@@ -249,6 +250,7 @@ def _make_empty_state() -> dict:
         "adjudication_result": None,
         "retry_count": 0,
         "retry_context": None,
+        "seen_source_keys": set(),
     }
 
 
@@ -382,6 +384,7 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
         "adjudication_result": session_state.get("adjudication_result"),
         "retry_count": session_state.get("retry_count", 0),
         "retry_context": session_state.get("retry_context"),
+        "seen_source_keys": set(session_state.get("seen_source_keys", set())),
     }
 
     iteration = 0
@@ -414,6 +417,8 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                 session_state["retry_count"] = update["retry_count"]
             if "retry_context" in update:
                 session_state["retry_context"] = update["retry_context"]
+            if "seen_source_keys" in update:
+                session_state["seen_source_keys"] = update["seen_source_keys"]
 
             # display
             if node_name == "format_input":
