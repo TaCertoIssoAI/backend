@@ -8,6 +8,7 @@ in a single pass, producing a FactCheckResult.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from typing import Any
@@ -15,6 +16,7 @@ from uuid import uuid4
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from app.agentic_ai.config import ADJUDICATION_MAX_RETRIES, ADJUDICATION_TIMEOUT
 from app.agentic_ai.prompts.adjudication_prompt import build_adjudication_prompt
 from app.agentic_ai.state import ContextAgentState
 from app.models.factchecking import (
@@ -99,6 +101,21 @@ def _convert_to_fact_check_result(
     )
 
 
+def _make_timeout_error_result(attempts: int, timeout: float) -> FactCheckResult:
+    """build a fallback FactCheckResult for timeout exhaustion."""
+    return FactCheckResult(
+        results=[DataSourceResult(
+            data_source_id=str(uuid4()),
+            source_type="original_text",
+            claim_verdicts=[],
+        )],
+        overall_summary=(
+            f"Erro: a adjudicação excedeu o tempo limite de {timeout}s "
+            f"após {attempts} tentativa(s)."
+        ),
+    )
+
+
 def make_adjudication_node(model: Any):
     """factory that returns the adjudication node function."""
 
@@ -120,13 +137,44 @@ def make_adjudication_node(model: Any):
             f"{sp_count} scraped sources in context"
         )
 
+        # build messages once — all retry attempts use the exact same input
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
         ]
 
-        logger.info("adjudication node: invoking LLM with structured output")
-        result: LLMAdjudicationOutput | None = await structured_model.ainvoke(messages)
+        total_attempts = 1 + ADJUDICATION_MAX_RETRIES
+        result: LLMAdjudicationOutput | None = None
+
+        for attempt in range(total_attempts):
+            try:
+                logger.info(
+                    f"adjudication node: invoking LLM (attempt {attempt + 1}/{total_attempts})"
+                )
+                result = await asyncio.wait_for(
+                    structured_model.ainvoke(messages),
+                    timeout=ADJUDICATION_TIMEOUT,
+                )
+                break  # success — exit retry loop
+            except asyncio.TimeoutError:
+                logger.warning(
+                    f"adjudication node: attempt {attempt + 1}/{total_attempts} "
+                    f"timed out after {ADJUDICATION_TIMEOUT}s"
+                )
+                if attempt < ADJUDICATION_MAX_RETRIES:
+                    continue
+                # all retries exhausted
+                error_msg = (
+                    f"Adjudication timed out after {total_attempts} attempt(s) "
+                    f"({ADJUDICATION_TIMEOUT}s each)"
+                )
+                logger.error(f"adjudication node: {error_msg}")
+                return {
+                    "adjudication_result": _make_timeout_error_result(
+                        total_attempts, ADJUDICATION_TIMEOUT
+                    ),
+                    "adjudication_error": error_msg,
+                }
 
         if result is None:
             logger.warning("adjudication node: LLM returned None (schema parse failure)")
@@ -160,3 +208,4 @@ def make_adjudication_node(model: Any):
         return {"adjudication_result": fact_check_result}
 
     return adjudication_node
+

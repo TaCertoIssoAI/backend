@@ -58,6 +58,10 @@ DEFAULT_MODEL = "gemini-2.5-flash-lite"
 ADJUDICATION_MODEL = "gemini-2.5-flash-lite"
 ADJUDICATION_THINKING_BUDGET = 1024
 
+# adjudication timeout retry policy
+ADJUDICATION_TIMEOUT = 20.0        # seconds per attempt
+ADJUDICATION_MAX_RETRIES = 2       # max retry attempts on timeout
+
 
 # suppress verbose debug logs from trafilatura (HTML processing library)
 logging.getLogger("trafilatura").setLevel(logging.WARNING)

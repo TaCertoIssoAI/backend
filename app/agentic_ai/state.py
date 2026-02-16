@@ -63,3 +63,6 @@ class ContextAgentState(MessagesState):
     # retry control (last-write-wins)
     retry_count: int
     retry_context: Optional[str]
+
+    # error propagation (set when adjudication times out after all retries)
+    adjudication_error: Optional[str]

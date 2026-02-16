@@ -341,8 +341,17 @@ def build_graph(
     # after wait_for_async: go back to context_agent
     graph.add_edge("wait_for_async", "context_agent")
 
-    # adjudication -> prepare_retry -> (retry_context_agent | END)
-    graph.add_edge("adjudication", "prepare_retry")
+    # adjudication -> prepare_retry (normal) or END (on timeout error)
+    def _route_after_adjudication(state: ContextAgentState) -> str:
+        if state.get("adjudication_error"):
+            return END
+        return "prepare_retry"
+
+    graph.add_conditional_edges(
+        "adjudication",
+        _route_after_adjudication,
+        {"prepare_retry": "prepare_retry", END: END},
+    )
     graph.add_conditional_edges(
         "prepare_retry",
         route_after_prepare_retry,
