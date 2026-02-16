@@ -83,6 +83,16 @@ Ao analisar o conteudo original, extraia as alegacoes verificaveis seguindo esta
 - Preserve o idioma original
 - Se o texto pergunta "X e verdade?", extraia a alegacao X
 
+**Foco das alegacoes — PRIORIZE o nucleo verificavel do texto:**
+- Centre cada alegacao nas PESSOAS ou ENTIDADES principais e nas ACOES diretamente \
+atribuidas a elas. Ex: "O presidente X assinou o decreto Y em data Z."
+- Inclua o nome completo da pessoa/entidade e o cargo/contexto que a torna relevante \
+para a alegacao.
+- Priorize a acao ou afirmacao MAIS ESPECIFICA e MAIS CENTRAL ao texto — aquela que, \
+se falsa, tornaria toda a noticia enganosa.
+- EVITE extrair alegacoes sobre detalhes perifericos, contexto de fundo ou \
+informacoes secundarias que nao sejam o ponto central da mensagem.
+
 ## Formato de Resposta
 
 Retorne um objeto JSON com:
