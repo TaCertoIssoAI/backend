@@ -38,12 +38,11 @@ def _merge_search_results(
 class ContextAgentState(MessagesState):
     """typed state for the context search loop graph."""
 
-    # accumulated context (append-only via reducers)
-    fact_check_results: Annotated[list[FactCheckApiContext], operator.add]
-    search_results: Annotated[
-        dict[str, list[GoogleSearchContext]], _merge_search_results
-    ]
-    scraped_pages: Annotated[list[WebScrapeContext], operator.add]
+    # accumulated context (last-write-wins — tool_node appends manually,
+    # prepare_retry overwrites with cited-only subset)
+    fact_check_results: list[FactCheckApiContext]
+    search_results: dict[str, list[GoogleSearchContext]]
+    scraped_pages: list[WebScrapeContext]
 
     # control flow
     iteration_count: int
@@ -60,3 +59,7 @@ class ContextAgentState(MessagesState):
 
     # adjudication output (set once by the adjudication node)
     adjudication_result: Optional[FactCheckResult]
+
+    # retry control (last-write-wins)
+    retry_count: int
+    retry_context: Optional[str]

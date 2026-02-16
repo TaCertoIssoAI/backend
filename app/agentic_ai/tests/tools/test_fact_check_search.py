@@ -109,3 +109,41 @@ async def test_search_returns_empty_on_missing_api_key():
     tool = FactCheckSearchTool(api_key="", max_results=5)
     results = await tool.search(["test query"])
     assert results == []
+
+
+@pytest.mark.asyncio
+async def test_search_deduplicates_urls_across_queries():
+    """two queries returning the same fact-check URL → only 1 result."""
+    api_response = {
+        "claims": [
+            {
+                "text": "claim",
+                "claimReview": [
+                    {
+                        "url": "https://factcheck.org/same",
+                        "title": "Same article",
+                        "publisher": {"name": "FC"},
+                        "textualRating": "False",
+                    }
+                ],
+            }
+        ]
+    }
+
+    mock_response = MagicMock()
+    mock_response.json.return_value = api_response
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("app.agentic_ai.tools.fact_check_search.httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client_cls.return_value = mock_client
+
+        tool = FactCheckSearchTool(api_key="test-key", max_results=10)
+        results = await tool.search(["query1", "query2"])
+
+        urls = [r.url for r in results]
+        assert len(urls) == len(set(urls))
+        assert len(results) == 1

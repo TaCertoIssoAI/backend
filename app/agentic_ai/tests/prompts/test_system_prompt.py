@@ -46,3 +46,14 @@ def test_prompt_contains_stop_criteria():
     )
     assert "Muito confiável" in prompt
     assert "SUFICIENTES" in prompt
+
+
+def test_prompt_contains_adaptive_strategy():
+    prompt = build_system_prompt(
+        iteration_count=0,
+        fact_check_results=[],
+        search_results={},
+        scraped_pages=[],
+    )
+    assert "_summary" in prompt
+    assert "POUCOS resultados" in prompt

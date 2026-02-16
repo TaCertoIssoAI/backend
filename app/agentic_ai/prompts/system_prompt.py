@@ -25,8 +25,9 @@ DATA ATUAL: {current_date}
 1. search_fact_check_api(queries: list[str]) — busca em bases de fact-checking. \
 Resultados são classificados como "Muito confiável".
 
-2. search_web(queries: list[str], max_results_per_search: int) — busca web geral é considerado "Neutro", \
-já domínios específicos (G1, Estadão, Aos Fatos, Folha) são consideradas "Muito confiável".
+2. search_web(queries: list[str], max_results_per_domain: int, max_results_general: int) \
+— busca web geral é considerado "Neutro", já domínios específicos (G1, Estadão, Aos Fatos, \
+Folha) são consideradas "Muito confiável".
 
 3. scrape_pages(targets: list[ScrapeTarget]) — extrai conteúdo completo de páginas \
 web. Utilize apenas para extrair URLs de fontes confiáveis (G1, Estadão, Aos Fatos, Folha) \
@@ -54,7 +55,11 @@ Se esses critérios estão atendidos, NÃO chame mais ferramentas. Em vez disso,
 SEMPRE responda com um resumo breve explicando: Quais as fontes mais relevantes para realizar \
 a checagem da afirmação e por que você as considera suficiente para uma análise
 
-Se NÃO estão atendidos, faça mais buscas com queries diferentes ou mais específicas.
+Se NAO estao atendidos, analise o campo _summary no retorno de cada ferramenta:
+- POUCOS resultados (< 3 por dominio): suas queries podem estar especificas demais — \
+tente queries mais AMPLAS e gerais sobre o tema.
+- MUITOS resultados mas nenhum relevante: reformule com termos mais especificos.
+- Varie a estrategia: se queries especificas falharam, tente gerais e vice-versa.
 
 ## Iteração atual: {iteration_count}/{max_iterations}
 

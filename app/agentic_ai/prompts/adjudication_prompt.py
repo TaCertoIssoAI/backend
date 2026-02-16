@@ -39,7 +39,11 @@ confiaveis contradizem diretamente a alegacao.
 
 3. **Fora de Contexto**: A alegacao contem elementos verdadeiros, mas foi apresentada \
 de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com \
-interpretacoes falsas. Inclui descontextualizacao temporal/espacial.
+interpretacoes falsas. Inclui descontextualizacao temporal/espacial. \
+**Tambem se aplica quando a alegacao apresenta como fato consumado algo que as fontes \
+descrevem como incerto, em andamento, investigado ou ainda nao confirmado** — ex: \
+afirmar "X foi condenado" quando as fontes indicam que o processo ainda corre; \
+afirmar "X aconteceu" quando as fontes dizem "pode acontecer" ou "esta sendo investigado".
 
 4. **Fontes insuficientes para verificar**: Nao ha evidencias suficientes nas fontes \
 fornecidas para confirmar ou refutar a alegacao.
@@ -68,6 +72,13 @@ escolha as 3 mais confiaveis.
 
 7. Verifique descontextualizacao temporal/espacial entre alegacoes.
 
+7a. **Certeza vs. incerteza — use "Fora de Contexto" quando a alegacao apresenta \
+como definitivo algo que as fontes tratam como incerto ou em curso.** Sinais de alerta \
+nas fontes: "pode", "esta sendo investigado", "aguarda julgamento", "ainda nao confirmado", \
+"segundo suspeitas", "ha possibilidade de". Se a alegacao afirma um fato consumado mas \
+as fontes descrevem um processo ainda aberto ou resultado ainda incerto, classifique \
+como "Fora de Contexto", nao como "Falso".
+
 8. Reconheca limitacoes — prefira "Fontes insuficientes para verificar" a suposicoes.
 
 9. Favoreca dados mais recentes quando houver fontes contraditorias.
@@ -76,12 +87,25 @@ escolha as 3 mais confiaveis.
 
 ## Extracao de Alegacoes
 
+Importante: Extraia no maximo 8 Alegacoes, caso seja um texto extenso, extraia apenas as 
+Alegacoes mais importantes antes de atingir esse limite
+
 Ao analisar o conteudo original, extraia as alegacoes verificaveis seguindo estas regras:
 - Extraia o MENOR numero de alegacoes possivel, com o MAXIMO de contexto em cada uma
 - Cada alegacao deve ser autocontida (compreensivel sem o texto original)
 - Inclua QUEM, O QUE, QUANDO, ONDE quando aplicavel
 - Preserve o idioma original
 - Se o texto pergunta "X e verdade?", extraia a alegacao X
+
+**Foco das alegacoes — PRIORIZE o nucleo verificavel do texto:**
+- Centre cada alegacao nas PESSOAS ou ENTIDADES principais e nas ACOES diretamente \
+atribuidas a elas. Ex: "O presidente X assinou o decreto Y em data Z."
+- Inclua o nome completo da pessoa/entidade e o cargo/contexto que a torna relevante \
+para a alegacao.
+- Priorize a acao ou afirmacao MAIS ESPECIFICA e MAIS CENTRAL ao texto — aquela que, \
+se falsa, tornaria toda a noticia enganosa.
+- EVITE extrair alegacoes sobre detalhes perifericos, contexto de fundo ou \
+informacoes secundarias que nao sejam o ponto central da mensagem.
 
 ## Formato de Resposta
 
@@ -117,7 +141,7 @@ ADJUDICATION_USER_PROMPT = """\
 
 {formatted_context}
 
-Analise o conteudo original acima, extraia as alegacoes verificaveis e forneca um \
+Analise o conteudo original acima, extraia as alegacoes verificaveis, no maximo 8 alegacoes, e forneca um \
 veredito fundamentado para cada uma, baseando-se nas fontes coletadas.
 
 Retorne sua analise como um objeto JSON estruturado conforme especificado.

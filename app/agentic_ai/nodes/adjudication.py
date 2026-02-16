@@ -112,13 +112,33 @@ def make_adjudication_node(model: Any):
             scraped_pages=state.get("scraped_pages", []),
         )
 
+        fc_count = len(state.get("fact_check_results", []))
+        sr_count = sum(len(v) for v in state.get("search_results", {}).values())
+        sp_count = len(state.get("scraped_pages", []))
+        logger.info(
+            f"adjudication node: {fc_count} fact_check, {sr_count} search, "
+            f"{sp_count} scraped sources in context"
+        )
+
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
         ]
 
         logger.info("adjudication node: invoking LLM with structured output")
-        result: LLMAdjudicationOutput = await structured_model.ainvoke(messages)
+        result: LLMAdjudicationOutput | None = await structured_model.ainvoke(messages)
+
+        if result is None:
+            logger.warning("adjudication node: LLM returned None (schema parse failure)")
+            fallback = FactCheckResult(
+                results=[DataSourceResult(
+                    data_source_id=str(uuid4()),
+                    source_type="original_text",
+                    claim_verdicts=[],
+                )],
+                overall_summary="Erro: o modelo nao retornou uma resposta estruturada valida.",
+            )
+            return {"adjudication_result": fallback}
 
         for r in result.results:
             for cv in r.claim_verdicts:

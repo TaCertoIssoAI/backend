@@ -40,8 +40,10 @@ def _format_data_sources(data_sources: list[DataSource]) -> str:
         return data_sources[0].to_llm_string()
 
     parts: list[str] = []
-    for i, ds in enumerate(data_sources, 1):
-        header = f"=== Fonte {i} ==="
+    labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    for i, ds in enumerate(data_sources):
+        label = labels[i] if i < len(labels) else str(i + 1)
+        header = f"=== Entrada {label} ==="
         if ds.source_type == "link_context":
             header += " [CONTEUDO EXPANDIDO DE LINK — PRIORIDADE ALTA]"
         parts.append(header)

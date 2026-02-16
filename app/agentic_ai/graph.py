@@ -1,7 +1,8 @@
 """
 LangGraph state graph definition for the context search loop.
 
-compiles the graph with: context_agent → check_edges → (wait_for_async | END).
+compiles the graph with: context_agent → check_edges → (wait_for_async | adjudication).
+after adjudication, prepare_retry decides whether to retry with different queries.
 tool calls are handled by the built-in LangGraph ToolNode.
 """
 
@@ -24,12 +25,17 @@ from app.models.agenticai import (
     WebScrapeContext,
 )
 from app.models.factchecking import FactCheckResult
-from app.agentic_ai.state import ContextAgentState
+from app.agentic_ai.state import ContextAgentState, _merge_search_results
 from app.agentic_ai.nodes.context_agent import make_context_agent_node
 from app.agentic_ai.nodes.adjudication import make_adjudication_node
 from app.agentic_ai.nodes.check_edges import check_edges as check_edges_router
 from app.agentic_ai.nodes.format_input import format_input_node
+from app.agentic_ai.nodes.retry_context_agent import make_retry_context_agent_node
 from app.agentic_ai.controlflow.wait_for_async import wait_for_async_node
+from app.agentic_ai.controlflow.prepare_retry import (
+    prepare_retry_node,
+    route_after_prepare_retry,
+)
 from app.agentic_ai.tools.protocols import (
     FactCheckSearchProtocol,
     WebSearchProtocol,
@@ -52,32 +58,38 @@ def _make_tools(
         returns results classified as 'Muito confiável'.
         queries: list of search query strings."""
         results = await fact_checker.search(queries)
+        items = [
+            {
+                "id": r.id,
+                "title": r.title,
+                "publisher": r.publisher,
+                "rating": r.rating,
+                "claim_text": r.claim_text,
+                "url": r.url,
+                "review_date": r.review_date,
+            }
+            for r in results
+        ]
         return json.dumps(
-            [
-                {
-                    "id": r.id,
-                    "title": r.title,
-                    "publisher": r.publisher,
-                    "rating": r.rating,
-                    "claim_text": r.claim_text,
-                    "url": r.url,
-                    "review_date": r.review_date,
-                }
-                for r in results
-            ],
+            {
+                "results": items,
+                "_summary": {"total_results": len(items)},
+            },
             ensure_ascii=False,
         )
 
     @tool
     async def search_web(
-        queries: list[str], max_results_per_search: int = 5
+        queries: list[str],
+        max_results_per_domain: int = 5,
+        max_results_general: int = 5,
     ) -> str:
         """search the web across general and domain-specific sources (G1, Estadão, Aos Fatos, Folha).
-        queries: list of search query strings. 
-        max_results_per_search: max results per domain per query (default 5).
-        Try to use the default max result and only increase it when strictly necessary
+        queries: list of search query strings.
+        max_results_per_domain: max results per domain-specific source per query (default 5).
+        max_results_general: max results for the general web search per query (default 5).
         """
-        results = await web_searcher.search(queries, max_results_per_search)
+        results = await web_searcher.search(queries, max_results_per_domain, max_results_general)
         output = {}
         for domain_key, entries in results.items():
             output[domain_key] = [
@@ -90,6 +102,9 @@ def _make_tools(
                 }
                 for e in entries
             ]
+        total = sum(len(entries) for entries in output.values())
+        per_domain = {k: len(v) for k, v in output.items() if v}
+        output["_summary"] = {"total_results": total, "per_domain": per_domain}
         return json.dumps(output, ensure_ascii=False)
 
     @tool
@@ -155,10 +170,11 @@ def _make_tool_node_with_state_update(
                 continue
 
             if msg.name == "search_fact_check_api":
-                if isinstance(data, list):
+                items = data.get("results", data) if isinstance(data, dict) else data
+                if isinstance(items, list):
                     from app.models.agenticai import SourceReliability as SR
 
-                    for item in data:
+                    for item in items:
                         new_fact_checks.append(
                             FactCheckApiContext(
                                 id=item.get("id", str(uuid4())),
@@ -179,6 +195,8 @@ def _make_tool_node_with_state_update(
                     from app.agentic_ai.config import DOMAIN_SEARCHES
 
                     for domain_key, entries in data.items():
+                        if domain_key == "_summary":
+                            continue
                         reliability = DOMAIN_SEARCHES.get(
                             domain_key, {}
                         ).get("reliability", SourceReliability.NEUTRO)
@@ -215,17 +233,51 @@ def _make_tool_node_with_state_update(
                             )
                         )
 
+        # count actual new items (not just truthy dict with empty lists)
+        new_search_count = sum(len(v) for v in new_search_results.values())
+        existing_fc = len(state.get("fact_check_results", []))
+        existing_search = sum(len(v) for v in state.get("search_results", {}).values())
+        existing_scraped = len(state.get("scraped_pages", []))
+
+        logger.debug(
+            f"tool_node parsed: {len(new_fact_checks)} new fact_check, "
+            f"{new_search_count} new search, {len(new_scraped)} new scraped "
+            f"(state has {existing_fc} fc, {existing_search} search, {existing_scraped} scraped)"
+        )
+
         update: dict[str, Any] = {"messages": messages}
         if new_fact_checks:
-            update["fact_check_results"] = new_fact_checks
-        if new_search_results:
-            update["search_results"] = new_search_results
+            update["fact_check_results"] = state.get("fact_check_results", []) + new_fact_checks
+        if new_search_count:
+            update["search_results"] = _merge_search_results(
+                state.get("search_results", {}), new_search_results
+            )
         if new_scraped:
-            update["scraped_pages"] = new_scraped
+            update["scraped_pages"] = state.get("scraped_pages", []) + new_scraped
 
         return update
 
     return tool_node_with_state_update
+
+
+def _make_route_after_agent(tools_node_name: str):
+    """create a router for an agent node that directs to the correct tools node."""
+
+    def router(state: ContextAgentState) -> str:
+        last_msg = state["messages"][-1] if state.get("messages") else None
+        has_tool_calls = (
+            hasattr(last_msg, "tool_calls") and last_msg.tool_calls
+        ) if last_msg else False
+
+        if has_tool_calls:
+            return tools_node_name
+
+        edge = check_edges_router(state)
+        if edge == "wait_for_async":
+            return "wait_for_async"
+        return "adjudication"
+
+    return router
 
 
 def build_graph(
@@ -256,22 +308,7 @@ def build_graph(
         tools, fact_checker, web_searcher, page_scraper
     )
     adjudication_node = make_adjudication_node(adjudication_model or model)
-
-    def _route_after_agent(state: ContextAgentState) -> str:
-        """combined router: check for tool calls first, then check_edges logic."""
-        last_msg = state["messages"][-1] if state.get("messages") else None
-        has_tool_calls = (
-            hasattr(last_msg, "tool_calls") and last_msg.tool_calls
-        ) if last_msg else False
-
-        if has_tool_calls:
-            return "tools"
-
-        # no tool calls — apply check_edges routing
-        edge = check_edges_router(state)
-        if edge == "wait_for_async":
-            return "wait_for_async"
-        return "adjudication"
+    retry_context_agent_node = make_retry_context_agent_node(model_with_tools)
 
     graph = StateGraph(ContextAgentState)
 
@@ -280,6 +317,9 @@ def build_graph(
     graph.add_node("tools", tool_node)
     graph.add_node("wait_for_async", wait_for_async_node)
     graph.add_node("adjudication", adjudication_node)
+    graph.add_node("prepare_retry", prepare_retry_node)
+    graph.add_node("retry_context_agent", retry_context_agent_node)
+    graph.add_node("retry_tools", tool_node)  # same function, different graph name
 
     graph.add_edge(START, "format_input")
     graph.add_edge("format_input", "context_agent")
@@ -287,7 +327,7 @@ def build_graph(
     # after context_agent: route based on tool calls + check_edges
     graph.add_conditional_edges(
         "context_agent",
-        _route_after_agent,
+        _make_route_after_agent("tools"),
         {
             "tools": "tools",
             "wait_for_async": "wait_for_async",
@@ -301,8 +341,25 @@ def build_graph(
     # after wait_for_async: go back to context_agent
     graph.add_edge("wait_for_async", "context_agent")
 
-    # adjudication is the terminal node
-    graph.add_edge("adjudication", END)
+    # adjudication -> prepare_retry -> (retry_context_agent | END)
+    graph.add_edge("adjudication", "prepare_retry")
+    graph.add_conditional_edges(
+        "prepare_retry",
+        route_after_prepare_retry,
+        {"retry_context_agent": "retry_context_agent", END: END},
+    )
+
+    # retry agent loop (mirrors context_agent loop)
+    graph.add_conditional_edges(
+        "retry_context_agent",
+        _make_route_after_agent("retry_tools"),
+        {
+            "retry_tools": "retry_tools",
+            "wait_for_async": "wait_for_async",
+            "adjudication": "adjudication",
+        },
+    )
+    graph.add_edge("retry_tools", "retry_context_agent")
 
     return graph.compile()
 

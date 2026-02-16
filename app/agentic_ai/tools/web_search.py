@@ -37,7 +37,10 @@ class WebSearchTool:
         self.timeout = timeout
 
     async def search(
-        self, queries: list[str], max_results_per_search: int = 3
+        self,
+        queries: list[str],
+        max_results_per_domain: int = 4,
+        max_results_general: int = 4,
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
         merged: dict[str, list[GoogleSearchContext]] = {
@@ -49,6 +52,13 @@ class WebSearchTool:
 
         for query in queries:
             for domain_key, domain_cfg in DOMAIN_SEARCHES.items():
+                # pick base max: general vs domain-specific
+                base_max = max_results_general if domain_key == "geral" else max_results_per_domain
+
+                # config override still takes priority when present
+                max_cfg = domain_cfg.get("max_results_per_call")
+                final_max_results = max_cfg if max_cfg else base_max
+
                 tasks.append(
                     self._search_single(
                         query=query,
@@ -57,7 +67,7 @@ class WebSearchTool:
                         site_search_filter=domain_cfg["site_search_filter"],
                         query_suffix=domain_cfg.get("query_suffix"),
                         reliability=domain_cfg["reliability"],
-                        max_results=max_results_per_search,
+                        max_results=final_max_results,
                     )
                 )
                 task_keys.append(domain_key)
@@ -69,6 +79,24 @@ class WebSearchTool:
                 merged[key].extend(result)
             elif isinstance(result, Exception):
                 logger.error(f"web search error for {key}: {result}")
+
+        # dedup by URL within each domain key — keeps first occurrence
+        total_before = sum(len(v) for v in merged.values())
+        for key in merged:
+            seen_urls: set[str] = set()
+            unique: list[GoogleSearchContext] = []
+            for entry in merged[key]:
+                if entry.url not in seen_urls:
+                    seen_urls.add(entry.url)
+                    unique.append(entry)
+            merged[key] = unique
+        total_after = sum(len(v) for v in merged.values())
+
+        per_key = {k: len(v) for k, v in merged.items() if v}
+        logger.debug(
+            f"web search: {total_after} result(s) across {len(per_key)} domain(s) "
+            f"(dedup removed {total_before - total_after}): {per_key}"
+        )
 
         return merged
 
@@ -98,8 +126,7 @@ class WebSearchTool:
                 num=min(max_results, 10),
                 site_search=site_search,
                 site_search_filter=site_search_filter,
-                date_restrict="m3",
-                language="lang_pt",
+               # language="lang_pt" this leads to better sources but they sometimes come in english, however if there are portuguese sources they will come first due to the query language
                 timeout=self.timeout,
             )
 
