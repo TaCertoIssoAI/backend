@@ -295,6 +295,22 @@ def _handle_cmd_prompt(session_state: dict) -> None:
     print(prompt)
 
 
+def _handle_cmd_adjudication_prompt(session_state: dict) -> None:
+    """rebuild and display the current adjudication prompt from state."""
+    from app.agentic_ai.prompts.adjudication_prompt import build_adjudication_prompt
+
+    system_prompt, user_prompt = build_adjudication_prompt(
+        formatted_data_sources=session_state.get("formatted_data_sources", ""),
+        fact_check_results=session_state.get("fact_check_results", []),
+        search_results=session_state.get("search_results", {}),
+        scraped_pages=session_state.get("scraped_pages", []),
+    )
+    print_section("Adjudication System Prompt")
+    print(system_prompt)
+    print_section("Adjudication User Prompt")
+    print(user_prompt)
+
+
 def _handle_cmd_messages(session_state: dict) -> None:
     """display message history with role, content preview, and tool calls."""
     from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, ToolMessage
@@ -509,6 +525,7 @@ def _print_session_help() -> None:
     print(f"  {Colors.BOLD}/state{Colors.END}     — show collected sources")
     print(f"  {Colors.BOLD}/verdict{Colors.END}   — show last adjudication verdict")
     print(f"  {Colors.BOLD}/prompt{Colors.END}    — show current system prompt")
+    print(f"  {Colors.BOLD}/adjudication_prompt{Colors.END} — show adjudication prompt")
     print(f"  {Colors.BOLD}/messages{Colors.END}  — show message history")
     print(f"  {Colors.BOLD}/config{Colors.END}    — show configuration")
     print(f"  {Colors.BOLD}/reset{Colors.END}     — clear state, start fresh")
@@ -551,6 +568,9 @@ async def _interactive_session_async() -> None:
             continue
         if user_input == "/prompt":
             _handle_cmd_prompt(session_state)
+            continue
+        if user_input == "/adjudication_prompt":
+            _handle_cmd_adjudication_prompt(session_state)
             continue
         if user_input == "/messages":
             _handle_cmd_messages(session_state)
