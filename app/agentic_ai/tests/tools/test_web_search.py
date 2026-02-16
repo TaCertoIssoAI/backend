@@ -33,7 +33,7 @@ async def test_search_returns_all_domain_keys():
     with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = mock_items
         tool = WebSearchTool()
-        results = await tool.search(["test query"], max_results_per_search=5)
+        results = await tool.search(["test query"], max_results_per_domain=5, max_results_general=5)
 
         # should have all domain keys
         assert "geral" in results

@@ -186,7 +186,7 @@ async def prepare_retry_node(state: ContextAgentState) -> dict:
     total_prev = len(fc) + sum(len(v) for v in sr.values()) + len(sp)
     logger.debug(
         f"prepare_retry: carrying {retained_total} cited source(s) "
-        f"out of {total_prev} into retry context, clearing dedup set"
+        f"out of {total_prev} into retry context, keeping dedup set"
     )
 
     logger.info(
@@ -206,7 +206,6 @@ async def prepare_retry_node(state: ContextAgentState) -> dict:
         "fact_check_results": retained_fc,
         "search_results": retained_search,
         "scraped_pages": retained_scraped,
-        "seen_source_keys": set(),
     }
 
 

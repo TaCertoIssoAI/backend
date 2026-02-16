@@ -23,7 +23,6 @@ DOMAIN_SEARCHES: dict[str, dict] = {
         "site_search": None,
         "site_search_filter": None,
         "reliability": SourceReliability.NEUTRO,
-        "max_results_per_call": 8
     },
     "g1": {
         "query_suffix": "(site:g1.globo.com OR site:ge.globo.com)", #globo esporte e G1

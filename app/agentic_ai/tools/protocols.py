@@ -25,7 +25,10 @@ class FactCheckSearchProtocol(Protocol):
 @runtime_checkable
 class WebSearchProtocol(Protocol):
     async def search(
-        self, queries: list[str], max_results_per_search: int = 5
+        self,
+        queries: list[str],
+        max_results_per_domain: int = 5,
+        max_results_general: int = 5,
     ) -> dict[str, list[GoogleSearchContext]]: ...
 
 

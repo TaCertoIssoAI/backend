@@ -23,9 +23,10 @@ DATA ATUAL: {current_date}
 1. search_fact_check_api(queries: list[str]) — busca em bases de fact-checking. \
 Resultados sao classificados como "Muito confiavel".
 
-2. search_web(queries: list[str], max_results_per_search: int) — busca web geral e \
-considerado "Neutro", ja dominios especificos (G1, Estadao, Aos Fatos, Folha) sao \
-consideradas "Muito confiavel".
+2. search_web(queries, max_results_per_domain, max_results_general) — busca web. \
+O parametro max_results_per_domain controla resultados de dominios especificos (G1, \
+Estadao, Aos Fatos, Folha) e max_results_general controla a busca geral. \
+Busca geral e considerado "Neutro", ja dominios especificos sao consideradas "Muito confiavel".
 
 3. scrape_pages(targets: list[ScrapeTarget]) — extrai conteudo completo de paginas \
 web. Utilize apenas para URLs de fontes confiaveis.
@@ -47,6 +48,8 @@ Desta vez voce DEVE usar queries significativamente mais especificas e direciona
 - Busque em fontes especializadas no tema (ex: economia -> portais financeiros)
 - Tente queries em ingles se o tema for internacional
 - Considere buscar o contexto mais amplo da noticia, nao apenas a alegacao exata
+- Aumente max_results_general (ex: 8-10) e reduza max_results_per_domain (ex: 2) \
+para priorizar fontes diversas em vez de dominios especificos que ja nao tinham resultados
 
 NAO repita queries vagas ou amplas. Cada query deve conter ao menos 2 termos \
 especificos (nome, data, local ou evento concreto).

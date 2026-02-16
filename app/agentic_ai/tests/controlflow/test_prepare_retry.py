@@ -480,8 +480,8 @@ async def test_prepare_retry_overwrites_sources():
 
 
 @pytest.mark.asyncio
-async def test_prepare_retry_clears_seen_source_keys():
-    """seen_source_keys is fully cleared on retry so the agent starts dedup fresh."""
+async def test_prepare_retry_keeps_seen_source_keys():
+    """seen_source_keys survives across retries to prevent duplicate URLs."""
     fc = _make_fc("fc-1")
     gs = _make_gs("ge-1", "geral", "bbc.com")
     sc = _make_sc("sc-1")
@@ -501,4 +501,4 @@ async def test_prepare_retry_clears_seen_source_keys():
 
     result = await prepare_retry_node(state)
 
-    assert result["seen_source_keys"] == set()
+    assert "seen_source_keys" not in result

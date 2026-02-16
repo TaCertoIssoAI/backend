@@ -37,7 +37,10 @@ class WebSearchTool:
         self.timeout = timeout
 
     async def search(
-        self, queries: list[str], max_results_per_search: int = 4
+        self,
+        queries: list[str],
+        max_results_per_domain: int = 4,
+        max_results_general: int = 4,
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
         merged: dict[str, list[GoogleSearchContext]] = {
@@ -49,10 +52,12 @@ class WebSearchTool:
 
         for query in queries:
             for domain_key, domain_cfg in DOMAIN_SEARCHES.items():
-                final_max_results = max_results_per_search
-                max_cfg = domain_cfg.get("max_results_per_call", "")
-                if max_cfg :
-                    final_max_results = max_cfg
+                # pick base max: general vs domain-specific
+                base_max = max_results_general if domain_key == "geral" else max_results_per_domain
+
+                # config override still takes priority when present
+                max_cfg = domain_cfg.get("max_results_per_call")
+                final_max_results = max_cfg if max_cfg else base_max
 
                 tasks.append(
                     self._search_single(
