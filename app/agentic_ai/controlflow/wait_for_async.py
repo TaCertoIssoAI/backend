@@ -31,13 +31,13 @@ async def wait_for_async_node(state: ContextAgentState) -> dict:
     all_sources = existing_sources + successful
     formatted = _format_data_sources(all_sources)
 
-    # system notification for the context agent
+    # send expanded content as a HumanMessage so the agent considers it
     if successful:
-        urls = [ds.metadata.get("url", "?") for ds in successful]
-        url_list = "\n".join(f"  - {u}" for u in urls)
+        expanded_formatted = _format_data_sources(successful)
         msg = (
-            f"[sistema] {len(successful)} link(s) expandidos:\n{url_list}\n"
-            "Reavalie o contexto com as novas fontes."
+            f"[sistema] {len(successful)} link(s) expandido(s) com sucesso. "
+            "IMPORTANTE: Considere este conteudo adicional na sua analise.\n\n"
+            f"{expanded_formatted}"
         )
     else:
         msg = "[sistema] Nenhum link expandido. Continue com as fontes disponiveis."

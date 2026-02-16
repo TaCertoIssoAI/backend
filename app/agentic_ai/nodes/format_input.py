@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import uuid
 
+from langchain_core.messages import HumanMessage
+
 from app.agentic_ai.state import ContextAgentState
 from app.agentic_ai.utils.link_expander import (
     expand_all_links,
@@ -74,18 +76,26 @@ async def format_input_node(state: ContextAgentState) -> dict:
             all_urls, parent_source_id, locale, timestamp
         )
         all_sources = data_sources + expanded
-        result["formatted_data_sources"] = _format_data_sources(all_sources)
+        formatted = _format_data_sources(all_sources)
+        result["formatted_data_sources"] = formatted
         result["data_sources"] = expanded  # appended via operator.add reducer
     elif all_urls:
         # normal: fire-and-forget, context_agent starts in parallel
         pending = fire_link_expansion(
             run_id, all_urls, parent_source_id, locale, timestamp
         )
-        result["formatted_data_sources"] = _format_data_sources(data_sources)
+        formatted = _format_data_sources(data_sources)
+        result["formatted_data_sources"] = formatted
         if pending > 0:
             result["pending_async_count"] = pending
     else:
         # no links: just format
-        result["formatted_data_sources"] = _format_data_sources(data_sources)
+        formatted = _format_data_sources(data_sources)
+        result["formatted_data_sources"] = formatted
+
+    # send data sources as a HumanMessage for the context agent
+    result["messages"] = [HumanMessage(
+        content=f"Conteudo que precisa de fontes e contexto para verificacao:\n\n{formatted}"
+    )]
 
     return result

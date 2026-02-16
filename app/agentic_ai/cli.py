@@ -66,12 +66,11 @@ def _build_graph():
 async def run_context_agent(text: str) -> FactCheckResult | ContextNodeOutput:
     """run the full context search loop on a text input."""
     from app.agentic_ai.graph import extract_output
-    from langchain_core.messages import HumanMessage
 
     graph = _build_graph()
 
     initial_state = {
-        "messages": [HumanMessage(content=text)],
+        "messages": [],
         "data_sources": [_make_data_source_from_text(text)],
         "fact_check_results": [],
         "search_results": {},
@@ -283,7 +282,6 @@ def _handle_cmd_prompt(session_state: dict) -> None:
     from app.agentic_ai.prompts.system_prompt import build_system_prompt
 
     prompt = build_system_prompt(
-        formatted_data_sources=session_state.get("formatted_data_sources", ""),
         iteration_count=session_state.get("iteration_count", 0),
         fact_check_results=session_state.get("fact_check_results", []),
         search_results=session_state.get("search_results", {}),
@@ -357,12 +355,11 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
     each node yields its raw output (before reducer application), so we apply
     the same merge logic that ContextAgentState uses.
     """
-    from langchain_core.messages import HumanMessage, AIMessage
+    from langchain_core.messages import AIMessage
     from app.agentic_ai.state import _merge_search_results
 
-    # prepare state for this run
+    # prepare state for this run — format_input will add the HumanMessage
     data_source = _make_data_source_from_text(text)
-    session_state["messages"].append(HumanMessage(content=text))
     session_state["data_sources"] = [data_source]
     session_state["formatted_data_sources"] = ""
     session_state["iteration_count"] = 0

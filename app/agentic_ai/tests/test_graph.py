@@ -116,14 +116,12 @@ def test_graph_compiles():
 
 @pytest.mark.asyncio
 async def test_graph_runs_to_completion():
-    from langchain_core.messages import HumanMessage
-
     model = _make_mock_model()
     adj_model = _make_mock_adjudication_model()
     graph = build_graph(model, MockFactChecker(), MockWebSearcher(), MockScraper(), adj_model)
 
     initial_state = {
-        "messages": [HumanMessage(content="Test claim")],
+        "messages": [],
         "data_sources": [DataSource(id="ds-1", source_type="original_text", original_text="Test claim")],
         "fact_check_results": [],
         "search_results": {},
