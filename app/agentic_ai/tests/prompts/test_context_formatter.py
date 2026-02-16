@@ -286,3 +286,107 @@ def test_filter_mixed_text_and_citations():
     text = "According to the study [2], the data [4] shows evidence. See also [1]."
     result = filter_cited_references(refs, text)
     assert [r[0] for r in result] == [1, 2, 4]
+
+
+# ===== numbering consistency: format_context vs build_source_reference_list =====
+
+import re
+
+
+def test_format_context_and_ref_list_numbering_match():
+    """[N] numbers from format_context match those from build_source_reference_list."""
+    fc1 = _make_fact_check(id="fc-1")
+    fc2 = _make_fact_check(id="fc-2", publisher="AosFatos")
+    aos = _make_search(id="af-1", domain_key="aosfatos", domain="aosfatos.org")
+    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
+    ge1 = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
+    ge2 = _make_search(id="ge-2", domain_key="geral", domain="cnn.com")
+    sc = _make_scrape(id="sc-1")
+
+    search = {"aosfatos": [aos], "g1": [g1], "geral": [ge1, ge2]}
+
+    formatted = format_context([fc1, fc2], search, [sc])
+    formatted_numbers = sorted(set(int(m) for m in re.findall(r"\[(\d+)\]", formatted)))
+
+    refs = build_source_reference_list([fc1, fc2], search, [sc])
+    ref_numbers = sorted(r[0] for r in refs)
+
+    assert formatted_numbers == ref_numbers
+
+
+def test_format_context_and_ref_list_urls_match():
+    """URL at each [N] position matches between format_context and build_source_reference_list."""
+    fc = _make_fact_check(id="fc-1")
+    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
+    ge = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
+    sc = _make_scrape(id="sc-1")
+
+    search = {"g1": [g1], "geral": [ge]}
+    refs = build_source_reference_list([fc], search, [sc])
+    formatted = format_context([fc], search, [sc])
+
+    # extract (number, url) pairs from formatted text
+    # pattern: [N] ... URL: <url>
+    lines = formatted.split("\n")
+    formatted_urls: dict[int, str] = {}
+    current_num = None
+    for line in lines:
+        num_match = re.match(r"\[(\d+)\]", line.strip())
+        if num_match:
+            current_num = int(num_match.group(1))
+        url_match = re.search(r"URL:\s*(https?://\S+)", line)
+        if url_match and current_num is not None:
+            formatted_urls[current_num] = url_match.group(1)
+
+    for num, title, url in refs:
+        assert num in formatted_urls, f"[{num}] not found in formatted output"
+        assert formatted_urls[num] == url, (
+            f"URL mismatch at [{num}]: formatted={formatted_urls[num]}, ref_list={url}"
+        )
+
+
+# ===== end-to-end: adjudication prompt numbering matches build_source_reference_list =====
+
+
+def test_adjudication_prompt_numbering_matches_ref_list():
+    """[N] in the adjudication user prompt (what the LLM sees) must match build_source_reference_list."""
+    from app.agentic_ai.prompts.adjudication_prompt import build_adjudication_prompt
+
+    fc = _make_fact_check(id="fc-1")
+    aos = _make_search(id="af-1", domain_key="aosfatos", domain="aosfatos.org")
+    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
+    ge = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
+    sc = _make_scrape(id="sc-1")
+
+    search = {"aosfatos": [aos], "g1": [g1], "geral": [ge]}
+
+    _, user_prompt = build_adjudication_prompt(
+        formatted_data_sources="Test claim text",
+        fact_check_results=[fc],
+        search_results=search,
+        scraped_pages=[sc],
+    )
+    refs = build_source_reference_list([fc], search, [sc])
+
+    # extract [N] numbers from the prompt
+    prompt_numbers = sorted(set(int(m) for m in re.findall(r"\[(\d+)\]", user_prompt)))
+    ref_numbers = sorted(r[0] for r in refs)
+    assert prompt_numbers == ref_numbers
+
+    # extract URLs at each [N] from the prompt and verify they match ref_list
+    lines = user_prompt.split("\n")
+    prompt_urls: dict[int, str] = {}
+    current_num = None
+    for line in lines:
+        num_match = re.match(r"\[(\d+)\]", line.strip())
+        if num_match:
+            current_num = int(num_match.group(1))
+        url_match = re.search(r"URL:\s*(https?://\S+)", line)
+        if url_match and current_num is not None:
+            prompt_urls[current_num] = url_match.group(1)
+
+    for num, title, url in refs:
+        assert num in prompt_urls, f"[{num}] not in adjudication prompt"
+        assert prompt_urls[num] == url, (
+            f"URL mismatch at [{num}]: prompt={prompt_urls[num]}, ref_list={url}"
+        )

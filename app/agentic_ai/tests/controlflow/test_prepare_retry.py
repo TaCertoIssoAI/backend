@@ -10,8 +10,16 @@ from app.agentic_ai.controlflow.prepare_retry import (
     _all_verdicts_insufficient,
     _extract_used_queries,
     _build_retry_context,
+    _get_cited_numbers,
+    _filter_to_cited_sources,
     prepare_retry_node,
     route_after_prepare_retry,
+)
+from app.models.agenticai import (
+    FactCheckApiContext,
+    GoogleSearchContext,
+    WebScrapeContext,
+    SourceReliability,
 )
 from app.models.factchecking import (
     ClaimVerdict,
@@ -183,6 +191,9 @@ def _make_state(
     verdict_strings: list[str] | None = None,
     retry_count: int = 0,
     messages: list | None = None,
+    fact_check_results: list | None = None,
+    search_results: dict | None = None,
+    scraped_pages: list | None = None,
 ) -> dict:
     adj_result = None
     if verdict_strings is not None:
@@ -193,6 +204,9 @@ def _make_state(
         "retry_count": retry_count,
         "messages": messages or [],
         "iteration_count": 3,
+        "fact_check_results": fact_check_results or [],
+        "search_results": search_results if search_results is not None else {},
+        "scraped_pages": scraped_pages or [],
     }
 
 
@@ -248,3 +262,218 @@ def test_route_to_end_at_max_retries():
         "retry_count": MAX_RETRY_COUNT,
     }
     assert route_after_prepare_retry(state) == END
+
+
+# --- source model helpers ---
+
+def _make_fc(id="fc-1"):
+    return FactCheckApiContext(
+        id=id,
+        url=f"https://factcheck.org/{id}",
+        parent_id=None,
+        reliability=SourceReliability.MUITO_CONFIAVEL,
+        title=f"FC {id}",
+        publisher="Lupa",
+        rating="Falso",
+        claim_text="claim text",
+    )
+
+
+def _make_gs(id="gs-1", domain_key="geral", domain="bbc.com"):
+    muito = {"aosfatos", "g1", "estadao", "folha"}
+    reliability = SourceReliability.MUITO_CONFIAVEL if domain_key in muito else SourceReliability.NEUTRO
+    return GoogleSearchContext(
+        id=id,
+        url=f"https://{domain}/{id}",
+        parent_id=None,
+        reliability=reliability,
+        title=f"Search {id}",
+        snippet="snippet",
+        domain=domain,
+    )
+
+
+def _make_sc(id="sc-1"):
+    return WebScrapeContext(
+        id=id,
+        url=f"https://example.com/{id}",
+        parent_id=None,
+        reliability=SourceReliability.POUCO_CONFIAVEL,
+        title=f"Scraped {id}",
+        content="page content",
+        extraction_status="success",
+        extraction_tool="beautifulsoup",
+    )
+
+
+# --- _get_cited_numbers tests ---
+
+def test_get_cited_numbers_from_justification():
+    fc1 = _make_fc("fc-1")
+    fc2 = _make_fc("fc-2")
+    gs = _make_gs("ge-1", "geral", "bbc.com")
+
+    # sources: [1] fc1, [2] fc2, [3] geral
+    adj = _make_fact_check_result(
+        ["Fontes insuficientes para verificar"],
+        summary="summary",
+    )
+    adj.results[0].claim_verdicts[0].justification = "Based on [1] and [3]."
+    cited = _get_cited_numbers([fc1, fc2], {"geral": [gs]}, [], adj)
+    assert cited == {1, 3}
+
+
+def test_get_cited_numbers_from_summary():
+    fc = _make_fc("fc-1")
+    gs1 = _make_gs("ge-1", "geral", "bbc.com")
+    gs2 = _make_gs("ge-2", "geral", "cnn.com")
+    sc1 = _make_sc("sc-1")
+    sc2 = _make_sc("sc-2")
+
+    # sources: [1] fc, [2] geral, [3] geral, [4] scraped, [5] scraped
+    adj = _make_fact_check_result(
+        ["Fontes insuficientes para verificar"],
+        summary="See [2][5] for details.",
+    )
+    adj.results[0].claim_verdicts[0].justification = "no refs here"
+    cited = _get_cited_numbers([fc], {"geral": [gs1, gs2]}, [sc1, sc2], adj)
+    assert cited == {2, 5}
+
+
+def test_get_cited_numbers_union_across_claims():
+    fc = _make_fc("fc-1")
+    aos = _make_gs("af-1", "aosfatos", "aosfatos.org")
+    gs1 = _make_gs("ge-1", "geral", "bbc.com")
+    gs2 = _make_gs("ge-2", "geral", "cnn.com")
+
+    # sources: [1] fc, [2] aosfatos, [3] geral, [4] geral
+    adj = FactCheckResult(
+        results=[
+            DataSourceResult(
+                data_source_id="ds-1",
+                source_type="original_text",
+                claim_verdicts=[
+                    ClaimVerdict(
+                        claim_id="c-1", claim_text="a",
+                        verdict="Fontes insuficientes para verificar",
+                        justification="Source [1].",
+                    ),
+                    ClaimVerdict(
+                        claim_id="c-2", claim_text="b",
+                        verdict="Fontes insuficientes para verificar",
+                        justification="Source [4].",
+                    ),
+                ],
+            )
+        ],
+        overall_summary="Overall [2].",
+    )
+    cited = _get_cited_numbers([fc], {"aosfatos": [aos], "geral": [gs1, gs2]}, [], adj)
+    assert cited == {1, 2, 4}
+
+
+def test_get_cited_numbers_empty():
+    fc = _make_fc("fc-1")
+    adj = _make_fact_check_result(
+        ["Fontes insuficientes para verificar"],
+        summary="no refs",
+    )
+    adj.results[0].claim_verdicts[0].justification = "nothing"
+    cited = _get_cited_numbers([fc], {}, [], adj)
+    assert cited == set()
+
+
+# --- _filter_to_cited_sources tests ---
+
+def test_filter_to_cited_sources_keeps_only_cited():
+    # sources: [1] fc, [2] aosfatos, [3] geral, [4] geral, [5] scraped
+    fc = _make_fc("fc-1")
+    aos = _make_gs("af-1", "aosfatos", "aosfatos.org")
+    g1 = _make_gs("ge-1", "geral", "bbc.com")
+    g2 = _make_gs("ge-2", "geral", "cnn.com")
+    sc = _make_sc("sc-1")
+
+    r_fc, r_search, r_scraped = _filter_to_cited_sources(
+        [fc], {"aosfatos": [aos], "geral": [g1, g2]}, [sc], {1, 3},
+    )
+    assert len(r_fc) == 1
+    assert r_fc[0].id == "fc-1"
+    assert r_search["aosfatos"] == []
+    assert len(r_search["geral"]) == 1
+    assert r_search["geral"][0].id == "ge-1"
+    assert r_scraped == []
+
+
+def test_filter_to_cited_sources_empty_when_none_cited():
+    fc = _make_fc("fc-1")
+    gs = _make_gs("ge-1", "geral", "bbc.com")
+    sc = _make_sc("sc-1")
+
+    r_fc, r_search, r_scraped = _filter_to_cited_sources(
+        [fc], {"geral": [gs]}, [sc], set(),
+    )
+    assert r_fc == []
+    assert r_search["geral"] == []
+    assert r_scraped == []
+
+
+def test_filter_to_cited_sources_keeps_all_when_all_cited():
+    fc = _make_fc("fc-1")
+    gs = _make_gs("ge-1", "geral", "bbc.com")
+    sc = _make_sc("sc-1")
+
+    # [1] fc, [2] geral, [3] scraped
+    r_fc, r_search, r_scraped = _filter_to_cited_sources(
+        [fc], {"geral": [gs]}, [sc], {1, 2, 3},
+    )
+    assert len(r_fc) == 1
+    assert len(r_search["geral"]) == 1
+    assert len(r_scraped) == 1
+
+
+def test_filter_to_cited_sources_numbering_matches_format_context():
+    """after filtering, format_context on filtered output produces contiguous numbering."""
+    from app.agentic_ai.prompts.context_formatter import format_context
+    import re
+
+    fc = _make_fc("fc-1")
+    aos = _make_gs("af-1", "aosfatos", "aosfatos.org")
+    gs = _make_gs("ge-1", "geral", "bbc.com")
+    sc = _make_sc("sc-1")
+
+    # sources: [1] fc, [2] aosfatos, [3] geral, [4] scraped — cite [1] and [3]
+    r_fc, r_search, r_scraped = _filter_to_cited_sources(
+        [fc], {"aosfatos": [aos], "geral": [gs]}, [sc], {1, 3},
+    )
+
+    formatted = format_context(r_fc, r_search, r_scraped)
+    numbers = [int(m) for m in re.findall(r"\[(\d+)\]", formatted)]
+    assert numbers == [1, 2]
+
+
+# --- prepare_retry_node returns source overwrite keys ---
+
+@pytest.mark.asyncio
+async def test_prepare_retry_overwrites_sources():
+    fc = _make_fc("fc-1")
+    gs = _make_gs("ge-1", "geral", "bbc.com")
+    sc = _make_sc("sc-1")
+
+    state = _make_state(
+        verdict_strings=["Fontes insuficientes para verificar"],
+        fact_check_results=[fc],
+        search_results={"geral": [gs]},
+        scraped_pages=[sc],
+    )
+    # patch justification to cite [1] only (the fact check)
+    state["adjudication_result"].results[0].claim_verdicts[0].justification = "See [1]."
+
+    result = await prepare_retry_node(state)
+
+    assert "fact_check_results" in result
+    assert "search_results" in result
+    assert "scraped_pages" in result
+    # only [1] (fact check) retained
+    assert len(result["fact_check_results"]) == 1
+    assert result["search_results"]["geral"] == []
+    assert result["scraped_pages"] == []

@@ -25,7 +25,7 @@ from app.models.agenticai import (
     WebScrapeContext,
 )
 from app.models.factchecking import FactCheckResult
-from app.agentic_ai.state import ContextAgentState
+from app.agentic_ai.state import ContextAgentState, _merge_search_results
 from app.agentic_ai.nodes.context_agent import make_context_agent_node
 from app.agentic_ai.nodes.adjudication import make_adjudication_node
 from app.agentic_ai.nodes.check_edges import check_edges as check_edges_router
@@ -223,11 +223,13 @@ def _make_tool_node_with_state_update(
 
         update: dict[str, Any] = {"messages": messages}
         if new_fact_checks:
-            update["fact_check_results"] = new_fact_checks
+            update["fact_check_results"] = state.get("fact_check_results", []) + new_fact_checks
         if new_search_results:
-            update["search_results"] = new_search_results
+            update["search_results"] = _merge_search_results(
+                state.get("search_results", {}), new_search_results
+            )
         if new_scraped:
-            update["scraped_pages"] = new_scraped
+            update["scraped_pages"] = state.get("scraped_pages", []) + new_scraped
 
         return update
 

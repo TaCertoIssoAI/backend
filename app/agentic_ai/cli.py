@@ -345,10 +345,12 @@ def _print_tool_calls(tool_calls: list, indent: str = "  ") -> None:
             continue
         print(f"{indent}{Colors.YELLOW}-> {name}({Colors.END}")
         for k, v in args.items():
+            # show count for list args (e.g. queries, targets)
+            count_suffix = f" ({len(v)} items)" if isinstance(v, list) else ""
             v_str = str(v)
             if len(v_str) > 80:
                 v_str = v_str[:77] + "..."
-            print(f"{indent}   {Colors.YELLOW}{k}={v_str}{Colors.END}")
+            print(f"{indent}   {Colors.YELLOW}{k}={v_str}{count_suffix}{Colors.END}")
         print(f"{indent}{Colors.YELLOW}){Colors.END}")
 
 
@@ -360,7 +362,6 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
     the same merge logic that ContextAgentState uses.
     """
     from langchain_core.messages import AIMessage
-    from app.agentic_ai.state import _merge_search_results
 
     # prepare state for this run — format_input will add the HumanMessage
     data_source = _make_data_source_from_text(text)
@@ -391,16 +392,16 @@ async def _run_streaming_query(graph, session_state: dict, text: str) -> None:
                 continue
 
             # accumulate streamed updates into session_state
+            # messages still use the built-in MessagesState reducer (append)
             if "messages" in update:
                 session_state["messages"].extend(update["messages"])
+            # context fields are last-write-wins — nodes return full lists
             if "fact_check_results" in update:
-                session_state["fact_check_results"].extend(update["fact_check_results"])
+                session_state["fact_check_results"] = update["fact_check_results"]
             if "search_results" in update:
-                session_state["search_results"] = _merge_search_results(
-                    session_state["search_results"], update["search_results"]
-                )
+                session_state["search_results"] = update["search_results"]
             if "scraped_pages" in update:
-                session_state["scraped_pages"].extend(update["scraped_pages"])
+                session_state["scraped_pages"] = update["scraped_pages"]
             if "iteration_count" in update:
                 session_state["iteration_count"] = update["iteration_count"]
             if "pending_async_count" in update:

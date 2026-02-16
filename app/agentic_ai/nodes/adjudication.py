@@ -112,6 +112,14 @@ def make_adjudication_node(model: Any):
             scraped_pages=state.get("scraped_pages", []),
         )
 
+        fc_count = len(state.get("fact_check_results", []))
+        sr_count = sum(len(v) for v in state.get("search_results", {}).values())
+        sp_count = len(state.get("scraped_pages", []))
+        logger.info(
+            f"adjudication node: {fc_count} fact_check, {sr_count} search, "
+            f"{sp_count} scraped sources in context"
+        )
+
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
