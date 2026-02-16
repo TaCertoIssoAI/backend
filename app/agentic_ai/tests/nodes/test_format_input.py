@@ -33,8 +33,8 @@ def test_multiple_data_sources_numbered():
     ds2 = DataSource(id="ds-2", source_type="link_context", original_text="article text")
     result = _format_data_sources([ds1, ds2])
 
-    assert "=== Fonte 1 ===" in result
-    assert "=== Fonte 2 ===" in result
+    assert "=== Entrada A ===" in result
+    assert "=== Entrada B ===" in result
     assert ds1.to_llm_string() in result
     assert ds2.to_llm_string() in result
 
@@ -67,7 +67,7 @@ def test_format_data_sources_link_context_priority_header():
     result = _format_data_sources([ds_text, ds_link])
     assert "PRIORIDADE ALTA" in result
     # original_text source should NOT have priority header
-    assert result.index("PRIORIDADE ALTA") > result.index("=== Fonte 1 ===")
+    assert result.index("PRIORIDADE ALTA") > result.index("=== Entrada A ===")
 
 
 # --- _is_links_only ---

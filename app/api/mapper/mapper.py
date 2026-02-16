@@ -138,7 +138,13 @@ def _get_verdict_summary(all_verdicts: list) -> str:
     return f"{verdadeiro_count} de {total_claims} afirmações foram classificadas como Verdadeiras."
 
 
-def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->AnalysisResponse:
+def fact_check_result_to_response(
+    msg_id: str,
+    result: FactCheckResult,
+    fact_check_results: list | None = None,
+    search_results: dict | None = None,
+    scraped_pages: list | None = None,
+) -> AnalysisResponse:
         all_verdicts = []
         for ds_result in result.results:
             all_verdicts.extend(ds_result.claim_verdicts)
@@ -173,22 +179,16 @@ def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->Analysi
                 rationale_parts.append(f"*{VEREDICT_SUBSTR}* {verdict_item.verdict}")
                 rationale_parts.append(f"*{JUSTIFICATION_SUBSTR}* {verdict_item.justification}")
 
-            # collect all unique citations directly from verdict citations_used
-            all_citations = []
-            citation_urls_seen: set[str] = set()
-            for verdict_item in all_verdicts:
-                for citation in getattr(verdict_item, "citations_used", []):
-                    if citation.url not in citation_urls_seen:
-                        citation_urls_seen.add(citation.url)
-                        all_citations.append(citation)
-
-            logger.debug(f"Total unique citations collected: {len(all_citations)}")
-
-            # build main rationale text first
             rationale = "\n".join(rationale_parts)
 
-            # add only citations that were actually referenced in the text
-            citation_text = _add_citations_to_final_msg(rationale, all_citations)
+            # build citation section using the same numbering as format_context
+            citation_text = _build_citations_from_source_refs(
+                rationale,
+                result,
+                fact_check_results or [],
+                search_results or {},
+                scraped_pages or [],
+            )
             if citation_text:
                 rationale = rationale + citation_text
         else:
@@ -206,47 +206,46 @@ def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->Analysi
             responseWithoutLinks=resp_without_links,
         )
 
-def _add_citations_to_final_msg(rationale_text: str, all_citations: list) -> str:
+
+def _build_citations_from_source_refs(
+    rationale_text: str,
+    result: FactCheckResult,
+    fact_check_results: list,
+    search_results: dict,
+    scraped_pages: list,
+) -> str:
+    """build the citation section using the same numbering as format_context.
+
+    uses build_source_reference_list to create [N] → (title, url) mapping
+    that matches the numbering the LLM used during adjudication, then
+    filter_cited_references to keep only those actually cited in text.
     """
-    extract citation references from text and add only referenced citations.
+    from app.agentic_ai.prompts.context_formatter import (
+        build_source_reference_list,
+        filter_cited_references,
+    )
 
-    finds all [number] patterns in the rationale text and includes only those
-    citations in the final sources list.
+    source_refs = build_source_reference_list(
+        fact_check_results, search_results, scraped_pages,
+    )
 
-    args:
-        rationale_text: the complete rationale text with [1], [2], etc. references
-        all_citations: list of all available citations
-
-    returns:
-        formatted string with only referenced sources, or empty string if none
-    """
-    import re
-
-    if not all_citations:
+    if not source_refs:
         return ""
 
-    # find all [number] patterns in the text
-    pattern = r'\[(\d+)\]'
-    matches = re.findall(pattern, rationale_text)
+    # collect all texts where citations may appear
+    cited_texts = [result.overall_summary or ""]
+    for ds_result in result.results:
+        for cv in ds_result.claim_verdicts:
+            cited_texts.append(cv.justification)
 
-    # convert to set of unique numbers and sort
-    referenced_numbers = sorted(set(int(num) for num in matches))
+    cited_refs = filter_cited_references(source_refs, *cited_texts)
 
-    if not referenced_numbers:
+    if not cited_refs:
         return ""
 
-    # build citation parts for only referenced sources
     citation_parts = ["\n\n*Fontes*:"]
-
-    for num in referenced_numbers:
-        # citations are 1-indexed in text, but 0-indexed in list
-        idx = num - 1
-        if 0 <= idx < len(all_citations):
-            citation = all_citations[idx]
-            citation_parts.append(f"\n[{num}] {citation.title}")
-            citation_parts.append(f"    Fonte: {citation.publisher}")
-            citation_parts.append(f"    URL: {citation.url}")
-            if citation.date:
-                citation_parts.append(f"    Data: {citation.date}")
+    for num, title, url in cited_refs:
+        citation_parts.append(f"\n[{num}] {title}")
+        citation_parts.append(f"    URL: {url}")
 
     return "\n".join(citation_parts)

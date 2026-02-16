@@ -31,67 +31,19 @@ def pretty_print_response(response_data: dict):
     print API response in a human-readable format.
     """
     print("\n" + "=" * 80)
-    print("📋 RESPONSE SUMMARY")
+    print("RESPONSE SUMMARY")
     print("=" * 80)
 
-    # message id
     if "message_id" in response_data:
-        print(f"\n🆔 Message ID: {response_data['message_id']}")
+        print(f"\nMessage ID: {response_data['message_id']}")
 
-    # verdict
-    if "verdict" in response_data:
-        verdict_emoji = {
-            "true": "✅",
-            "false": "❌",
-            "misleading": "⚠️",
-            "unverifiable": "❓",
-        }
-        verdict = response_data["verdict"].lower()
-        emoji = verdict_emoji.get(verdict, "🔍")
-        print(f"\n{emoji} Verdict: {response_data['verdict'].upper()}")
-
-    # confidence
-    if "confidence" in response_data:
-        confidence = response_data["confidence"]
-        print(f"📊 Confidence: {confidence:.2%}")
-
-    # rationale
     if "rationale" in response_data:
-        print(f"\n💡 Rationale:")
+        print(f"\nRationale:")
         print(f"   {response_data['rationale']}")
 
-    # response without links
     if "responseWithoutLinks" in response_data:
-        print(f"\n📝 Response (without links):")
+        print(f"\nResponse (without links):")
         print(f"   {response_data['responseWithoutLinks']}")
-
-    # claims
-    if "claims" in response_data and response_data["claims"]:
-        print(f"\n🔎 Extracted Claims ({len(response_data['claims'])} total):")
-        for i, claim in enumerate(response_data["claims"], 1):
-            print(f"   {i}. {claim.get('claim', 'N/A')}")
-            if "verdict" in claim:
-                print(f"      → Verdict: {claim['verdict']}")
-
-    # citations
-    if "citations" in response_data and response_data["citations"]:
-        print(f"\n📚 Citations ({len(response_data['citations'])} sources):")
-        for i, citation in enumerate(response_data["citations"], 1):
-            print(f"\n   [{i}] {citation.get('title', 'No title')}")
-            if "source" in citation:
-                print(f"       Source: {citation['source']}")
-            if "url" in citation:
-                print(f"       URL: {citation['url']}")
-            if "snippet" in citation and citation['snippet']:
-                snippet = citation['snippet'][:150] + "..." if len(citation['snippet']) > 150 else citation['snippet']
-                print(f"       Snippet: {snippet}")
-            if "published_at" in citation:
-                print(f"       Published: {citation['published_at']}")
-
-    # processing time
-    if "processing_time_ms" in response_data:
-        time_sec = response_data["processing_time_ms"] / 1000
-        print(f"\n⚡ Processing Time: {time_sec:.2f}s ({response_data['processing_time_ms']}ms)")
 
     print("\n" + "=" * 80)
 
@@ -99,29 +51,38 @@ def pretty_print_response(response_data: dict):
 def check_server_health() -> bool:
     """
     check if the server is up and running.
-    
+
     returns:
         True if server is healthy, False otherwise
     """
     try:
         response = requests.get(HEALTH_ENDPOINT, timeout=5)
         if response.status_code == 200:
-            print("✅ Server is up and running")
+            print("Server is up and running")
             print(f"   Response: {response.json()}")
             return True
         else:
-            print(f"❌ Server returned status code {response.status_code}")
+            print(f"Server returned status code {response.status_code}")
             return False
     except requests.exceptions.ConnectionError:
-        print(f"❌ Could not connect to server at {BASE_URL}")
+        print(f"Could not connect to server at {BASE_URL}")
         print("   Make sure the server is running: uvicorn app.main:app --reload --port 8000")
         return False
     except requests.exceptions.Timeout:
-        print("❌ Server health check timed out")
+        print("Server health check timed out")
         return False
     except Exception as e:
-        print(f"❌ Unexpected error checking server health: {e}")
+        print(f"Unexpected error checking server health: {e}")
         return False
+
+
+def _assert_response_schema(response_data: dict):
+    """validate that the response matches the AnalysisResponse schema."""
+    assert "message_id" in response_data, "Response missing 'message_id'"
+    assert "rationale" in response_data, "Response missing 'rationale'"
+    assert "responseWithoutLinks" in response_data, "Response missing 'responseWithoutLinks'"
+    assert len(response_data["rationale"]) > 0, "Rationale is empty"
+    assert len(response_data["responseWithoutLinks"]) > 0, "responseWithoutLinks is empty"
 
 
 def test_simple_text_claim():
@@ -135,34 +96,29 @@ def test_simple_text_claim():
     payload = {
         "content": [
             {
-                "textContent": "Neymar está dando tudo de si para tentar tirar o Santos da zona de rebaixamento",
+                "textContent": "Neymar est\u00e1 dando tudo de si para tentar tirar o Santos da zona de rebaixamento",
                 "type": "text"
             }
         ]
     }
 
-    print(f"\n📤 Request payload:")
+    print(f"\nRequest payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
 
     start_time = time.time()
-    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
     elapsed_time = time.time() - start_time
 
-    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"📥 Response status: {response.status_code}")
+    print(f"\nRequest time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
     pretty_print_response(response_data)
 
-    # verify response schema
-    assert "message_id" in response_data, "Response missing 'message_id'"
-    assert "verdict" in response_data, "Response missing 'verdict'"
-    assert "rationale" in response_data, "Response missing 'rationale'"
-    assert "responseWithoutLinks" in response_data, "Response missing 'responseWithoutLinks'"
-    assert "processing_time_ms" in response_data, "Response missing 'processing_time_ms'"
+    _assert_response_schema(response_data)
 
-    print("\n✅ Test passed: Response schema is correct")
+    print("\nTest passed: Response schema is correct")
     return response_data
 
 
@@ -177,27 +133,29 @@ def test_multiple_text_claims():
     payload = {
         "content": [
             {
-                "textContent": "O presidente anunciou um imposto de R$250 por tonelada de carbono. O governo também vai investir R$500 bilhões em energia renovável nos próximos 10 anos.",
+                "textContent": "O presidente anunciou um imposto de R$250 por tonelada de carbono. O governo tamb\u00e9m vai investir R$500 bilh\u00f5es em energia renov\u00e1vel nos pr\u00f3ximos 10 anos.",
                 "type": "text"
             }
         ]
     }
 
-    print(f"\n📤 Request payload:")
+    print(f"\nRequest payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
 
     start_time = time.time()
-    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
     elapsed_time = time.time() - start_time
 
-    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"📥 Response status: {response.status_code}")
+    print(f"\nRequest time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
     pretty_print_response(response_data)
 
-    print("\n✅ Test passed: Multiple claims processed successfully")
+    _assert_response_schema(response_data)
+
+    print("\nTest passed: Multiple claims processed successfully")
     return response_data
 
 
@@ -212,27 +170,29 @@ def test_short_text():
     payload = {
         "content": [
             {
-                "textContent": "O Brasil é campeão mundial.",
+                "textContent": "O Brasil \u00e9 campe\u00e3o mundial.",
                 "type": "text"
             }
         ]
     }
 
-    print(f"\n📤 Request payload:")
+    print(f"\nRequest payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
 
     start_time = time.time()
-    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
     elapsed_time = time.time() - start_time
 
-    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"📥 Response status: {response.status_code}")
+    print(f"\nRequest time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
     pretty_print_response(response_data)
 
-    print("\n✅ Test passed: Short text processed successfully")
+    _assert_response_schema(response_data)
+
+    print("\nTest passed: Short text processed successfully")
     return response_data
 
 
@@ -248,30 +208,32 @@ def test_long_text():
         "content": [
             {
                 "textContent": """
-A vacina contra COVID-19 foi desenvolvida em tempo recorde. Estudos mostram que ela é 95% eficaz na prevenção de casos graves.
-O uso de máscaras reduziu a transmissão em 70% segundo pesquisas recentes.
-Além disso, o distanciamento social foi fundamental para achatar a curva de contágio durante os picos da pandemia.
+A vacina contra COVID-19 foi desenvolvida em tempo recorde. Estudos mostram que ela \u00e9 95% eficaz na preven\u00e7\u00e3o de casos graves.
+O uso de m\u00e1scaras reduziu a transmiss\u00e3o em 70% segundo pesquisas recentes.
+Al\u00e9m disso, o distanciamento social foi fundamental para achatar a curva de cont\u00e1gio durante os picos da pandemia.
 """.strip(),
                 "type": "text"
             }
         ]
     }
 
-    print(f"\n📤 Request payload:")
+    print(f"\nRequest payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
 
     start_time = time.time()
-    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
     elapsed_time = time.time() - start_time
 
-    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"📥 Response status: {response.status_code}")
+    print(f"\nRequest time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
     pretty_print_response(response_data)
 
-    print("\n✅ Test passed: Long text processed successfully")
+    _assert_response_schema(response_data)
+
+    print("\nTest passed: Long text processed successfully")
     return response_data
 
 
@@ -292,21 +254,23 @@ def test_opinion_text():
         ]
     }
 
-    print(f"\n📤 Request payload:")
+    print(f"\nRequest payload:")
     print(json.dumps(payload, indent=2, ensure_ascii=False))
 
     start_time = time.time()
-    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=60)
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
     elapsed_time = time.time() - start_time
 
-    print(f"\n⏱️  Request time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
-    print(f"📥 Response status: {response.status_code}")
+    print(f"\nRequest time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"Response status: {response.status_code}")
     assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
     response_data = response.json()
     pretty_print_response(response_data)
 
-    print("\n✅ Test passed: Opinion text processed successfully")
+    _assert_response_schema(response_data)
+
+    print("\nTest passed: Opinion text processed successfully")
     return response_data
 
 
@@ -319,12 +283,12 @@ def run_all_tests():
     print("=" * 80)
     print(f"Target: {TEXT_ENDPOINT}")
     print("=" * 80)
-    
+
     # check server health first
     if not check_server_health():
-        print("\n❌ Server is not available. Aborting tests.")
+        print("\nServer is not available. Aborting tests.")
         sys.exit(1)
-    
+
     # run all tests
     tests = [
         test_simple_text_claim,
@@ -333,37 +297,36 @@ def run_all_tests():
         test_long_text,
         test_opinion_text,
     ]
-    
+
     passed = 0
     failed = 0
-    
+
     for test_func in tests:
         try:
             test_func()
             passed += 1
         except AssertionError as e:
-            print(f"\n❌ Test failed: {e}")
+            print(f"\nTest failed: {e}")
             failed += 1
         except Exception as e:
-            print(f"\n❌ Unexpected error: {e}")
+            print(f"\nUnexpected error: {e}")
             failed += 1
-    
+
     # summary
     print("\n" + "=" * 80)
     print("TEST SUMMARY")
     print("=" * 80)
-    print(f"✅ Passed: {passed}")
-    print(f"❌ Failed: {failed}")
-    print(f"📊 Total: {passed + failed}")
+    print(f"Passed: {passed}")
+    print(f"Failed: {failed}")
+    print(f"Total: {passed + failed}")
     print("=" * 80)
-    
+
     if failed > 0:
         sys.exit(1)
     else:
-        print("\n🎉 All tests passed!")
+        print("\nAll tests passed!")
         sys.exit(0)
 
 
 if __name__ == "__main__":
     run_all_tests()
-

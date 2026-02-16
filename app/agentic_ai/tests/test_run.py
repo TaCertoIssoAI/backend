@@ -1,11 +1,12 @@
 """tests for app.agentic_ai.run module.
 
 covers:
-- run_fact_check returns FactCheckResult on successful graph invocation
+- run_fact_check returns GraphOutput with FactCheckResult on successful graph invocation
 - run_fact_check returns fallback FactCheckResult when graph returns ContextNodeOutput
 - initial state passed to graph contains the provided data_sources
 - _build_graph builds a fresh graph per call
 - data_sources are forwarded without mutation
+- GraphOutput includes source lists from graph state
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from app.models.factchecking import (
     DataSourceResult,
     FactCheckResult,
 )
+from app.agentic_ai.run import GraphOutput
 
 
 # ---- helpers ----
@@ -54,7 +56,7 @@ def _make_fact_check_result(summary: str = "Done.") -> FactCheckResult:
 
 @pytest.mark.asyncio
 async def test_run_fact_check_returns_fact_check_result():
-    """when graph produces a FactCheckResult, it is returned directly."""
+    """when graph produces a FactCheckResult, it is returned in GraphOutput."""
     expected = _make_fact_check_result()
     mock_graph = MagicMock()
     mock_graph.ainvoke = AsyncMock(return_value={"adjudication_result": expected})
@@ -62,12 +64,13 @@ async def test_run_fact_check_returns_fact_check_result():
     with patch("app.agentic_ai.run._build_graph", return_value=mock_graph), \
          patch("app.agentic_ai.graph.extract_output", return_value=expected):
         from app.agentic_ai.run import run_fact_check
-        result = await run_fact_check([_make_data_source()])
+        output = await run_fact_check([_make_data_source()])
 
-    assert isinstance(result, FactCheckResult)
-    assert result.overall_summary == "Done."
-    assert len(result.results) == 1
-    assert result.results[0].claim_verdicts[0].verdict == "Falso"
+    assert isinstance(output, GraphOutput)
+    assert isinstance(output.result, FactCheckResult)
+    assert output.result.overall_summary == "Done."
+    assert len(output.result.results) == 1
+    assert output.result.results[0].claim_verdicts[0].verdict == "Falso"
 
 
 # ---- test: fallback when graph returns ContextNodeOutput ----
@@ -83,11 +86,12 @@ async def test_run_fact_check_fallback_on_context_output():
     with patch("app.agentic_ai.run._build_graph", return_value=mock_graph), \
          patch("app.agentic_ai.graph.extract_output", return_value=context_output):
         from app.agentic_ai.run import run_fact_check
-        result = await run_fact_check([_make_data_source()])
+        output = await run_fact_check([_make_data_source()])
 
-    assert isinstance(result, FactCheckResult)
-    assert result.results == []
-    assert "Nenhuma verificação" in result.overall_summary
+    assert isinstance(output, GraphOutput)
+    assert isinstance(output.result, FactCheckResult)
+    assert output.result.results == []
+    assert "Nenhuma verificação" in output.result.overall_summary
 
 
 # ---- test: data_sources forwarded in initial state ----

@@ -66,9 +66,11 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 2: run the agentic fact-checking graph
         logger.info(f"[{msg_id}] starting agentic fact-check graph")
         graph_start = time.time()
-        fact_check_result = await run_fact_check(data_sources)
+        graph_output = await run_fact_check(data_sources)
         graph_duration = (time.time() - graph_start) * 1000
         logger.info(f"[{msg_id}] graph completed in {graph_duration:.0f}ms")
+
+        fact_check_result = graph_output.result
 
         # log results
         total_claims = sum(len(ds_result.claim_verdicts) for ds_result in fact_check_result.results)
@@ -76,7 +78,13 @@ async def analyze_text(request: Request) -> AnalysisResponse:
 
         # step 3: build response
         logger.info(f"[{msg_id}] building response")
-        response = fact_check_result_to_response(msg_id, fact_check_result)
+        response = fact_check_result_to_response(
+            msg_id,
+            fact_check_result,
+            fact_check_results=graph_output.fact_check_results,
+            search_results=graph_output.search_results,
+            scraped_pages=graph_output.scraped_pages,
+        )
 
         # step 4: sanitize response to remove PII
         sanitized_response = sanitize_response(response)
