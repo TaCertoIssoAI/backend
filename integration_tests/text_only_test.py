@@ -22,7 +22,7 @@ import time
 
 # configuration
 BASE_URL = "http://localhost:8000"
-TEXT_ENDPOINT = f"{BASE_URL}/api/text"
+TEXT_ENDPOINT = f"{BASE_URL}/text"
 HEALTH_ENDPOINT = f"{BASE_URL}/health"
 
 

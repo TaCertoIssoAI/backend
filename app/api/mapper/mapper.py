@@ -173,39 +173,11 @@ def fact_check_result_to_response(msg_id: str, result: FactCheckResult)->Analysi
                 rationale_parts.append(f"*{VEREDICT_SUBSTR}* {verdict_item.verdict}")
                 rationale_parts.append(f"*{JUSTIFICATION_SUBSTR}* {verdict_item.justification}")
 
-            # check sources_with_claims for debugging
-            logger.debug(f"Number of sources_with_claims: {len(result.sources_with_claims)}")
-            for idx, swc in enumerate(result.sources_with_claims):
-                # handle both DataSourceWithClaims and DataSourceWithExtractedClaims
-                claims = getattr(swc, 'enriched_claims', None) or getattr(swc, 'extracted_claims', [])
-                logger.debug(f"Source {idx}: {swc.data_source.id}, {len(claims)} claims")
-                for claim in claims:
-                    citations = getattr(claim, 'citations', [])
-                    logger.debug(f"  Claim {claim.id}: {len(citations)} citations")
-
-            # build citation lookup map from sources_with_claims
-            claim_citations_map = {}
-            for source_with_claims in result.sources_with_claims:
-                # handle both DataSourceWithClaims (enriched_claims) and DataSourceWithExtractedClaims (extracted_claims)
-                claims = getattr(source_with_claims, 'enriched_claims', None) or getattr(source_with_claims, 'extracted_claims', [])
-                for claim in claims:
-                    # EnrichedClaim has citations, ExtractedClaim doesn't
-                    citations = getattr(claim, 'citations', [])
-                    claim_citations_map[claim.id] = citations
-
-            logger.debug(f"Built citation map with {len(claim_citations_map)} entries")
-            logger.debug(f"Claim IDs in map: {list(claim_citations_map.keys())}")
-
-            # collect all unique citations from verdicts
+            # collect all unique citations directly from verdict citations_used
             all_citations = []
-            citation_urls_seen = set()
+            citation_urls_seen: set[str] = set()
             for verdict_item in all_verdicts:
-                logger.debug(f"Looking up citations for claim_id: {verdict_item.claim_id}")
-                # lookup citations by claim_id
-                citations = claim_citations_map.get(verdict_item.claim_id, [])
-                logger.debug(f"  Found {len(citations)} citations")
-                for citation in citations:
-                    # deduplicate by URL
+                for citation in getattr(verdict_item, "citations_used", []):
                     if citation.url not in citation_urls_seen:
                         citation_urls_seen.add(citation.url)
                         all_citations.append(citation)
