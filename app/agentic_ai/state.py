@@ -63,6 +63,3 @@ class ContextAgentState(MessagesState):
     # retry control (last-write-wins)
     retry_count: int
     retry_context: Optional[str]
-
-    # dedup: tracks (context_type, url) pairs already added to prevent duplicates across tool calls
-    seen_source_keys: set[tuple[str, str]]

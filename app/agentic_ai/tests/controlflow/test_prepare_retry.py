@@ -479,26 +479,3 @@ async def test_prepare_retry_overwrites_sources():
     assert result["scraped_pages"] == []
 
 
-@pytest.mark.asyncio
-async def test_prepare_retry_keeps_seen_source_keys():
-    """seen_source_keys survives across retries to prevent duplicate URLs."""
-    fc = _make_fc("fc-1")
-    gs = _make_gs("ge-1", "geral", "bbc.com")
-    sc = _make_sc("sc-1")
-
-    state = _make_state(
-        verdict_strings=["Fontes insuficientes para verificar"],
-        fact_check_results=[fc],
-        search_results={"geral": [gs]},
-        scraped_pages=[sc],
-    )
-    state["seen_source_keys"] = {
-        ("fact_check", fc.url),
-        ("search", gs.url),
-        ("scraped", sc.url),
-    }
-    state["adjudication_result"].results[0].claim_verdicts[0].justification = "See [1]."
-
-    result = await prepare_retry_node(state)
-
-    assert "seen_source_keys" not in result

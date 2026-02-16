@@ -80,6 +80,16 @@ class WebSearchTool:
             elif isinstance(result, Exception):
                 logger.error(f"web search error for {key}: {result}")
 
+        # dedup by URL within each domain key — keeps first occurrence
+        for key in merged:
+            seen_urls: set[str] = set()
+            unique: list[GoogleSearchContext] = []
+            for entry in merged[key]:
+                if entry.url not in seen_urls:
+                    seen_urls.add(entry.url)
+                    unique.append(entry)
+            merged[key] = unique
+
         return merged
 
     async def _search_single(

@@ -46,7 +46,15 @@ class FactCheckSearchTool:
                 merged.extend(r)
             elif isinstance(r, Exception):
                 logger.error(f"fact-check search error: {r}")
-        return merged
+
+        # dedup by URL across queries — keeps first occurrence
+        seen_urls: set[str] = set()
+        unique: list[FactCheckApiContext] = []
+        for entry in merged:
+            if entry.url not in seen_urls:
+                seen_urls.add(entry.url)
+                unique.append(entry)
+        return unique
 
     async def _search_single(self, query: str) -> list[FactCheckApiContext]:
         """search a single query against the fact-check API."""

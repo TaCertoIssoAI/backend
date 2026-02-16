@@ -66,3 +66,36 @@ async def test_search_handles_google_error():
         # should return empty lists, not raise
         for key in results:
             assert results[key] == []
+
+
+@pytest.mark.asyncio
+async def test_search_deduplicates_urls_within_domain_key():
+    """two queries returning the same URL under the same domain key → only 1 entry."""
+    same_item = {"link": "https://dup.com/1", "title": "Dup", "snippet": "s", "displayLink": "dup.com"}
+
+    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
+        mock_search.return_value = [same_item]
+        tool = WebSearchTool()
+        results = await tool.search(["query1", "query2"], max_results_per_domain=5, max_results_general=5)
+
+        # each domain key should have at most 1 entry (the deduped URL)
+        for key, entries in results.items():
+            urls = [e.url for e in entries]
+            assert len(urls) == len(set(urls)), f"duplicate URLs in domain key '{key}': {urls}"
+
+
+@pytest.mark.asyncio
+async def test_search_allows_same_url_across_domain_keys():
+    """same URL returned by different domain searches is kept in both domain keys."""
+    same_item = {"link": "https://shared.com/article", "title": "Shared", "snippet": "s", "displayLink": "shared.com"}
+
+    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
+        mock_search.return_value = [same_item]
+        tool = WebSearchTool()
+        results = await tool.search(["query1"], max_results_per_domain=5, max_results_general=5)
+
+        # every domain key that returned results should have the URL
+        keys_with_results = [k for k, v in results.items() if v]
+        assert len(keys_with_results) > 1
+        for key in keys_with_results:
+            assert results[key][0].url == "https://shared.com/article"
