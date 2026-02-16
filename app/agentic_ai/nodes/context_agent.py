@@ -29,7 +29,6 @@ def make_context_agent_node(model: Any):
 
     async def context_agent_node(state: ContextAgentState) -> dict:
         system_prompt = build_system_prompt(
-            formatted_data_sources=state.get("formatted_data_sources", ""),
             iteration_count=state.get("iteration_count", 0),
             fact_check_results=state.get("fact_check_results", []),
             search_results=state.get("search_results", {}),

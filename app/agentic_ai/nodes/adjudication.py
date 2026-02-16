@@ -9,6 +9,7 @@ in a single pass, producing a FactCheckResult.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 from uuid import uuid4
 
@@ -17,7 +18,6 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.agentic_ai.prompts.adjudication_prompt import build_adjudication_prompt
 from app.agentic_ai.state import ContextAgentState
 from app.models.factchecking import (
-    Citation,
     ClaimVerdict,
     DataSourceResult,
     FactCheckResult,
@@ -25,6 +25,45 @@ from app.models.factchecking import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+MAX_REFS_PER_GROUP = 3
+
+# matches consecutive [N] refs, both [1][2][3][4] and [1, 2, 3, 4] styles
+_BRACKET_SEQ_RE = re.compile(r"(\[\d+\])(\[\d+\])+")
+_COMMA_LIST_RE = re.compile(r"\[(\d+(?:\s*,\s*\d+)+)\]")
+
+
+def _cap_citation_refs(text: str, max_refs: int = MAX_REFS_PER_GROUP) -> str:
+    """cap sequences of citation references to max_refs per group.
+
+    handles two patterns the LLM produces:
+      [1][2][3][4][5] → [1][2][3]
+      [1, 2, 3, 4, 5] → [1][2][3]
+    """
+    # first: convert comma-list style [1, 2, 3, 4] into individual [1][2][3]
+    def _expand_and_cap(m: re.Match) -> str:
+        nums = [n.strip() for n in m.group(1).split(",")]
+        return "".join(f"[{n}]" for n in nums[:max_refs])
+
+    text = _COMMA_LIST_RE.sub(_expand_and_cap, text)
+
+    # second: cap consecutive [N][N][N]... sequences
+    def _cap_consecutive(m: re.Match) -> str:
+        refs = re.findall(r"\[\d+\]", m.group(0))
+        return "".join(refs[:max_refs])
+
+    text = _BRACKET_SEQ_RE.sub(_cap_consecutive, text)
+    return text
+
+
+def _cap_llm_output_refs(llm_output: LLMAdjudicationOutput) -> None:
+    """cap citation refs in all justification and summary fields in-place."""
+    for result in llm_output.results:
+        for cv in result.claim_verdicts:
+            cv.justification = _cap_citation_refs(cv.justification)
+    if llm_output.overall_summary:
+        llm_output.overall_summary = _cap_citation_refs(llm_output.overall_summary)
 
 
 def _convert_to_fact_check_result(
@@ -80,6 +119,14 @@ def make_adjudication_node(model: Any):
 
         logger.info("adjudication node: invoking LLM with structured output")
         result: LLMAdjudicationOutput = await structured_model.ainvoke(messages)
+
+        for r in result.results:
+            for cv in r.claim_verdicts:
+                logger.debug(f"[pre-cap] justification: {cv.justification}")
+        if result.overall_summary:
+            logger.debug(f"[pre-cap] summary: {result.overall_summary}")
+
+        _cap_llm_output_refs(result)
 
         fact_check_result = _convert_to_fact_check_result(
             result, state.get("formatted_data_sources", "")

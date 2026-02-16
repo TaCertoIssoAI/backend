@@ -3,6 +3,7 @@
 from unittest.mock import patch, AsyncMock
 
 import pytest
+from langchain_core.messages import HumanMessage
 
 from app.models.commondata import DataSource
 from app.agentic_ai.nodes.format_input import (
@@ -95,12 +96,19 @@ async def test_format_input_node_reads_state():
     assert "formatted_data_sources" in result
     assert result["formatted_data_sources"] == ds.to_llm_string()
 
+    # should include a HumanMessage with the formatted content
+    assert "messages" in result
+    assert len(result["messages"]) == 1
+    assert isinstance(result["messages"][0], HumanMessage)
+    assert "test claim" in result["messages"][0].content
+
 
 @pytest.mark.asyncio
 async def test_format_input_node_empty_state():
     state = {"data_sources": []}
     result = await format_input_node(state)
     assert result["formatted_data_sources"] == "(nenhum conteudo fornecido)"
+    assert isinstance(result["messages"][0], HumanMessage)
 
 
 @pytest.mark.asyncio
@@ -108,6 +116,7 @@ async def test_format_input_node_missing_key():
     state = {}
     result = await format_input_node(state)
     assert result["formatted_data_sources"] == "(nenhum conteudo fornecido)"
+    assert isinstance(result["messages"][0], HumanMessage)
 
 
 @pytest.mark.asyncio

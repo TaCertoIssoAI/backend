@@ -58,9 +58,10 @@ Se NÃO estão atendidos, faça mais buscas com queries diferentes ou mais espec
 
 ## Iteração atual: {iteration_count}/{max_iterations}
 
-## Conteúdo recebido para verificação
+## Conteúdo para verificação
 
-{formatted_data_sources}
+O usuário enviará o conteúdo a ser verificado como mensagem. Analise todas as \
+afirmações e conteudo de todas as mensagens e busque fontes que auxiliem na verificacao de cada uma.
 
 ## Fontes já coletadas
 
@@ -69,7 +70,6 @@ Se NÃO estão atendidos, faça mais buscas com queries diferentes ou mais espec
 
 
 def build_system_prompt(
-    formatted_data_sources: str,
     iteration_count: int,
     fact_check_results: list[FactCheckApiContext],
     search_results: dict[str, list[GoogleSearchContext]],
@@ -83,6 +83,5 @@ def build_system_prompt(
         current_date=get_current_date(),
         iteration_count=iteration_count,
         max_iterations=max_iterations,
-        formatted_data_sources=formatted_data_sources,
         formatted_context=formatted,
     )
