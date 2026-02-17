@@ -70,6 +70,10 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         graph_duration = (time.time() - graph_start) * 1000
         logger.info(f"[{msg_id}] graph completed in {graph_duration:.0f}ms")
 
+        if graph_output.error:
+            logger.error(f"[{msg_id}] agentic graph error: {graph_output.error}")
+            raise HTTPException(status_code=500, detail=graph_output.error)
+
         fact_check_result = graph_output.result
 
         # log results
