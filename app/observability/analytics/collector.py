@@ -311,6 +311,85 @@ class AnalyticsCollector:
         if fact_check_result.overall_summary:
             self.analytics.CommentAboutCompleteContext = fact_check_result.overall_summary
 
+    def populate_from_graph_output(
+        self,
+        fact_check_result: FactCheckResult,
+        fact_check_results: list,
+        search_results: dict,
+        scraped_pages: list,
+    ) -> None:
+        """
+        populate analytics from graph output.
+
+        fills ScrapedLinks, ResponseByDataSource, ResponseByClaim, CommentAboutCompleteContext,
+        and patches reasoningSources on each claim verdict using filter_cited_references.
+
+        args:
+            fact_check_result: the final adjudication result
+            fact_check_results: list of FactCheckApiContext entries
+            search_results: dict mapping domain keys to list of GoogleSearchContext
+            scraped_pages: list of WebScrapeContext entries
+        """
+        from app.agentic_ai.prompts.context_formatter import build_source_reference_list, filter_cited_references
+
+        _NAMED_DOMAINS = {"aosfatos", "g1", "estadao", "folha"}
+
+        # a) scraped links — only successful ones
+        for entry in scraped_pages:
+            if entry.extraction_status == "success":
+                self.add_scraped_link(url=entry.url, success=True, text=entry.content)
+
+        # b) claims — populate from claim verdicts
+        claim_num = 1
+        for ds_result in fact_check_result.results:
+            for cv in ds_result.claim_verdicts:
+                self.analytics.Claims[str(claim_num)] = ClaimAnalytics(
+                    text=cv.claim_text, links=[]
+                )
+                claim_num += 1
+
+        # c) adjudication output — fills ResponseByDataSource + ResponseByClaim + CommentAboutCompleteContext
+        self.populate_from_adjudication(fact_check_result)
+        self.populate_from_fact_check_result(fact_check_result)
+
+        # d) patch reasoningSources per claim using filter_cited_references
+        # build url → (publisher, citation_text) lookup
+        _url_meta: dict = {}
+        for entry in fact_check_results:
+            _url_meta[entry.url] = (entry.publisher or "", entry.rating_comment or entry.claim_text or "")
+        for domain_key, results in search_results.items():
+            pub = domain_key if domain_key in _NAMED_DOMAINS else ""
+            for entry in results:
+                _url_meta[entry.url] = (pub, entry.snippet or "")
+        for entry in scraped_pages:
+            if entry.url not in _url_meta:
+                _url_meta[entry.url] = ("", "")
+
+        source_refs = build_source_reference_list(fact_check_results, search_results, scraped_pages)
+
+        claim_index = 1
+        for ds_idx, ds_result in enumerate(fact_check_result.results):
+            for cv_idx, cv in enumerate(ds_result.claim_verdicts):
+                cited_refs = filter_cited_references(source_refs, cv.justification) # get justification for the claim
+                reasoning_sources = [
+                    CitationAnalytics(
+                        url=url,
+                        title=title,
+                        publisher=_url_meta.get(url, ("", ""))[0],
+                        citation_text=_url_meta.get(url, ("", ""))[1],
+                    )
+                    for _, title, url in cited_refs
+                ]
+                # patch ResponseByClaim
+                if str(claim_index) in self.analytics.ResponseByClaim:
+                    self.analytics.ResponseByClaim[str(claim_index)].reasoningSources = reasoning_sources
+                # patch ResponseByDataSource
+                if ds_idx < len(self.analytics.ResponseByDataSource):
+                    ds_analytics = self.analytics.ResponseByDataSource[ds_idx]
+                    if cv_idx < len(ds_analytics.claim_verdicts):
+                        ds_analytics.claim_verdicts[cv_idx].reasoningSources = reasoning_sources
+                claim_index += 1
+
     def set_final_response(self, response_text: str):
         """
         set the final formatted response text.

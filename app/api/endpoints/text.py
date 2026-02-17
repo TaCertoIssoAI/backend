@@ -76,6 +76,13 @@ async def analyze_text(request: Request) -> AnalysisResponse:
 
         fact_check_result = graph_output.result
 
+        analytics.populate_from_graph_output(
+            fact_check_result=graph_output.result,
+            fact_check_results=graph_output.fact_check_results,
+            search_results=graph_output.search_results,
+            scraped_pages=graph_output.scraped_pages,
+        )
+
         # log results
         total_claims = sum(len(ds_result.claim_verdicts) for ds_result in fact_check_result.results)
         logger.info(f"[{msg_id}] extracted {total_claims} claim(s) from {len(fact_check_result.results)} data source(s)")
