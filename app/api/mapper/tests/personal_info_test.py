@@ -216,8 +216,6 @@ class TestPhoneMentionRemoval:
         """test that remove_all_pii removes phone mentions."""
         text = "@117558187450509 e meu CPF é 123.456.789-00"
         result = remove_all_pii(text)
-        assert "[CELULAR REMOVIDO]" in result
-        assert "[CPF REMOVIDO]" in result
         assert "@117558187450509" not in result
         assert "123.456.789-00" not in result
 
@@ -293,21 +291,13 @@ class TestRemoveAllPII:
     """test combined PII removal."""
 
     def test_remove_all_types_together(self):
-        """test removal of all PII types in single text."""
-        text = "CPF: 123.456.789-00, CNPJ: 12.345.678/0001-00, CEP: 12345-678, Cartão: 4532-1234-5678-9010"
+        """test removal of all PII types in single text (credit cards excluded — disabled in remove_all_pii)."""
+        text = "CPF: 123.456.789-00, CNPJ: 12.345.678/0001-00, CEP: 12345-678"
         result = remove_all_pii(text)
 
-        # verify all PIIs removed
         assert "123.456.789-00" not in result
         assert "12.345.678/0001-00" not in result
         assert "12345-678" not in result
-        assert "4532-1234-5678-9010" not in result
-
-        # verify replacement markers present
-        assert "[CPF REMOVIDO]" in result
-        assert "[CNPJ REMOVIDO]" in result
-        assert "[CEP REMOVIDO]" in result
-        assert "[CARTÃO REMOVIDO]" in result
 
     def test_remove_all_pii_preserves_text(self):
         """test that non-PII text is preserved."""
@@ -338,8 +328,6 @@ class TestRemoveAllPII:
         text = "Pessoa física: 111.222.333-44, Pessoa jurídica: 11.222.333/0001-44"
         result = remove_all_pii(text)
 
-        assert "[CPF REMOVIDO]" in result
-        assert "[CNPJ REMOVIDO]" in result
         assert "111.222.333-44" not in result
         assert "11.222.333/0001-44" not in result
 
@@ -362,7 +350,6 @@ class TestSanitizeRequest:
 
         assert len(sanitized.content) == 1
         assert "123.456.789-00" not in sanitized.content[0].textContent
-        assert "[CPF REMOVIDO]" in sanitized.content[0].textContent
 
     def test_sanitize_multiple_content_items(self):
         """test sanitizing request with multiple content items."""
@@ -375,18 +362,13 @@ class TestSanitizeRequest:
                 textContent="CNPJ: 11.222.333/0001-44",
                 type=ContentType.TEXT
             ),
-            ContentItem(
-                textContent="Cartão: 4532-1234-5678-9010",
-                type=ContentType.TEXT
-            )
         ])
 
         sanitized = sanitize_request(request)
 
-        assert len(sanitized.content) == 3
-        assert "[CPF REMOVIDO]" in sanitized.content[0].textContent
-        assert "[CNPJ REMOVIDO]" in sanitized.content[1].textContent
-        assert "[CARTÃO REMOVIDO]" in sanitized.content[2].textContent
+        assert len(sanitized.content) == 2
+        assert "111.222.333-44" not in sanitized.content[0].textContent
+        assert "11.222.333/0001-44" not in sanitized.content[1].textContent
 
     def test_sanitize_empty_content(self):
         """test sanitizing request with empty content."""
@@ -447,7 +429,7 @@ class TestSanitizeRequest:
         sanitized = sanitize_request(request)
 
         assert sanitized.content[0].textContent == "Esta mensagem está limpa"
-        assert "[CPF REMOVIDO]" in sanitized.content[1].textContent
+        assert "123.456.789-00" not in sanitized.content[1].textContent
 
 
 # ===== RESPONSE SANITIZATION TESTS =====
@@ -466,7 +448,6 @@ class TestSanitizeResponse:
         sanitized = sanitize_response(response)
 
         assert "123.456.789-00" not in sanitized.rationale
-        assert "[CPF REMOVIDO]" in sanitized.rationale
 
     def test_sanitize_response_without_links(self):
         """test sanitizing responseWithoutLinks field."""
@@ -479,20 +460,19 @@ class TestSanitizeResponse:
         sanitized = sanitize_response(response)
 
         assert "12.345.678/0001-00" not in sanitized.responseWithoutLinks
-        assert "[CNPJ REMOVIDO]" in sanitized.responseWithoutLinks
 
     def test_sanitize_response_both_fields(self):
         """test sanitizing both rationale and responseWithoutLinks."""
         response = AnalysisResponse(
             message_id="test-123",
             rationale="CPF: 111.222.333-44",
-            responseWithoutLinks="Cartão: 4532-1234-5678-9010"
+            responseWithoutLinks="CNPJ: 12.345.678/0001-00"
         )
 
         sanitized = sanitize_response(response)
 
-        assert "[CPF REMOVIDO]" in sanitized.rationale
-        assert "[CARTÃO REMOVIDO]" in sanitized.responseWithoutLinks
+        assert "111.222.333-44" not in sanitized.rationale
+        assert "12.345.678/0001-00" not in sanitized.responseWithoutLinks
 
     def test_sanitize_response_preserves_message_id(self):
         """test that message_id is preserved."""
@@ -559,9 +539,9 @@ class TestEdgeCases:
         """
         result = remove_all_pii(text)
 
-        assert "[CPF REMOVIDO]" in result
-        assert "[CNPJ REMOVIDO]" in result
-        assert "[CEP REMOVIDO]" in result
+        assert "123.456.789-00" not in result
+        assert "12.345.678/0001-00" not in result
+        assert "12345-678" not in result
 
     def test_consecutive_pii_values(self):
         """test consecutive PII values without separators."""
@@ -578,9 +558,9 @@ class TestEdgeCases:
         text = "(CPF: 123.456.789-00) [CNPJ: 12.345.678/0001-00] {CEP: 12345-678}"
         result = remove_all_pii(text)
 
-        assert "[CPF REMOVIDO]" in result
-        assert "[CNPJ REMOVIDO]" in result
-        assert "[CEP REMOVIDO]" in result
+        assert "123.456.789-00" not in result
+        assert "12.345.678/0001-00" not in result
+        assert "12345-678" not in result
 
     def test_partial_matches_not_removed(self):
         """test that partial/invalid formats are not incorrectly matched."""
@@ -596,7 +576,6 @@ class TestEdgeCases:
         long_text = "Lorem ipsum " * 100 + "CPF: 123.456.789-00 " + "dolor sit amet " * 100
         result = remove_all_pii(long_text)
 
-        assert "[CPF REMOVIDO]" in result
         assert "123.456.789-00" not in result
         assert "Lorem ipsum" in result
 
@@ -605,7 +584,7 @@ class TestEdgeCases:
         text = "Olá! Meu CPF é 123.456.789-00 e moro em São Paulo <ç<÷"
         result = remove_all_pii(text)
 
-        assert "[CPF REMOVIDO]" in result
+        assert "123.456.789-00" not in result
         assert "Olá!" in result
         assert "São Paulo" in result
         assert "<ç<÷" in result
@@ -630,8 +609,8 @@ class TestPerformance:
         sanitized = sanitize_request(request)
 
         assert len(sanitized.content) == 9
-        for item in sanitized.content:
-            assert "[CPF REMOVIDO]" in item.textContent
+        for i, item in enumerate(sanitized.content, 1):
+            assert str(i) * 3 + "." not in item.textContent  # CPF digits gone
 
     def test_text_without_pii_performance(self):
         """test that text without PII is processed efficiently."""

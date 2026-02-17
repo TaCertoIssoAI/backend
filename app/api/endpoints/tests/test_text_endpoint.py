@@ -98,12 +98,14 @@ def _make_graph_output(
     fact_check_results: list | None = None,
     search_results: dict | None = None,
     scraped_pages: list | None = None,
+    error: str | None = None,
 ) -> GraphOutput:
     return GraphOutput(
         result=fc_result or _make_fact_check_result(),
         fact_check_results=fact_check_results or [],
         search_results=search_results or {},
         scraped_pages=scraped_pages or [],
+        error=error,
     )
 
 
@@ -254,6 +256,31 @@ def test_run_fact_check_error_returns_500(mock_run):
 
     assert resp.status_code == 500
     assert "Graph exploded" in resp.json()["detail"]
+
+
+@patch("app.api.endpoints.text.run_fact_check", new_callable=AsyncMock)
+def test_adjudication_timeout_returns_500(mock_run):
+    """when adjudication times out, endpoint should return 500 with error detail."""
+    mock_run.return_value = _make_graph_output(
+        error="Adjudication timed out after 3 attempt(s) (120s each)",
+    )
+
+    resp = client.post("/text", json=_TEXT_PAYLOAD)
+
+    assert resp.status_code == 500
+    assert "timed out" in resp.json()["detail"]
+    assert "3 attempt(s)" in resp.json()["detail"]
+
+
+@patch("app.api.endpoints.text.send_analytics_payload", new_callable=AsyncMock)
+@patch("app.api.endpoints.text.run_fact_check", new_callable=AsyncMock)
+def test_no_error_field_returns_200(mock_run, mock_analytics):
+    """when GraphOutput.error is None, endpoint returns 200 normally."""
+    mock_run.return_value = _make_graph_output(error=None)
+
+    resp = client.post("/text", json=_TEXT_PAYLOAD)
+
+    assert resp.status_code == 200
 
 
 # ---- test: sanitization ----

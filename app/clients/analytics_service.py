@@ -31,15 +31,13 @@ async def send_analytics_payload(collector: AnalyticsCollector)->None:
         full_path = ANALYTICS_SERVICE_URL + ANALYTICS_SERVICE_ENDPOINT
         json_val = collector.to_dict()
 
-        logger.info("Analytics output keys %s",json_val.keys())
+        logger.info("Analytics output URL %s", full_path)
         async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
             resp = await client.post(
                 full_path,
                 json=json_val,
             )
             logger.info("Analytics status: %s", resp.status_code)
-    except Exception:
-        pass
-        # swallow or log only
-        logger.exception("Failed to send analytics payload")
+    except Exception as e:
+        logger.exception("Failed to send analytics payload: %s", e)
     

@@ -70,7 +70,18 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         graph_duration = (time.time() - graph_start) * 1000
         logger.info(f"[{msg_id}] graph completed in {graph_duration:.0f}ms")
 
+        if graph_output.error:
+            logger.error(f"[{msg_id}] agentic graph error: {graph_output.error}")
+            raise HTTPException(status_code=500, detail=graph_output.error)
+
         fact_check_result = graph_output.result
+
+        analytics.populate_from_graph_output(
+            fact_check_result=graph_output.result,
+            fact_check_results=graph_output.fact_check_results,
+            search_results=graph_output.search_results,
+            scraped_pages=graph_output.scraped_pages,
+        )
 
         # log results
         total_claims = sum(len(ds_result.claim_verdicts) for ds_result in fact_check_result.results)

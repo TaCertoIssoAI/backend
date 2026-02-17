@@ -29,6 +29,7 @@ class GraphOutput:
     fact_check_results: list[FactCheckApiContext] = field(default_factory=list)
     search_results: dict[str, list[GoogleSearchContext]] = field(default_factory=dict)
     scraped_pages: list[WebScrapeContext] = field(default_factory=list)
+    error: str | None = None
 
 logger = get_logger(__name__)
 
@@ -88,10 +89,11 @@ async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
     final_state = await graph.ainvoke(initial_state)
     output = extract_output(final_state)
 
-    # extract source lists from graph state for citation mapping
+    # extract source lists and error from graph state
     fc_results = final_state.get("fact_check_results", [])
     sr_results = final_state.get("search_results", {})
     sp_results = final_state.get("scraped_pages", [])
+    adj_error = final_state.get("adjudication_error")
 
     if isinstance(output, FactCheckResult):
         return GraphOutput(
@@ -99,6 +101,7 @@ async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
             fact_check_results=fc_results,
             search_results=sr_results,
             scraped_pages=sp_results,
+            error=adj_error,
         )
 
     # fallback: no adjudication result (shouldn't happen in production)
@@ -108,4 +111,5 @@ async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
         fact_check_results=fc_results,
         search_results=sr_results,
         scraped_pages=sp_results,
+        error=adj_error,
     )
