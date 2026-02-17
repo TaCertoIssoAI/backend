@@ -28,15 +28,17 @@ def test_single_data_source_returns_to_llm_string():
     assert "=== Fonte" not in result
 
 
-def test_multiple_data_sources_numbered():
+def test_multiple_data_sources_formatted():
     ds1 = DataSource(id="ds-1", source_type="original_text", original_text="claim A")
     ds2 = DataSource(id="ds-2", source_type="link_context", original_text="article text")
     result = _format_data_sources([ds1, ds2])
 
-    assert "=== Entrada A ===" in result
-    assert "=== Entrada B ===" in result
+    assert result.count("=== Entrada ===") >= 1
     assert ds1.to_llm_string() in result
     assert ds2.to_llm_string() in result
+    # should NOT contain letter labels
+    assert "Entrada A" not in result
+    assert "Entrada B" not in result
 
 
 def test_data_source_with_metadata():
@@ -66,8 +68,9 @@ def test_format_data_sources_link_context_priority_header():
     ds_link = DataSource(id="l-1", source_type="link_context", original_text="link content")
     result = _format_data_sources([ds_text, ds_link])
     assert "PRIORIDADE ALTA" in result
-    # original_text source should NOT have priority header
-    assert result.index("PRIORIDADE ALTA") > result.index("=== Entrada A ===")
+    # first Entrada header should NOT have priority tag (it's original_text)
+    first_entrada = result.index("=== Entrada ===")
+    assert result.index("PRIORIDADE ALTA") > first_entrada
 
 
 # --- _is_links_only ---

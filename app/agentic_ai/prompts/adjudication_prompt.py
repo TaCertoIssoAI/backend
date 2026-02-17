@@ -65,9 +65,9 @@ NUNCA use formato de lista como [1, 2] ou [1, 2, 3].
    - Maximo de 3 citacoes por afirmacao. Se mais de 3 fontes apoiam o mesmo ponto, \
 escolha as 3 mais confiaveis.
    - NAO inclua URLs no texto. Use apenas os numeros das fontes.
-   - NUNCA cite o conteudo original com colchetes (ex: [Original Text], [Texto Original], \
-[Conteudo Original]). Os colchetes [N] sao EXCLUSIVOS para as fontes coletadas numeradas. \
-O conteudo original e o objeto de verificacao, nao uma fonte.
+   - NUNCA cite ou referencie o conteudo original na justificativa. O conteudo original e \
+o objeto de verificacao, NAO uma fonte. Nao use  [Original Text], [Texto Original] ou qualquer referencia ao conteudo original. \
+Os colchetes [N] sao EXCLUSIVOS para as fontes coletadas numeradas na secao "Fontes coletadas".
 
 5. Seja claro e objetivo na justificativa.
 
