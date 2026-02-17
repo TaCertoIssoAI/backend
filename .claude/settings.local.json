@@ -7,7 +7,15 @@
       "Bash(source:*)",
       "Bash(python3:*)",
       "Bash(find:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pyenv versions:*)",
+      "Bash(python3.12 -m pytest:*)",
+      "Bash(PYENV_VERSION=3.12.6 pyenv exec python -m pytest:*)",
+      "Bash(venv/bin/python -m pytest:*)",
+      "Bash(venv/bin/pip show:*)",
+      "Bash(pip show:*)",
+      "Bash(python -c:*)",
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python:*)"
     ],
     "deny": [],
     "ask": []

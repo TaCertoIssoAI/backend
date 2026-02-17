@@ -6,9 +6,7 @@ from app.models.api import Request, AnalysisResponse
 from app.clients import send_analytics_payload
 from app.observability.analytics import AnalyticsCollector
 from app.api.mapper import request_to_data_sources,fact_check_result_to_response, sanitize_request, sanitize_response
-from app.ai import run_fact_check_pipeline
-from app.config.gemini_models import get_gemini_default_pipeline_config
-from app.ai.pipeline.steps import PipelineSteps, DefaultPipelineSteps
+from app.agentic_ai.run import run_fact_check
 from app.observability.logger.logger import get_logger
 from app.utils.id_generator import generate_message_id
 
@@ -45,11 +43,6 @@ async def analyze_text(request: Request) -> AnalysisResponse:
 
     Accepts an array of content items, each with textContent and type.
     Returns detailed analysis with verdict, rationale, and citations.
-
-    The key to calling async functions:
-    1. Make the endpoint async (async def)
-    2. Use await to call async functions
-    3. FastAPI handles the rest automatically
     """
     start_time = time.time()
     msg_id = generate_message_id()
@@ -70,32 +63,41 @@ async def analyze_text(request: Request) -> AnalysisResponse:
 
         logger.info(f"[{msg_id}] created {len(data_sources)} data source(s)")
 
-        # step 2: get pipeline configuration
-        config = get_gemini_default_pipeline_config()
-        pipeline_step = DefaultPipelineSteps()
+        # step 2: run the agentic fact-checking graph
+        logger.info(f"[{msg_id}] starting agentic fact-check graph")
+        graph_start = time.time()
+        graph_output = await run_fact_check(data_sources)
+        graph_duration = (time.time() - graph_start) * 1000
+        logger.info(f"[{msg_id}] graph completed in {graph_duration:.0f}ms")
 
-        # step 3: run the async fact-checking pipeline
-        logger.info(f"[{msg_id}] starting fact-check pipeline")
-        pipeline_start = time.time()
-        fact_check_result = await run_fact_check_pipeline(
-            data_sources,
-            config,
-            pipeline_step,
-            analytics,
-            message_id=msg_id
+        if graph_output.error:
+            logger.error(f"[{msg_id}] agentic graph error: {graph_output.error}")
+            raise HTTPException(status_code=500, detail=graph_output.error)
+
+        fact_check_result = graph_output.result
+
+        analytics.populate_from_graph_output(
+            fact_check_result=graph_output.result,
+            fact_check_results=graph_output.fact_check_results,
+            search_results=graph_output.search_results,
+            scraped_pages=graph_output.scraped_pages,
         )
-        pipeline_duration = (time.time() - pipeline_start) * 1000
-        logger.info(f"[{msg_id}] pipeline completed in {pipeline_duration:.0f}ms")
 
-        # log pipeline results
+        # log results
         total_claims = sum(len(ds_result.claim_verdicts) for ds_result in fact_check_result.results)
         logger.info(f"[{msg_id}] extracted {total_claims} claim(s) from {len(fact_check_result.results)} data source(s)")
 
-        # step 4: build response
+        # step 3: build response
         logger.info(f"[{msg_id}] building response")
-        response = fact_check_result_to_response(msg_id, fact_check_result)
+        response = fact_check_result_to_response(
+            msg_id,
+            fact_check_result,
+            fact_check_results=graph_output.fact_check_results,
+            search_results=graph_output.search_results,
+            scraped_pages=graph_output.scraped_pages,
+        )
 
-        # step 5: sanitize response to remove PII
+        # step 4: sanitize response to remove PII
         sanitized_response = sanitize_response(response)
 
         analytics.set_final_response(sanitized_response.rationale)
@@ -118,3 +120,4 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         logger.error(f"[{msg_id}] request failed after {total_duration:.0f}ms: {error_type}: {str(e)}")
         logger.error(f"[{msg_id}] traceback:\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}") from e
+

@@ -62,8 +62,10 @@ class DataSource(BaseModel):
         
         # Always add source header with type and ID
         parts.append(f"Tipo da fonte: {self.source_type}")
-        parts.append(f"ID da fonte: {self.id}")
 
+        # prominent URL for link_context sources
+        if self.source_type == "link_context" and self.metadata.get("url"):
+            parts.append(f"URL da fonte: {self.metadata['url']}")
 
         # Add additional metadata if present
         if self.metadata:
@@ -72,6 +74,9 @@ class DataSource(BaseModel):
             meta: dict[str, str] = dict[str, str](self.metadata)
             for key in meta:
                 value = meta[key]
+                # skip url for link_context — already shown above
+                if self.source_type == "link_context" and key == "url":
+                    continue
                 # Capitalize the key and format nicely
                 formatted_key = key.replace("_", " ").title()
                 parts.append(f"{formatted_key}: {value}")
