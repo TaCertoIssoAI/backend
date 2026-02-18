@@ -308,3 +308,45 @@ def test_empty_source_lists():
     assert col.analytics.ScrapedLinks == []
     sources = col.analytics.ResponseByClaim["1"].reasoningSources
     assert sources == []
+
+
+# ---- has_extracted_claims edge cases ----
+
+def test_has_extracted_claims_false_when_no_claims():
+    """fresh collector with no data should return False."""
+    col = _collector()
+    assert col.has_extracted_claims() is False
+
+
+def test_has_extracted_claims_false_with_empty_claim_verdicts():
+    """ResponseByDataSource entries with zero claim_verdicts should not count."""
+    col = _collector()
+    empty_result = FactCheckResult(
+        results=[
+            DataSourceResult(
+                data_source_id="ds-1",
+                source_type="original_text",
+                claim_verdicts=[],
+            )
+        ],
+        overall_summary="Nothing.",
+    )
+
+    col.populate_from_graph_output(
+        fact_check_result=empty_result,
+        fact_check_results=[],
+        search_results={},
+        scraped_pages=[],
+    )
+
+    # ResponseByDataSource has an entry, but with zero claim_verdicts
+    assert len(col.analytics.ResponseByDataSource) == 1
+    assert col.has_extracted_claims() is False
+
+
+def test_has_extracted_claims_true_with_claims_dict_only():
+    """manually adding a claim via Claims dict should be enough."""
+    col = _collector()
+    from app.models.analytics import ClaimAnalytics
+    col.analytics.Claims["1"] = ClaimAnalytics(text="manual claim", links=[])
+    assert col.has_extracted_claims() is True
