@@ -339,7 +339,7 @@ class AnalyticsCollector:
             if entry.extraction_status == "success":
                 self.add_scraped_link(url=entry.url, success=True, text=entry.content)
 
-        # c) adjudication output — fills ResponseByDataSource + ResponseByClaim + CommentAboutCompleteContext
+        # b) adjudication output — fills ResponseByDataSource + ResponseByClaim + CommentAboutCompleteContext
         self.populate_from_adjudication(fact_check_result)
         self.populate_from_fact_check_result(fact_check_result)
 
@@ -421,11 +421,15 @@ class AnalyticsCollector:
         check if any claims were extracted during the pipeline.
 
         returns:
-            True if at least one claim exists in Claims dict or ResponseByDataSource, False otherwise
+            True if ResponseByClaim has entries or ResponseByDataSource
+            contains at least one claim verdict, False otherwise
         """
-        has_claims_dict = len(self.analytics.Claims) > 0
-        has_response_data = len(self.analytics.ResponseByDataSource) > 0
-        return has_claims_dict or has_response_data
+        if len(self.analytics.ResponseByClaim) > 0:
+            return True
+        return any(
+            len(ds.claim_verdicts) > 0
+            for ds in self.analytics.ResponseByDataSource
+        )
 
     def _extract_urls_from_text(self, text: str) -> List[str]:
         """
