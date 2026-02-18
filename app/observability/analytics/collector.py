@@ -339,16 +339,7 @@ class AnalyticsCollector:
             if entry.extraction_status == "success":
                 self.add_scraped_link(url=entry.url, success=True, text=entry.content)
 
-        # b) claims — populate from claim verdicts
-        claim_num = 1
-        for ds_result in fact_check_result.results:
-            for cv in ds_result.claim_verdicts:
-                self.analytics.Claims[str(claim_num)] = ClaimAnalytics(
-                    text=cv.claim_text, links=[]
-                )
-                claim_num += 1
-
-        # c) adjudication output — fills ResponseByDataSource + ResponseByClaim + CommentAboutCompleteContext
+        # b) adjudication output — fills ResponseByDataSource + ResponseByClaim + CommentAboutCompleteContext
         self.populate_from_adjudication(fact_check_result)
         self.populate_from_fact_check_result(fact_check_result)
 
@@ -430,10 +421,10 @@ class AnalyticsCollector:
         check if any claims were extracted during the pipeline.
 
         returns:
-            True if at least one claim exists in Claims dict or
-            at least one claim verdict exists in ResponseByDataSource, False otherwise
+            True if ResponseByClaim has entries or ResponseByDataSource
+            contains at least one claim verdict, False otherwise
         """
-        if len(self.analytics.Claims) > 0:
+        if len(self.analytics.ResponseByClaim) > 0:
             return True
         return any(
             len(ds.claim_verdicts) > 0

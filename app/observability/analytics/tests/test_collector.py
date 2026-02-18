@@ -265,35 +265,6 @@ def test_has_extracted_claims_true_after_populate():
     assert col.has_extracted_claims() is True
 
 
-def test_claims_populated_from_claim_verdicts():
-    col = _collector()
-    fc_result = FactCheckResult(
-        results=[
-            DataSourceResult(
-                data_source_id="ds-1",
-                source_type="original_text",
-                claim_verdicts=[
-                    ClaimVerdict(claim_id="c-1", claim_text="Claim A", verdict="Falso", justification="J1", citations_used=[]),
-                    ClaimVerdict(claim_id="c-2", claim_text="Claim B", verdict="Verdadeiro", justification="J2", citations_used=[]),
-                ],
-            )
-        ],
-        overall_summary="Summary.",
-    )
-
-    col.populate_from_graph_output(
-        fact_check_result=fc_result,
-        fact_check_results=[],
-        search_results={},
-        scraped_pages=[],
-    )
-
-    assert "1" in col.analytics.Claims
-    assert "2" in col.analytics.Claims
-    assert col.analytics.Claims["1"].text == "Claim A"
-    assert col.analytics.Claims["2"].text == "Claim B"
-
-
 def test_empty_source_lists():
     col = _collector()
     fc_result = _make_fact_check_result(justification="No sources.")
@@ -344,9 +315,11 @@ def test_has_extracted_claims_false_with_empty_claim_verdicts():
     assert col.has_extracted_claims() is False
 
 
-def test_has_extracted_claims_true_with_claims_dict_only():
-    """manually adding a claim via Claims dict should be enough."""
+def test_has_extracted_claims_true_with_response_by_claim():
+    """ResponseByClaim with entries should be enough."""
     col = _collector()
-    from app.models.analytics import ClaimAnalytics
-    col.analytics.Claims["1"] = ClaimAnalytics(text="manual claim", links=[])
+    from app.models.analytics import ClaimResponseAnalytics
+    col.analytics.ResponseByClaim["1"] = ClaimResponseAnalytics(
+        claim_id="c-1", claim_text="claim", Result="Falso", reasoningText="reason"
+    )
     assert col.has_extracted_claims() is True
