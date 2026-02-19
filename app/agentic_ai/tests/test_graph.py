@@ -55,7 +55,6 @@ class MockWebSearcher:
                 )
             ],
             "g1": [],
-            "estadao": [],
             "aosfatos": [],
             "folha": [],
         }

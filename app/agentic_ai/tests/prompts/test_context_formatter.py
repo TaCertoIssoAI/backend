@@ -157,23 +157,22 @@ def test_ref_list_fact_check_no_claim_text():
 
 
 def test_ref_list_ordering_matches_format_context():
-    """numbering must follow the same order as format_context: fact-checks, aosfatos, g1, estadao, folha, geral, scraped."""
+    """numbering must follow the same order as format_context: fact-checks, aosfatos, g1, folha, geral, scraped."""
     fc = _make_fact_check(id="fc-1")
     aosfatos = _make_search(id="af-1", domain_key="aosfatos", domain="aosfatos.org")
     g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
-    estadao = _make_search(id="es-1", domain_key="estadao", domain="estadao.com.br")
     folha = _make_search(id="fo-1", domain_key="folha", domain="folha.uol.com.br")
     geral = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
     scrape = _make_scrape(id="sc-1")
 
     refs = build_source_reference_list(
         [fc],
-        {"aosfatos": [aosfatos], "g1": [g1], "estadao": [estadao], "folha": [folha], "geral": [geral]},
+        {"aosfatos": [aosfatos], "g1": [g1], "folha": [folha], "geral": [geral]},
         [scrape],
     )
 
     numbers = [r[0] for r in refs]
-    assert numbers == [1, 2, 3, 4, 5, 6, 7]
+    assert numbers == [1, 2, 3, 4, 5, 6]
 
 
 def test_ref_list_numbering_contiguous_with_multiple_per_domain():

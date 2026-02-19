@@ -301,7 +301,7 @@ def _make_fc(id="fc-1"):
 
 
 def _make_gs(id="gs-1", domain_key="geral", domain="bbc.com"):
-    muito = {"aosfatos", "g1", "estadao", "folha"}
+    muito = {"aosfatos", "g1", "folha"}
     reliability = SourceReliability.MUITO_CONFIAVEL if domain_key in muito else SourceReliability.NEUTRO
     return GoogleSearchContext(
         id=id,
