@@ -28,7 +28,7 @@ def _make_fact_check(id="fc-1", title="FC Title", publisher="Lupa", rating="Fals
 
 
 def _make_search(id="gs-1", domain_key="geral", domain="bbc.com"):
-    muito_confiavel_domains = {"aosfatos", "g1", "estadao", "folha"}
+    muito_confiavel_domains = {"aosfatos", "g1", "folha"}
     reliability = (
         SourceReliability.MUITO_CONFIAVEL
         if domain_key in muito_confiavel_domains
@@ -106,13 +106,13 @@ def test_global_numbering_is_contiguous():
 
 def test_multiple_domains_ordered_correctly():
     g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
-    estadao = _make_search(id="es-1", domain_key="estadao", domain="estadao.com.br")
+    folha = _make_search(id="fo-1", domain_key="folha", domain="folha.uol.com.br")
     result = format_context(
-        [], {"g1": [g1], "estadao": [estadao]}, []
+        [], {"g1": [g1], "folha": [folha]}, []
     )
     g1_pos = result.index("G1")
-    estadao_pos = result.index("Estadão")
-    assert g1_pos < estadao_pos
+    folha_pos = result.index("Folha")
+    assert g1_pos < folha_pos
 
 
 def test_g1_appears_in_muito_confiavel():
@@ -120,13 +120,6 @@ def test_g1_appears_in_muito_confiavel():
     result = format_context([], {"g1": [entry]}, [])
     assert "Muito confiável" in result
     assert "G1" in result
-
-
-def test_estadao_appears_in_muito_confiavel():
-    entry = _make_search(domain_key="estadao", domain="estadao.com.br")
-    result = format_context([], {"estadao": [entry]}, [])
-    assert "Muito confiável" in result
-    assert "Estadão" in result
 
 
 def test_folha_appears_in_muito_confiavel():

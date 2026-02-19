@@ -30,11 +30,6 @@ DOMAIN_SEARCHES: dict[str, dict] = {
         "site_search_filter": None,
         "reliability": SourceReliability.MUITO_CONFIAVEL,
     },
-    "estadao": {
-        "site_search": "estadao.com.br",
-        "site_search_filter": "i",
-        "reliability": SourceReliability.MUITO_CONFIAVEL,
-    },
     "aosfatos": {
         "site_search": "aosfatos.org",
         "site_search_filter": "i",

@@ -26,11 +26,13 @@ DATA ATUAL: {current_date}
 Resultados são classificados como "Muito confiável".
 
 2. search_web(queries: list[str], max_results_per_domain: int, max_results_general: int) \
-— busca web geral é considerado "Neutro", já domínios específicos (G1, Estadão, Aos Fatos, \
-Folha) são consideradas "Muito confiável".
+— busca web geral é considerado "Neutro", já domínios específicos (G1, Aos Fatos, \
+Folha) são consideradas "Muito confiável". \
+IMPORTANTE: envie apenas UMA query por chamada (queries deve conter exatamente 1 item). \
+Se precisar de buscas diferentes, chame a ferramenta múltiplas vezes em iterações separadas.
 
 3. scrape_pages(targets: list[ScrapeTarget]) — extrai conteúdo completo de páginas \
-web. Utilize apenas para extrair URLs de fontes confiáveis (G1, Estadão, Aos Fatos, Folha) \
+web. Utilize apenas para extrair URLs de fontes confiáveis (G1, Aos Fatos, Folha) \
 Caso o contexto existente da primeira busca na web seja insuficiente.
 
 ## IMPORTANTE — Chame múltiplas ferramentas em paralelo
