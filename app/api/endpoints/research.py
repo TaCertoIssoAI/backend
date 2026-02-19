@@ -134,24 +134,34 @@ async def search_claim(request: ClaimSearchRequest) -> ClaimSearchResponse:
 
 @router.get("/research-status")
 async def research_status():
-    """check google search configuration and availability"""
+    """check google search and serper fallback configuration and availability"""
     import os
     api_key = os.getenv("GOOGLE_SEARCH_API_KEY")
     cse_cx = os.getenv("GOOGLE_CSE_CX")
-    is_configured = bool(api_key and cse_cx)
+    serper_key = os.getenv("SERPER_API_KEY")
+    google_configured = bool(api_key and cse_cx)
+    serper_configured = bool(serper_key)
+    is_configured = google_configured or serper_configured
 
     return {
         "research_available": is_configured,
-        "google_search_configured": is_configured,
+        "google_search_configured": google_configured,
+        "serper_fallback_configured": serper_configured,
         "api_key_status": "configured" if api_key else "missing",
         "cse_cx_status": "configured" if cse_cx else "missing",
-        "search_engine": "google",
+        "serper_key_status": "configured" if serper_key else "missing",
+        "search_engine": "google" if google_configured else ("serper-fallback" if serper_configured else "none"),
         "supported_features": {
-            "claim_search": "✅ available",
-            "fact_checking_support": "✅ provides search results for verification",
-            "multi_language": "✅ supports portuguese (pt) and other languages"
+            "claim_search": "available",
+            "fact_checking_support": "provides search results for verification",
+            "multi_language": "supports portuguese (pt) and other languages",
+            "serper_fallback": "enabled" if serper_configured else "disabled (set SERPER_API_KEY)"
         },
         "api": "google-custom-search",
-        "note": "set GOOGLE_SEARCH_API_KEY and GOOGLE_CSE_CX in environment" if not is_configured else "google search ready"
+        "note": (
+            "google search ready" + (" with serper fallback" if serper_configured else "")
+            if google_configured
+            else "set GOOGLE_SEARCH_API_KEY and GOOGLE_CSE_CX in environment"
+        )
     }
 
