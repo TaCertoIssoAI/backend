@@ -31,7 +31,7 @@ def _build_query_with_trusted_domains(query: str) -> str:
 
 
 class WebSearchTool:
-    """runs 5 parallel searches per query: general + 4 domain-specific."""
+    """runs parallel searches per query: general + domain-specific (g1, aosfatos, folha)."""
 
     def __init__(self, timeout: float = SEARCH_TIMEOUT_PER_QUERY):
         self.timeout = timeout

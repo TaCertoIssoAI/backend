@@ -25,8 +25,9 @@ Resultados sao classificados como "Muito confiavel".
 
 2. search_web(queries, max_results_per_domain, max_results_general) — busca web. \
 O parametro max_results_per_domain controla resultados de dominios especificos (G1, \
-Estadao, Aos Fatos, Folha) e max_results_general controla a busca geral. \
-Busca geral e considerado "Neutro", ja dominios especificos sao consideradas "Muito confiavel".
+Aos Fatos, Folha) e max_results_general controla a busca geral. \
+Busca geral e considerado "Neutro", ja dominios especificos sao consideradas "Muito confiavel". \
+IMPORTANTE: envie apenas UMA query por chamada (queries deve conter exatamente 1 item).
 
 3. scrape_pages(targets: list[ScrapeTarget]) — extrai conteudo completo de paginas \
 web. Utilize apenas para URLs de fontes confiaveis.

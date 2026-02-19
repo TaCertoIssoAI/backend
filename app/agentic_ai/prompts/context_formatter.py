@@ -41,7 +41,6 @@ def format_context(
     for domain_key, label in [
         ("aosfatos", "Aos Fatos"),
         ("g1", "G1"),
-        ("estadao", "Estadão"),
         ("folha", "Folha"),
     ]:
         entries = search_results.get(domain_key, [])
@@ -116,7 +115,7 @@ def build_source_reference_list(
         refs.append((counter, title, entry.url))
         counter += 1
 
-    for domain_key in ("aosfatos", "g1", "estadao", "folha"):
+    for domain_key in ("aosfatos", "g1", "folha"):
         for entry in search_results.get(domain_key, []):
             refs.append((counter, entry.title, entry.url))
             counter += 1

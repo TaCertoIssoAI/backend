@@ -332,7 +332,7 @@ class AnalyticsCollector:
         """
         from app.agentic_ai.prompts.context_formatter import build_source_reference_list, filter_cited_references
 
-        _NAMED_DOMAINS = {"aosfatos", "g1", "estadao", "folha"}
+        _NAMED_DOMAINS = {"aosfatos", "g1", "folha"}
 
         # a) scraped links — only successful ones
         for entry in scraped_pages:

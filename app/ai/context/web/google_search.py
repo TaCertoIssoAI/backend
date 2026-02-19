@@ -1,5 +1,6 @@
 """
-google custom search api integration for web search
+google custom search api integration for web search.
+falls back to serper.dev when google fails and SERPER_API_KEY is configured.
 """
 
 import os
@@ -7,6 +8,12 @@ import logging
 from typing import Any, Dict
 
 import httpx
+
+from app.ai.context.web.serper_search import (
+    serper_search,
+    SerperSearchError,
+    _is_serper_configured,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +26,7 @@ class GoogleSearchError(Exception):
 async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 45.0) -> dict:
     """
     search google for information about a claim using Google Custom Search API.
+    falls back to serper.dev when google fails and SERPER_API_KEY is configured.
 
     args:
         claim: the claim text to search for
@@ -28,11 +36,23 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 4
     returns:
         dict with search results and metadata
     """
+    result = await _searchGoogleClaimInternal(claim, maxResults, timeout)
+
+    if not result["success"] and _is_serper_configured():
+        logger.warning(f"google claim search failed ({result.get('error')}), trying serper fallback")
+        fallback = await _searchSerperClaimFallback(claim, maxResults, timeout)
+        if fallback["success"]:
+            return fallback
+
+    return result
+
+
+async def _searchGoogleClaimInternal(claim: str, maxResults: int = 10, timeout: float = 45.0) -> dict:
+    """internal google claim search — original logic without fallback."""
     try:
         logger.info(f"searching google for claim: {claim[:100]}...")
         logger.info(f"search timeout: {timeout}s, max results: {maxResults}")
 
-        # get google search api credentials from environment
         api_key = os.environ.get("GOOGLE_SEARCH_API_KEY", "")
         cse_cx = os.environ.get("GOOGLE_CSE_CX", "")
 
@@ -46,21 +66,18 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 4
                 "error": "missing google search api credentials"
             }
 
-        # build request parameters
         params = {
             "key": api_key,
             "cx": cse_cx,
             "q": claim,
-            "num": min(maxResults, 10),  # google api max is 10
-            "lr": "lang_pt",  # portuguese results preferred
+            "num": min(maxResults, 10),
+            "lr": "lang_pt",
         }
 
-        # perform search with timeout
         base_url = "https://www.googleapis.com/customsearch/v1"
         async with httpx.AsyncClient(timeout=timeout) as client:
             response = await client.get(base_url, params=params)
 
-        # check response status
         if response.status_code != 200:
             error_msg = f"google api returned {response.status_code}: {response.text[:100]}"
             logger.error(error_msg)
@@ -72,7 +89,6 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 4
                 "error": error_msg
             }
 
-        # parse response
         data = response.json()
         items = data.get("items", [])
 
@@ -86,7 +102,6 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 4
                 "error": "no search results found"
             }
 
-        # extract and structure search results
         searchResults = []
         for position, item in enumerate(items, start=1):
             searchResults.append({
@@ -135,6 +150,62 @@ async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 4
         }
 
 
+async def _searchSerperClaimFallback(claim: str, maxResults: int = 10, timeout: float = 45.0) -> dict:
+    """fallback claim search using serper.dev, returns same dict format as google."""
+    try:
+        logger.info(f"serper fallback: searching for claim: {claim[:100]}...")
+        items = await serper_search(
+            query=claim,
+            num=min(maxResults, 10),
+            language="lang_pt",
+            timeout=timeout,
+        )
+
+        if not items:
+            return {
+                "success": False,
+                "claim": claim,
+                "results": [],
+                "total_results": 0,
+                "error": "no search results found (serper fallback)"
+            }
+
+        searchResults = []
+        for position, item in enumerate(items, start=1):
+            searchResults.append({
+                "title": item.get("title", ""),
+                "url": item.get("link", ""),
+                "description": item.get("snippet", ""),
+                "position": position,
+                "domain": item.get("displayLink", "")
+            })
+
+        logger.info(f"serper fallback completed: {len(searchResults)} results found")
+
+        return {
+            "success": True,
+            "claim": claim,
+            "results": searchResults,
+            "total_results": len(searchResults),
+            "metadata": {
+                "search_engine": "serper",
+                "language": "pt",
+                "api": "serper-dev-fallback"
+            },
+            "error": None
+        }
+
+    except Exception as e:
+        logger.error(f"serper fallback also failed: {e}")
+        return {
+            "success": False,
+            "claim": claim,
+            "results": [],
+            "total_results": 0,
+            "error": f"serper fallback failed: {e}"
+        }
+
+
 async def google_search(
     query: str,
     *,
@@ -151,7 +222,7 @@ async def google_search(
 ) -> list[Dict[str, Any]]:
     """
     performs a search using google custom search api and returns the list of result items.
-    more flexible version with all available parameters.
+    falls back to serper.dev when google fails and SERPER_API_KEY is configured.
 
     args:
         query: search query string
@@ -167,8 +238,41 @@ async def google_search(
         timeout: request timeout in seconds
 
     returns:
-        list of search result items from google api
+        list of search result items from google api (or serper fallback)
     """
+    try:
+        return await _google_search_internal(
+            query,
+            num=num, start=start,
+            site_search=site_search, site_search_filter=site_search_filter,
+            date_restrict=date_restrict, sort=sort, file_type=file_type,
+            safe=safe, language=language, timeout=timeout,
+        )
+    except (GoogleSearchError, httpx.TimeoutException, Exception) as e:
+        logger.warning(f"google search failed, trying serper fallback: {e}")
+        return await _serper_fallback(
+            e, query,
+            num=num,
+            site_search=site_search, site_search_filter=site_search_filter,
+            date_restrict=date_restrict, language=language, timeout=timeout,
+        )
+
+
+async def _google_search_internal(
+    query: str,
+    *,
+    num: int = 10,
+    start: int = 1,
+    site_search: str | None = None,
+    site_search_filter: str | None = None,
+    date_restrict: str | None = None,
+    sort: str | None = None,
+    file_type: str | None = None,
+    safe: str | None = None,
+    language: str | None = None,
+    timeout: float = 15.0,
+) -> list[Dict[str, Any]]:
+    """original google search logic without fallback."""
     api_key = os.environ.get("GOOGLE_SEARCH_API_KEY", "")
     cse_cx = os.environ.get("GOOGLE_CSE_CX", "")
 
@@ -209,3 +313,36 @@ async def google_search(
 
     data = response.json()
     return data.get("items", [])
+
+
+async def _serper_fallback(
+    original_error: Exception,
+    query: str,
+    *,
+    num: int = 10,
+    site_search: str | None = None,
+    site_search_filter: str | None = None,
+    date_restrict: str | None = None,
+    language: str | None = None,
+    timeout: float = 15.0,
+) -> list[Dict[str, Any]]:
+    """attempt serper.dev as fallback; re-raise original error if serper is not configured or also fails."""
+    if not _is_serper_configured():
+        logger.warning("serper not configured, re-raising original error")
+        raise original_error
+
+    try:
+        items = await serper_search(
+            query=query,
+            num=num,
+            site_search=site_search,
+            site_search_filter=site_search_filter,
+            date_restrict=date_restrict,
+            language=language,
+            timeout=timeout,
+        )
+        logger.info(f"serper fallback succeeded: {len(items)} result(s)")
+        return items
+    except Exception as serper_err:
+        logger.error(f"serper fallback also failed: {serper_err}")
+        raise original_error from serper_err

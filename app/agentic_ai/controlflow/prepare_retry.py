@@ -128,7 +128,7 @@ def _get_cited_numbers(
 
 
 # domain iteration order — must match format_context / build_source_reference_list
-_SOURCE_DOMAIN_ORDER = ("aosfatos", "g1", "estadao", "folha")
+_SOURCE_DOMAIN_ORDER = ("aosfatos", "g1", "folha")
 
 
 def _filter_to_cited_sources(

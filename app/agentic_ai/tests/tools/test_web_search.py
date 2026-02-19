@@ -38,7 +38,6 @@ async def test_search_returns_all_domain_keys():
         # should have all domain keys
         assert "geral" in results
         assert "g1" in results
-        assert "estadao" in results
         assert "aosfatos" in results
         assert "folha" in results
 

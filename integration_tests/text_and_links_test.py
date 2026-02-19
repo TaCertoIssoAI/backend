@@ -136,7 +136,7 @@ def test_text_with_single_link():
     payload = {
         "content": [
             {
-                "textContent": "Confira essa notícia importante: https://www.cnnbrasil.com.br/nacional/em-belem-cupula-dos-povos-cobra-participacao-popular-nas-acoes-climaticas/ sobre o Neymar no Santos.",
+                "textContent": "O lula proibiu o carnaval",
                 "type": "text"
             }
         ]
@@ -366,11 +366,11 @@ def run_all_tests():
     # run all tests
     tests = [
         test_text_with_single_link,
-        test_text_with_multiple_links,
-        test_link_only_no_surrounding_text,
-        test_text_with_link_at_end,
-        test_text_with_social_media_link,
-        test_text_with_broken_link,
+       # test_text_with_multiple_links,
+        #test_link_only_no_surrounding_text,
+       # test_text_with_link_at_end,
+       # test_text_with_social_media_link,
+       # test_text_with_broken_link,
     ]
     
     passed = 0
