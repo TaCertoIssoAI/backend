@@ -30,16 +30,17 @@ DOMAIN_SEARCHES: dict[str, dict] = {
         "site_search_filter": None,
         "reliability": SourceReliability.MUITO_CONFIAVEL,
     },
-    "aosfatos": {
-        "site_search": "aosfatos.org",
-        "site_search_filter": "i",
-        "reliability": SourceReliability.MUITO_CONFIAVEL,
-    },
-    "folha": {
-        "site_search": "folha.uol.com.br",
-        "site_search_filter": "i",
-        "reliability": SourceReliability.MUITO_CONFIAVEL,
-    },
+    # commenting these sources due to very high costs with the search API
+    # "aosfatos": {
+    #     "site_search": "aosfatos.org",
+   #      "site_search_filter": "i",
+   #     "reliability": SourceReliability.MUITO_CONFIAVEL,
+   # },
+    #"folha": {
+    #    "site_search": "folha.uol.com.br",
+    #    "site_search_filter": "i",
+    #    "reliability": SourceReliability.MUITO_CONFIAVEL,
+   # },
 }
 
 # link expansion settings
