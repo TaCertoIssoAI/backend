@@ -26,7 +26,10 @@
       "WebFetch(domain:www.tavily.com)",
       "WebFetch(domain:brave.com)",
       "Bash(pip3 list:*)",
-      "Bash(./venv/bin/python -m pytest:*)"
+      "Bash(./venv/bin/python -m pytest:*)",
+      "WebFetch(domain:docs.cloud.google.com)",
+      "WebFetch(domain:developers.google.com)",
+      "WebFetch(domain:medium.com)"
     ],
     "deny": [],
     "ask": []
