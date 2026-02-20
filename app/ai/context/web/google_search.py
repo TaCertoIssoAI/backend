@@ -1,6 +1,6 @@
 """
 google custom search api integration for web search.
-falls back to serper.dev when google fails and SERPER_API_KEY is configured.
+falls back in cascade: vertex ai search → google custom search → serper.dev.
 """
 
 import os
@@ -11,8 +11,12 @@ import httpx
 
 from app.ai.context.web.serper_search import (
     serper_search,
-    SerperSearchError,
     _is_serper_configured,
+)
+from app.ai.context.web.vertex_search import (
+    vertex_search,
+    VertexSearchError,
+    _is_vertex_configured,
 )
 
 logger = logging.getLogger(__name__)
@@ -26,7 +30,7 @@ class GoogleSearchError(Exception):
 async def searchGoogleClaim(claim: str, maxResults: int = 10, timeout: float = 45.0) -> dict:
     """
     search google for information about a claim using Google Custom Search API.
-    falls back to serper.dev when google fails and SERPER_API_KEY is configured.
+    falls back in cascade: vertex ai search → google custom search → serper.dev.
 
     args:
         claim: the claim text to search for
@@ -221,8 +225,8 @@ async def google_search(
     timeout: float = 15.0,
 ) -> list[Dict[str, Any]]:
     """
-    performs a search using google custom search api and returns the list of result items.
-    falls back to serper.dev when google fails and SERPER_API_KEY is configured.
+    performs a search using fallback cascade and returns the list of result items.
+    fallback order: vertex ai search → google custom search → serper.dev.
 
     args:
         query: search query string
@@ -238,8 +242,18 @@ async def google_search(
         timeout: request timeout in seconds
 
     returns:
-        list of search result items from google api (or serper fallback)
+        list of search result items from vertex/google/serper fallback chain
     """
+    try:
+        return await _vertex_search_internal(
+            query,
+            num=num,
+            site_search=site_search,
+            site_search_filter=site_search_filter,
+        )
+    except (VertexSearchError, Exception) as vertex_err:
+        logger.warning(f"vertex search failed, trying google fallback: {vertex_err}")
+
     try:
         return await _google_search_internal(
             query,
@@ -248,14 +262,40 @@ async def google_search(
             date_restrict=date_restrict, sort=sort, file_type=file_type,
             safe=safe, language=language, timeout=timeout,
         )
-    except (GoogleSearchError, httpx.TimeoutException, Exception) as e:
-        logger.warning(f"google search failed, trying serper fallback: {e}")
+    except (GoogleSearchError, httpx.TimeoutException, Exception) as google_err:
+        logger.warning(f"google search failed, trying serper fallback: {google_err}")
         return await _serper_fallback(
-            e, query,
+            google_err,
+            query,
             num=num,
-            site_search=site_search, site_search_filter=site_search_filter,
-            date_restrict=date_restrict, language=language, timeout=timeout,
+            site_search=site_search,
+            site_search_filter=site_search_filter,
+            date_restrict=date_restrict,
+            language=language,
+            timeout=timeout,
         )
+
+
+async def _vertex_search_internal(
+    query: str,
+    *,
+    num: int = 10,
+    site_search: str | None = None,
+    site_search_filter: str | None = None,
+) -> list[Dict[str, Any]]:
+    """vertex search integration for google_search() fallback cascade."""
+    if not _is_vertex_configured():
+        raise VertexSearchError("vertex search is not configured")
+
+    allowed_domains: list[str] | None = None
+    if site_search and site_search_filter != "e":
+        allowed_domains = [site_search]
+
+    return await vertex_search(
+        query=query,
+        num=num,
+        allowed_domains=allowed_domains,
+    )
 
 
 async def _google_search_internal(

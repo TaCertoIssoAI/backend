@@ -4,9 +4,8 @@ vertex ai search (discovery engine) integration — uses google cloud python sdk
 
 import os
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Sequence
 from urllib.parse import urlparse
-from google.cloud import discoveryengine_v1 as discoveryengine
 import asyncio
 
 logger = logging.getLogger(__name__)
@@ -30,7 +29,21 @@ def _is_vertex_configured() -> bool:
     )
 
 
-def _sync_vertex_search(query: str, num: int):
+def _build_vertex_filter(allowed_domains: Sequence[str] | None = None) -> str | None:
+    if not allowed_domains:
+        return None
+
+    normalized_domains = [d.strip() for d in allowed_domains if d and d.strip()]
+    if not normalized_domains:
+        return None
+
+    filter_parts = [f'siteSearch:"https://{domain}/"' for domain in normalized_domains]
+    return " OR ".join(filter_parts)
+
+
+def _sync_vertex_search(query: str, num: int, allowed_domains: Sequence[str] | None = None):
+    from google.cloud import discoveryengine_v1 as discoveryengine
+
     project_id = os.environ.get("VERTEX_SEARCH_PROJECT_ID", "")
     location = os.environ.get("VERTEX_SEARCH_LOCATION", "global")
     data_store_id = os.environ.get("VERTEX_SEARCH_DATA_STORE_ID", "")
@@ -45,22 +58,26 @@ def _sync_vertex_search(query: str, num: int):
         f"/dataStores/{data_store_id}/servingConfigs/default_serving_config"
     )
 
-    request = discoveryengine.SearchRequest(
-        serving_config=serving_config,
-        query=query,
-        filter='siteSearch:"https://g1.globo.com/"',
-        page_size=min(num, 100),
-        content_search_spec=discoveryengine.SearchRequest.ContentSearchSpec(
+    request_kwargs: Dict[str, Any] = {
+        "serving_config": serving_config,
+        "query": query,
+        "page_size": min(num, 100),
+        "content_search_spec": discoveryengine.SearchRequest.ContentSearchSpec(
             snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
                 return_snippet=True
             )
         ),
+    }
+
+    search_filter = _build_vertex_filter(allowed_domains)
+    if search_filter:
+        request_kwargs["filter"] = search_filter
+
+    request = discoveryengine.SearchRequest(
+        **request_kwargs,
     )
 
     response = client.search(request=request)
-    r0 = next(iter(response.results), None)
-    print(dict(r0.document.derived_struct_data).keys())
-    print(dict(r0.document.derived_struct_data))
     return response
 
 
@@ -68,9 +85,10 @@ async def vertex_search(
     query: str,
     *,
     num: int = 10,
+    allowed_domains: Sequence[str] | None = None,
 ) -> list[Dict[str, Any]]:
 
-    response = await asyncio.to_thread(_sync_vertex_search, query, num)
+    response = await asyncio.to_thread(_sync_vertex_search, query, num, allowed_domains)
 
     items: list[Dict[str, Any]] = []
 

@@ -1,5 +1,5 @@
 """
-tests for google search → serper.dev fallback behavior.
+tests for web search fallback behavior (vertex → google → serper).
 
 validates:
 - google succeeds → serper never called
@@ -21,6 +21,7 @@ from app.ai.context.web.google_search import (
     google_search,
     searchGoogleClaim,
     GoogleSearchError,
+    _vertex_search_internal,
 )
 
 
@@ -229,3 +230,95 @@ async def test_claim_serper_not_configured_returns_google_error():
 
             assert result["success"] is False
             assert result["error"] == "missing credentials"
+
+
+@pytest.mark.asyncio
+async def test_vertex_succeeds_google_and_serper_not_called():
+    """when vertex works, google and serper should not be called."""
+    vertex_items = [{"title": "Vertex Result", "link": "https://vertex.com/1", "snippet": "from vertex", "displayLink": "vertex.com"}]
+    with patch("app.ai.context.web.google_search._vertex_search_internal", new_callable=AsyncMock) as mock_vertex:
+        with patch("app.ai.context.web.google_search._google_search_internal", new_callable=AsyncMock) as mock_google:
+            with patch("app.ai.context.web.google_search.serper_search", new_callable=AsyncMock) as mock_serper:
+                mock_vertex.return_value = vertex_items
+
+                result = await google_search("test query")
+
+                assert result == vertex_items
+                mock_vertex.assert_called_once()
+                mock_google.assert_not_called()
+                mock_serper.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_vertex_fails_google_succeeds_serper_not_called():
+    """when vertex fails and google works, serper should not be called."""
+    with patch("app.ai.context.web.google_search._vertex_search_internal", new_callable=AsyncMock) as mock_vertex:
+        with patch("app.ai.context.web.google_search._google_search_internal", new_callable=AsyncMock) as mock_google:
+            with patch("app.ai.context.web.google_search.serper_search", new_callable=AsyncMock) as mock_serper:
+                mock_vertex.side_effect = Exception("vertex down")
+                mock_google.return_value = MOCK_GOOGLE_ITEMS
+
+                result = await google_search("test query")
+
+                assert result == MOCK_GOOGLE_ITEMS
+                mock_google.assert_called_once()
+                mock_serper.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_vertex_and_google_fail_serper_succeeds():
+    """when vertex and google fail, fallback to serper."""
+    with patch("app.ai.context.web.google_search._vertex_search_internal", new_callable=AsyncMock) as mock_vertex:
+        with patch("app.ai.context.web.google_search._google_search_internal", new_callable=AsyncMock) as mock_google:
+            with patch("app.ai.context.web.google_search.serper_search", new_callable=AsyncMock) as mock_serper:
+                with patch("app.ai.context.web.google_search._is_serper_configured", return_value=True):
+                    mock_vertex.side_effect = Exception("vertex down")
+                    mock_google.side_effect = GoogleSearchError("quota exceeded")
+                    mock_serper.return_value = MOCK_SERPER_ITEMS
+
+                    result = await google_search("test query")
+
+                    assert result == MOCK_SERPER_ITEMS
+                    mock_serper.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_vertex_internal_passes_domain_filters():
+    """site_search include filter should be sent to vertex as allowed domains."""
+    with patch("app.ai.context.web.google_search._is_vertex_configured", return_value=True):
+        with patch("app.ai.context.web.google_search.vertex_search", new_callable=AsyncMock) as mock_vertex_search:
+            mock_vertex_search.return_value = []
+
+            await _vertex_search_internal(
+                "test query",
+                num=5,
+                site_search="g1.globo.com",
+                site_search_filter="i",
+            )
+
+            mock_vertex_search.assert_called_once_with(
+                query="test query",
+                num=5,
+                allowed_domains=["g1.globo.com"],
+            )
+
+
+@pytest.mark.asyncio
+async def test_vertex_internal_ignores_exclude_domain_filter():
+    """exclude domain filter should not restrict vertex domains."""
+    with patch("app.ai.context.web.google_search._is_vertex_configured", return_value=True):
+        with patch("app.ai.context.web.google_search.vertex_search", new_callable=AsyncMock) as mock_vertex_search:
+            mock_vertex_search.return_value = []
+
+            await _vertex_search_internal(
+                "test query",
+                num=5,
+                site_search="g1.globo.com",
+                site_search_filter="e",
+            )
+
+            mock_vertex_search.assert_called_once_with(
+                query="test query",
+                num=5,
+                allowed_domains=None,
+            )
