@@ -1,9 +1,13 @@
 """tests for web_search tool."""
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.agentic_ai.tools.web_search import WebSearchTool, _build_query_with_trusted_domains
+from app.agentic_ai.tools.web_search import (
+    WebSearchTool,
+    _build_query_with_trusted_domains,
+    _custom_search,
+)
 
 
 def test_build_query_with_trusted_domains_empty():
@@ -30,7 +34,7 @@ async def test_search_returns_all_domain_keys():
         {"link": "https://test.com/1", "title": "Result 1", "snippet": "s1", "displayLink": "test.com"},
     ]
 
-    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
+    with patch("app.agentic_ai.tools.web_search._custom_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = mock_items
         tool = WebSearchTool()
         results = await tool.search(["test query"], max_results_specific_search=5, max_results_general=5)
@@ -42,7 +46,7 @@ async def test_search_returns_all_domain_keys():
 
 @pytest.mark.asyncio
 async def test_search_handles_empty_results():
-    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
+    with patch("app.agentic_ai.tools.web_search._custom_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = []
         tool = WebSearchTool()
         results = await tool.search(["empty query"])
@@ -53,10 +57,8 @@ async def test_search_handles_empty_results():
 
 @pytest.mark.asyncio
 async def test_search_handles_google_error():
-    from app.ai.context.web.google_search import GoogleSearchError
-
-    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
-        mock_search.side_effect = GoogleSearchError("api error")
+    with patch("app.agentic_ai.tools.web_search._custom_search", new_callable=AsyncMock) as mock_search:
+        mock_search.side_effect = Exception("api error")
         tool = WebSearchTool()
         results = await tool.search(["failing query"])
 
@@ -70,7 +72,7 @@ async def test_search_deduplicates_urls_within_domain_key():
     """two queries returning the same URL under the same domain key → only 1 entry."""
     same_item = {"link": "https://dup.com/1", "title": "Dup", "snippet": "s", "displayLink": "dup.com"}
 
-    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
+    with patch("app.agentic_ai.tools.web_search._custom_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = [same_item]
         tool = WebSearchTool()
         results = await tool.search(["query1", "query2"], max_results_specific_search=5, max_results_general=5)
@@ -86,7 +88,7 @@ async def test_search_allows_same_url_across_domain_keys():
     """same URL returned by different domain searches is kept in both domain keys."""
     same_item = {"link": "https://shared.com/article", "title": "Shared", "snippet": "s", "displayLink": "shared.com"}
 
-    with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
+    with patch("app.agentic_ai.tools.web_search._custom_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = [same_item]
         tool = WebSearchTool()
         results = await tool.search(["query1"], max_results_specific_search=5, max_results_general=5)
@@ -96,3 +98,40 @@ async def test_search_allows_same_url_across_domain_keys():
         assert len(keys_with_results) > 1
         for key in keys_with_results:
             assert results[key][0].url == "https://shared.com/article"
+
+
+@pytest.mark.asyncio
+async def test_custom_search_sends_domains_params():
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"results": []}
+
+    with patch.dict("os.environ", {"WEB_SERCH_SERVER_URL": "http://127.0.0.1:6050"}):
+        with patch("app.agentic_ai.tools.web_search.httpx.AsyncClient") as mock_client_cls:
+            mock_client = AsyncMock()
+            mock_client.get.return_value = mock_response
+            mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+
+            await _custom_search(
+                "climate",
+                num=5,
+                domains=["cdc.gov", "un.org"],
+            )
+
+            call_kwargs = mock_client.get.call_args.kwargs
+            params = call_kwargs.get("params") or mock_client.get.call_args[1].get("params")
+
+            # verify we send domains params when provided
+            assert ("domains", "cdc.gov") in params
+            assert ("domains", "un.org") in params
+
+
+@pytest.mark.asyncio
+async def test_search_returns_empty_on_missing_server_url():
+    with patch.dict("os.environ", {}, clear=True):
+        tool = WebSearchTool()
+        results = await tool.search(["test query"])
+
+        for key in results:
+            assert results[key] == []

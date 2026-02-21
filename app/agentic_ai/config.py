@@ -13,7 +13,7 @@ MAX_RETRY_COUNT = 1
 MAX_RETRY_ITERATIONS = 3
 
 # timeouts (seconds)
-SEARCH_TIMEOUT_PER_QUERY = 15.0
+SEARCH_TIMEOUT_PER_QUERY = 30.0
 SCRAPE_TIMEOUT_PER_PAGE = 30.0
 FACT_CHECK_TIMEOUT = 30.0
 
@@ -26,15 +26,13 @@ DOMAIN_SEARCHES: dict[str, dict] = {
     },
     "especifico": {
         # unified specific search across trusted Brazilian news sources
-        "query_suffix": (
-            "("
-            "site:g1.globo.com OR "
-            "site:ge.globo.com OR "
-            "site:estadao.com.br OR "
-            "site:folha.uol.com.br OR "
-            "site:aosfatos.org"
-            ")"
-        ),
+        "domains": [
+            "g1.globo.com",
+            "ge.globo.com",
+            "estadao.com.br",
+            "folha.uol.com.br",
+            "aosfatos.org",
+        ],
         "site_search": None,
         "site_search_filter": None,
         "reliability": SourceReliability.MUITO_CONFIAVEL,
