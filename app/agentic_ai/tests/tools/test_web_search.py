@@ -33,13 +33,11 @@ async def test_search_returns_all_domain_keys():
     with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = mock_items
         tool = WebSearchTool()
-        results = await tool.search(["test query"], max_results_per_domain=5, max_results_general=5)
+        results = await tool.search(["test query"], max_results_specific_search=5, max_results_general=5)
 
         # should have all domain keys
         assert "geral" in results
-        assert "g1" in results
-        assert "aosfatos" in results
-        assert "folha" in results
+        assert "especifico" in results
 
 
 @pytest.mark.asyncio
@@ -75,7 +73,7 @@ async def test_search_deduplicates_urls_within_domain_key():
     with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = [same_item]
         tool = WebSearchTool()
-        results = await tool.search(["query1", "query2"], max_results_per_domain=5, max_results_general=5)
+        results = await tool.search(["query1", "query2"], max_results_specific_search=5, max_results_general=5)
 
         # each domain key should have at most 1 entry (the deduped URL)
         for key, entries in results.items():
@@ -91,7 +89,7 @@ async def test_search_allows_same_url_across_domain_keys():
     with patch("app.agentic_ai.tools.web_search.google_search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = [same_item]
         tool = WebSearchTool()
-        results = await tool.search(["query1"], max_results_per_domain=5, max_results_general=5)
+        results = await tool.search(["query1"], max_results_specific_search=5, max_results_general=5)
 
         # every domain key that returned results should have the URL
         keys_with_results = [k for k, v in results.items() if v]

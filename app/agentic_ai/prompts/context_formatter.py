@@ -38,21 +38,16 @@ def format_context(
             counter += 1
 
     # domain-specific search results (muito confiável)
-    for domain_key, label in [
-        ("aosfatos", "Aos Fatos"),
-        ("g1", "G1"),
-        ("folha", "Folha"),
-    ]:
-        entries = search_results.get(domain_key, [])
-        if entries:
-            muito_confiavel_lines.append(f"### Busca Web — {label}")
-            for entry in entries:
-                muito_confiavel_lines.append(
-                    f"[{counter}] Title: \"{entry.title}\"\n"
-                    f"    URL: {entry.url} | Domain: {entry.domain}\n"
-                    f"    Snippet: \"{entry.snippet}\""
-                )
-                counter += 1
+    entries = search_results.get("especifico", [])
+    if entries:
+        muito_confiavel_lines.append("### Busca Web — Sites específicos")
+        for entry in entries:
+            muito_confiavel_lines.append(
+                f"[{counter}] Title: \"{entry.title}\"\n"
+                f"    URL: {entry.url} | Domain: {entry.domain}\n"
+                f"    Snippet: \"{entry.snippet}\""
+            )
+            counter += 1
 
     if muito_confiavel_lines:
         sections.append(
@@ -115,10 +110,9 @@ def build_source_reference_list(
         refs.append((counter, title, entry.url))
         counter += 1
 
-    for domain_key in ("aosfatos", "g1", "folha"):
-        for entry in search_results.get(domain_key, []):
-            refs.append((counter, entry.title, entry.url))
-            counter += 1
+    for entry in search_results.get("especifico", []):
+        refs.append((counter, entry.title, entry.url))
+        counter += 1
 
     for entry in search_results.get("geral", []):
         refs.append((counter, entry.title, entry.url))

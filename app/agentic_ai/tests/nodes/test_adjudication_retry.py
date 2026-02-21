@@ -367,8 +367,8 @@ async def test_graph_routes_to_end_on_adjudication_error():
             return []
 
     class MockWS:
-        async def search(self, queries, max_results_per_domain=5, max_results_general=5):
-            return {"geral": [], "g1": [], "aosfatos": [], "folha": []}
+        async def search(self, queries, max_results_specific_search=5, max_results_general=5):
+            return {"geral": [], "especifico": []}
 
     class MockScraper:
         async def scrape(self, targets):

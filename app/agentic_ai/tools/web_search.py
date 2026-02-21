@@ -31,7 +31,7 @@ def _build_query_with_trusted_domains(query: str) -> str:
 
 
 class WebSearchTool:
-    """runs parallel searches per query: general + domain-specific (g1, aosfatos, folha)."""
+    """runs parallel searches per query: general + domain-specific (unified)."""
 
     def __init__(self, timeout: float = SEARCH_TIMEOUT_PER_QUERY):
         self.timeout = timeout
@@ -39,7 +39,7 @@ class WebSearchTool:
     async def search(
         self,
         queries: list[str],
-        max_results_per_domain: int = 4,
+        max_results_specific_search: int = 15,
         max_results_general: int = 4,
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
@@ -53,7 +53,7 @@ class WebSearchTool:
         for query in queries:
             for domain_key, domain_cfg in DOMAIN_SEARCHES.items():
                 # pick base max: general vs domain-specific
-                base_max = max_results_general if domain_key == "geral" else max_results_per_domain
+                base_max = max_results_general if domain_key == "geral" else max_results_specific_search
 
                 # config override still takes priority when present
                 max_cfg = domain_cfg.get("max_results_per_call")

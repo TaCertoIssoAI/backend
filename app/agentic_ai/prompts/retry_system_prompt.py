@@ -23,9 +23,9 @@ DATA ATUAL: {current_date}
 1. search_fact_check_api(queries: list[str]) — busca em bases de fact-checking. \
 Resultados sao classificados como "Muito confiavel".
 
-2. search_web(queries, max_results_per_domain, max_results_general) — busca web. \
-O parametro max_results_per_domain controla resultados de dominios especificos (G1, \
-Aos Fatos, Folha) e max_results_general controla a busca geral. \
+2. search_web(queries, max_results_specific_search, max_results_general) — busca web. \
+O parametro max_results_specific_search controla resultados de dominios especificos e \
+max_results_general controla a busca geral. \
 Busca geral e considerado "Neutro", ja dominios especificos sao consideradas "Muito confiavel". \
 IMPORTANTE: envie apenas UMA query por chamada (queries deve conter exatamente 1 item).
 

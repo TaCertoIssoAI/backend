@@ -81,16 +81,16 @@ def _make_tools(
     @tool
     async def search_web(
         queries: list[str],
-        max_results_per_domain: int = 5,
+        max_results_specific_search: int = 15,
         max_results_general: int = 5,
     ) -> str:
-        """search the web across general and domain-specific sources (G1, Aos Fatos, Folha).
+        """search the web across general and domain-specific sources (unified).
         queries: list with exactly 1 search query string. only one query per call is allowed.
-        max_results_per_domain: max results per domain-specific source (default 5).
+        max_results_specific_search: max results for domain-specific sources (default 15).
         max_results_general: max results for the general web search (default 5).
         """
         # enforce single query limit
-        results = await web_searcher.search(queries[:1], max_results_per_domain, max_results_general)
+        results = await web_searcher.search(queries[:1], max_results_specific_search, max_results_general)
         output = {}
         for domain_key, entries in results.items():
             output[domain_key] = [
