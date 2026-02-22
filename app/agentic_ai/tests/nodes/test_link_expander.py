@@ -14,7 +14,7 @@ from app.agentic_ai.utils.link_expander import (
     _pending_link_tasks,
 )
 from app.agentic_ai.config import MAX_LINKS_TO_EXPAND
-from app.ai.context.web.models import WebContentResult
+from app.agentic_ai.context.web.models import WebContentResult
 from app.models.commondata import DataSource
 
 

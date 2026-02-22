@@ -1,8 +1,7 @@
 """
 web search tool — runs parallel searches across general + domain-specific sources.
 
-reuses google_search() from app.ai.context.web.google_search
-and trusted domains from app.config.trusted_domains.
+uses the custom search server for all web searches.
 """
 
 import asyncio

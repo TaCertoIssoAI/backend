@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 import asyncio
 
-from app.ai.context.web.apify_utils import detectPlatform, PlatformType, scrapeGenericUrl
-from app.ai.context.web.news_scrapers import (
+from app.agentic_ai.context.web.apify_utils import detectPlatform, PlatformType, scrapeGenericUrl
+from app.agentic_ai.context.web.news_scrapers import (
     scrape_g1_article,
     scrape_estadao_article,
     scrape_folha_article,
@@ -124,8 +124,8 @@ class TestDetectPlatform:
 
 class TestG1Scraper:
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_successful_extraction(self, mock_traf, mock_session):
         mock_resp = MagicMock()
         mock_resp.text = G1_HTML
@@ -141,8 +141,8 @@ class TestG1Scraper:
         assert "primeiro parágrafo" in result["content"]
         assert result["error"] is None
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_stops_at_nav_marker(self, mock_traf, mock_session):
         mock_resp = MagicMock()
         mock_resp.text = G1_HTML
@@ -154,8 +154,8 @@ class TestG1Scraper:
         # "Veja também" intertitle should stop extraction
         assert "Veja também" not in result["content"]
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_falls_back_to_trafilatura(self, mock_traf, mock_session):
         mock_resp = MagicMock()
         mock_resp.text = EMPTY_BODY_HTML
@@ -167,7 +167,7 @@ class TestG1Scraper:
         assert result["success"] is True
         assert result["content"] == "A" * 60
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
     def test_http_error(self, mock_session):
         mock_session.get.side_effect = Exception("connection refused")
 
@@ -178,8 +178,8 @@ class TestG1Scraper:
 
 class TestEstadaoScraper:
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_successful_extraction(self, mock_traf, mock_session):
         mock_resp = MagicMock()
         mock_resp.text = ESTADAO_HTML
@@ -197,7 +197,7 @@ class TestEstadaoScraper:
         assert "Manchete de ruído" not in result["content"]
         assert result["error"] is None
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
     def test_http_error(self, mock_session):
         mock_session.get.side_effect = Exception("timeout")
 
@@ -208,8 +208,8 @@ class TestEstadaoScraper:
 
 class TestFolhaScraper:
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_successful_extraction(self, mock_traf, mock_session):
         mock_resp = MagicMock()
         mock_resp.content = FOLHA_HTML.encode("utf-8")
@@ -226,8 +226,8 @@ class TestFolhaScraper:
         # noise class paragraph should be excluded
         assert "deve ser ignorado" not in result["content"]
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_url_normalization(self, mock_traf, mock_session):
         mock_resp = MagicMock()
         mock_resp.content = FOLHA_HTML.encode("utf-8")
@@ -240,7 +240,7 @@ class TestFolhaScraper:
         call_url = mock_session.get.call_args[0][0]
         assert "www1.folha.uol.com.br" in call_url
 
-    @patch("app.ai.context.web.news_scrapers._SESSION")
+    @patch("app.agentic_ai.context.web.news_scrapers._SESSION")
     def test_http_error(self, mock_session):
         mock_session.get.side_effect = Exception("ssl error")
 
@@ -250,8 +250,8 @@ class TestFolhaScraper:
 
 class TestAosFatosScraper:
 
-    @patch("app.ai.context.web.news_scrapers._fetch_aosfatos")
-    @patch("app.ai.context.web.news_scrapers.trafilatura")
+    @patch("app.agentic_ai.context.web.news_scrapers._fetch_aosfatos")
+    @patch("app.agentic_ai.context.web.news_scrapers.trafilatura")
     def test_successful_extraction(self, mock_traf, mock_fetch):
         mock_fetch.return_value = (AOSFATOS_HTML, 200)
         mock_traf.extract.return_value = ""
@@ -265,7 +265,7 @@ class TestAosFatosScraper:
         # noise class paragraph should be excluded
         assert "deve ser ignorado" not in result["content"]
 
-    @patch("app.ai.context.web.news_scrapers._fetch_aosfatos")
+    @patch("app.agentic_ai.context.web.news_scrapers._fetch_aosfatos")
     def test_http_error(self, mock_fetch):
         mock_fetch.side_effect = Exception("UNEXPECTED_EOF")
 
@@ -307,7 +307,7 @@ class TestBuildResult:
 class TestScrapeGenericUrlRouting:
 
     @pytest.mark.asyncio
-    @patch("app.ai.context.web.apify_utils.scrape_g1_article")
+    @patch("app.agentic_ai.context.web.apify_utils.scrape_g1_article")
     async def test_routes_g1(self, mock_scraper):
         mock_scraper.return_value = {
             "success": True, "content": "g1 content", "metadata": {"extraction_tool": "g1_scraper"}, "error": None
@@ -320,7 +320,7 @@ class TestScrapeGenericUrlRouting:
         assert result["metadata"]["extraction_tool"] == "g1_scraper"
 
     @pytest.mark.asyncio
-    @patch("app.ai.context.web.apify_utils.scrape_estadao_article")
+    @patch("app.agentic_ai.context.web.apify_utils.scrape_estadao_article")
     async def test_routes_estadao(self, mock_scraper):
         mock_scraper.return_value = {
             "success": True, "content": "estadao content", "metadata": {"extraction_tool": "estadao_scraper"}, "error": None
@@ -332,7 +332,7 @@ class TestScrapeGenericUrlRouting:
         assert result["metadata"]["extraction_tool"] == "estadao_scraper"
 
     @pytest.mark.asyncio
-    @patch("app.ai.context.web.apify_utils.scrape_folha_article")
+    @patch("app.agentic_ai.context.web.apify_utils.scrape_folha_article")
     async def test_routes_folha(self, mock_scraper):
         mock_scraper.return_value = {
             "success": True, "content": "folha content", "metadata": {"extraction_tool": "folha_scraper"}, "error": None
@@ -344,7 +344,7 @@ class TestScrapeGenericUrlRouting:
         assert result["metadata"]["extraction_tool"] == "folha_scraper"
 
     @pytest.mark.asyncio
-    @patch("app.ai.context.web.apify_utils.scrape_aosfatos_article")
+    @patch("app.agentic_ai.context.web.apify_utils.scrape_aosfatos_article")
     async def test_routes_aosfatos(self, mock_scraper):
         mock_scraper.return_value = {
             "success": True, "content": "aosfatos content", "metadata": {"extraction_tool": "aosfatos_scraper"}, "error": None
@@ -356,8 +356,8 @@ class TestScrapeGenericUrlRouting:
         assert result["metadata"]["extraction_tool"] == "aosfatos_scraper"
 
     @pytest.mark.asyncio
-    @patch("app.ai.context.web.apify_utils.scrapeGenericSimple")
-    @patch("app.ai.context.web.apify_utils.scrape_g1_article")
+    @patch("app.agentic_ai.context.web.apify_utils.scrapeGenericSimple")
+    @patch("app.agentic_ai.context.web.apify_utils.scrape_g1_article")
     async def test_fallback_on_scraper_failure(self, mock_g1, mock_generic):
         mock_g1.return_value = {
             "success": False, "content": "", "metadata": {}, "error": "extraction failed"
