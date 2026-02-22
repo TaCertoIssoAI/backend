@@ -7,15 +7,23 @@ and trusted domains from app.config.trusted_domains.
 
 import asyncio
 import logging
+import os
+from urllib.parse import urlparse
 from uuid import uuid4
 
+import httpx
+
 from app.models.agenticai import GoogleSearchContext, SourceReliability
-from app.ai.context.web.google_search import google_search, GoogleSearchError
 from app.config.trusted_domains import get_trusted_domains
 
 from app.agentic_ai.config import DOMAIN_SEARCHES, SEARCH_TIMEOUT_PER_QUERY
 
 logger = logging.getLogger(__name__)
+
+
+class WebSearchError(Exception):
+    """exception raised when the custom search server fails."""
+    pass
 
 
 def _build_query_with_trusted_domains(query: str) -> str:
@@ -31,7 +39,7 @@ def _build_query_with_trusted_domains(query: str) -> str:
 
 
 class WebSearchTool:
-    """runs parallel searches per query: general + domain-specific (g1, aosfatos, folha)."""
+    """runs parallel searches per query: general + domain-specific (unified)."""
 
     def __init__(self, timeout: float = SEARCH_TIMEOUT_PER_QUERY):
         self.timeout = timeout
@@ -39,8 +47,8 @@ class WebSearchTool:
     async def search(
         self,
         queries: list[str],
-        max_results_per_domain: int = 4,
-        max_results_general: int = 4,
+        max_results_specific_search: int = 12,
+        max_results_general: int = 7,
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
         merged: dict[str, list[GoogleSearchContext]] = {
@@ -53,7 +61,7 @@ class WebSearchTool:
         for query in queries:
             for domain_key, domain_cfg in DOMAIN_SEARCHES.items():
                 # pick base max: general vs domain-specific
-                base_max = max_results_general if domain_key == "geral" else max_results_per_domain
+                base_max = max_results_general if domain_key == "geral" else max_results_specific_search
 
                 # config override still takes priority when present
                 max_cfg = domain_cfg.get("max_results_per_call")
@@ -65,7 +73,7 @@ class WebSearchTool:
                         domain_key=domain_key,
                         site_search=domain_cfg["site_search"],
                         site_search_filter=domain_cfg["site_search_filter"],
-                        query_suffix=domain_cfg.get("query_suffix"),
+                        domains=domain_cfg.get("domains"),
                         reliability=domain_cfg["reliability"],
                         max_results=final_max_results,
                     )
@@ -97,7 +105,6 @@ class WebSearchTool:
             f"web search: {total_after} result(s) across {len(per_key)} domain(s) "
             f"(dedup removed {total_before - total_after}): {per_key}"
         )
-
         return merged
 
     async def _search_single(
@@ -106,27 +113,19 @@ class WebSearchTool:
         domain_key: str,
         site_search: str | None,
         site_search_filter: str | None,
-        query_suffix: str | None,
+        domains: list[str] | None,
         reliability: SourceReliability,
         max_results: int,
     ) -> list[GoogleSearchContext]:
         """execute a single search against one domain configuration."""
         try:
-            # for general search, use trusted domain filters in query
             effective_query = query
-            if domain_key == "geral":
-                effective_query = _build_query_with_trusted_domains(query)
 
-            # append query_suffix (e.g. multi-domain site: filters)
-            if query_suffix:
-                effective_query = f"{effective_query} {query_suffix}"
-
-            items = await google_search(
+            # for general search, use trusted domains via server params
+            items = await _custom_search(
                 query=effective_query,
-                num=min(max_results, 10),
-                site_search=site_search,
-                site_search_filter=site_search_filter,
-               # language="lang_pt" this leads to better sources but they sometimes come in english, however if there are portuguese sources they will come first due to the query language
+                num=min(max_results, 50),
+                domains=domains,
                 timeout=self.timeout,
             )
 
@@ -152,9 +151,63 @@ class WebSearchTool:
 
             return results
 
-        except GoogleSearchError as e:
-            logger.error(f"google search error ({domain_key}): {e}")
+        except WebSearchError as e:
+            logger.error(f"web search error ({domain_key}): {e!r}", exc_info=True)
             return []
         except Exception as e:
-            logger.error(f"web search unexpected error ({domain_key}): {e}")
+            logger.error(f"web search unexpected error ({domain_key}): {e!r}", exc_info=True)
             return []
+
+
+async def _custom_search(
+    query: str,
+    *,
+    num: int = 10,
+    domains: list[str] | None = None,
+    timeout: float = 15.0,
+) -> list[dict]:
+    """
+    performs a search using the custom search server and returns a list of items
+    with google-like keys: title, link, snippet, displayLink.
+    """
+    base_url = os.getenv("WEB_SERCH_SERVER_URL", "").rstrip("/")
+    if not base_url:
+        raise WebSearchError("missing WEB_SERCH_SERVER_URL")
+
+    params: list[tuple[str, str]] = [
+        ("query", query),
+        ("n_results", str(max(1, min(num, 50)))),
+    ]
+    domain_params: list[str] = []
+    if domains:
+        domain_params.extend([d.strip() for d in domains if d and d.strip()])
+    for domain in domain_params:
+        params.append(("domains", domain))
+
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        response = await client.get(f"{base_url}/search", params=params)
+
+    if response.status_code != 200:
+        raise WebSearchError(
+            f"search server returned {response.status_code}: {response.text[:200]}"
+        )
+
+    data = response.json()
+    results = data.get("results", []) or []
+
+    mapped: list[dict] = []
+    for item in results:
+        url = item.get("url", "")
+        display = item.get("displayed_url", "")
+        if not display and url:
+            display = urlparse(url).netloc
+        mapped.append(
+            {
+                "title": item.get("title", ""),
+                "link": url,
+                "snippet": item.get("snippet", ""),
+                "displayLink": display,
+            }
+        )
+
+    return mapped

@@ -23,10 +23,10 @@ def test_merge_search_results_empty():
 
 def test_merge_search_results_new_key():
     existing = {"geral": [_make_entry("1")]}
-    new = {"g1": [_make_entry("2")]}
+    new = {"especifico": [_make_entry("2")]}
     result = _merge_search_results(existing, new)
     assert len(result["geral"]) == 1
-    assert len(result["g1"]) == 1
+    assert len(result["especifico"]) == 1
 
 
 def test_merge_search_results_extends_existing():

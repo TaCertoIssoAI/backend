@@ -189,7 +189,7 @@ def test_build_retry_context_includes_summary():
 def test_build_retry_context_includes_tool_summaries():
     result = _make_fact_check_result(["Fontes insuficientes para verificar"])
     summaries = [
-        {"tool": "search_web", "total_results": 2, "per_domain": {"geral": 1, "folha": 1}},
+        {"tool": "search_web", "total_results": 2, "per_domain": {"geral": 1, "especifico": 1}},
         {"tool": "search_fact_check_api", "total_results": 0},
     ]
     context = _build_retry_context(result, [], summaries)
@@ -301,7 +301,7 @@ def _make_fc(id="fc-1"):
 
 
 def _make_gs(id="gs-1", domain_key="geral", domain="bbc.com"):
-    muito = {"aosfatos", "g1", "folha"}
+    muito = {"especifico"}
     reliability = SourceReliability.MUITO_CONFIAVEL if domain_key in muito else SourceReliability.NEUTRO
     return GoogleSearchContext(
         id=id,
@@ -363,11 +363,11 @@ def test_get_cited_numbers_from_summary():
 
 def test_get_cited_numbers_union_across_claims():
     fc = _make_fc("fc-1")
-    aos = _make_gs("af-1", "aosfatos", "aosfatos.org")
+    es = _make_gs("es-1", "especifico", "g1.globo.com")
     gs1 = _make_gs("ge-1", "geral", "bbc.com")
     gs2 = _make_gs("ge-2", "geral", "cnn.com")
 
-    # sources: [1] fc, [2] aosfatos, [3] geral, [4] geral
+    # sources: [1] fc, [2] especifico, [3] geral, [4] geral
     adj = FactCheckResult(
         results=[
             DataSourceResult(
@@ -389,7 +389,7 @@ def test_get_cited_numbers_union_across_claims():
         ],
         overall_summary="Overall [2].",
     )
-    cited = _get_cited_numbers([fc], {"aosfatos": [aos], "geral": [gs1, gs2]}, [], adj)
+    cited = _get_cited_numbers([fc], {"especifico": [es], "geral": [gs1, gs2]}, [], adj)
     assert cited == {1, 2, 4}
 
 
@@ -407,19 +407,19 @@ def test_get_cited_numbers_empty():
 # --- _filter_to_cited_sources tests ---
 
 def test_filter_to_cited_sources_keeps_only_cited():
-    # sources: [1] fc, [2] aosfatos, [3] geral, [4] geral, [5] scraped
+    # sources: [1] fc, [2] especifico, [3] geral, [4] geral, [5] scraped
     fc = _make_fc("fc-1")
-    aos = _make_gs("af-1", "aosfatos", "aosfatos.org")
+    es = _make_gs("es-1", "especifico", "g1.globo.com")
     g1 = _make_gs("ge-1", "geral", "bbc.com")
     g2 = _make_gs("ge-2", "geral", "cnn.com")
     sc = _make_sc("sc-1")
 
     r_fc, r_search, r_scraped = _filter_to_cited_sources(
-        [fc], {"aosfatos": [aos], "geral": [g1, g2]}, [sc], {1, 3},
+        [fc], {"especifico": [es], "geral": [g1, g2]}, [sc], {1, 3},
     )
     assert len(r_fc) == 1
     assert r_fc[0].id == "fc-1"
-    assert r_search["aosfatos"] == []
+    assert r_search["especifico"] == []
     assert len(r_search["geral"]) == 1
     assert r_search["geral"][0].id == "ge-1"
     assert r_scraped == []
@@ -458,13 +458,13 @@ def test_filter_to_cited_sources_numbering_matches_format_context():
     import re
 
     fc = _make_fc("fc-1")
-    aos = _make_gs("af-1", "aosfatos", "aosfatos.org")
+    es = _make_gs("es-1", "especifico", "g1.globo.com")
     gs = _make_gs("ge-1", "geral", "bbc.com")
     sc = _make_sc("sc-1")
 
-    # sources: [1] fc, [2] aosfatos, [3] geral, [4] scraped — cite [1] and [3]
+    # sources: [1] fc, [2] especifico, [3] geral, [4] scraped — cite [1] and [3]
     r_fc, r_search, r_scraped = _filter_to_cited_sources(
-        [fc], {"aosfatos": [aos], "geral": [gs]}, [sc], {1, 3},
+        [fc], {"especifico": [es], "geral": [gs]}, [sc], {1, 3},
     )
 
     formatted = format_context(r_fc, r_search, r_scraped)
@@ -517,7 +517,7 @@ def _make_tool_msg(name: str, content: str) -> MagicMock:
 def test_extract_tool_summaries_from_messages():
     web_content = json.dumps({
         "results": [],
-        "_summary": {"total_results": 2, "per_domain": {"geral": 1, "folha": 1}},
+        "_summary": {"total_results": 2, "per_domain": {"geral": 1, "especifico": 1}},
     })
     fc_content = json.dumps({
         "results": [],
@@ -529,7 +529,7 @@ def test_extract_tool_summaries_from_messages():
     ]
     summaries = _extract_tool_summaries(messages)
     assert len(summaries) == 2
-    assert summaries[0] == {"tool": "search_web", "total_results": 2, "per_domain": {"geral": 1, "folha": 1}}
+    assert summaries[0] == {"tool": "search_web", "total_results": 2, "per_domain": {"geral": 1, "especifico": 1}}
     assert summaries[1] == {"tool": "search_fact_check_api", "total_results": 0}
 
 
@@ -557,5 +557,4 @@ def test_extract_tool_summaries_handles_invalid_json():
     msg = _make_tool_msg("search_web", "not valid json {{{")
     summaries = _extract_tool_summaries([msg])
     assert summaries == []
-
 

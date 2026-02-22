@@ -41,7 +41,7 @@ class MockFactChecker:
 
 
 class MockWebSearcher:
-    async def search(self, queries, max_results_per_domain=5, max_results_general=5):
+    async def search(self, queries, max_results_specific_search=5, max_results_general=5):
         return {
             "geral": [
                 GoogleSearchContext(
@@ -54,9 +54,7 @@ class MockWebSearcher:
                     domain="test.com",
                 )
             ],
-            "g1": [],
-            "aosfatos": [],
-            "folha": [],
+            "especifico": [],
         }
 
 

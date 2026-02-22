@@ -13,7 +13,7 @@ MAX_RETRY_COUNT = 1
 MAX_RETRY_ITERATIONS = 3
 
 # timeouts (seconds)
-SEARCH_TIMEOUT_PER_QUERY = 15.0
+SEARCH_TIMEOUT_PER_QUERY = 35.0
 SCRAPE_TIMEOUT_PER_PAGE = 30.0
 FACT_CHECK_TIMEOUT = 30.0
 
@@ -24,23 +24,19 @@ DOMAIN_SEARCHES: dict[str, dict] = {
         "site_search_filter": None,
         "reliability": SourceReliability.NEUTRO,
     },
-    "g1": {
-        "query_suffix": "(site:g1.globo.com OR site:ge.globo.com)", #globo esporte e G1
+    "especifico": {
+        # unified specific search across trusted Brazilian news sources
+        "domains": [
+            "g1.globo.com",
+            "ge.globo.com",
+            "estadao.com.br",
+            "folha.uol.com.br",
+            "aosfatos.org",
+        ],
         "site_search": None,
         "site_search_filter": None,
         "reliability": SourceReliability.MUITO_CONFIAVEL,
     },
-    # commenting these sources due to very high costs with the search API
-    # "aosfatos": {
-    #     "site_search": "aosfatos.org",
-   #      "site_search_filter": "i",
-   #     "reliability": SourceReliability.MUITO_CONFIAVEL,
-   # },
-    #"folha": {
-    #    "site_search": "folha.uol.com.br",
-    #    "site_search_filter": "i",
-    #    "reliability": SourceReliability.MUITO_CONFIAVEL,
-   # },
 }
 
 # link expansion settings

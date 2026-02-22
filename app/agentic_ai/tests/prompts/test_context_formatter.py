@@ -28,7 +28,7 @@ def _make_fact_check(id="fc-1", title="FC Title", publisher="Lupa", rating="Fals
 
 
 def _make_search(id="gs-1", domain_key="geral", domain="bbc.com"):
-    muito_confiavel_domains = {"aosfatos", "g1", "folha"}
+    muito_confiavel_domains = {"especifico"}
     reliability = (
         SourceReliability.MUITO_CONFIAVEL
         if domain_key in muito_confiavel_domains
@@ -73,11 +73,11 @@ def test_fact_check_results_appear_in_muito_confiavel():
     assert "[1]" in result
 
 
-def test_aosfatos_appears_in_muito_confiavel():
-    entry = _make_search(domain_key="aosfatos", domain="aosfatos.org")
-    result = format_context([], {"aosfatos": [entry]}, [])
+def test_especifico_appears_in_muito_confiavel():
+    entry = _make_search(domain_key="especifico", domain="aosfatos.org")
+    result = format_context([], {"especifico": [entry]}, [])
     assert "Muito confiável" in result
-    assert "Aos Fatos" in result
+    assert "Sites específicos" in result
 
 
 def test_general_search_appears_in_neutro():
@@ -104,29 +104,20 @@ def test_global_numbering_is_contiguous():
     assert "[3]" in result
 
 
-def test_multiple_domains_ordered_correctly():
-    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
-    folha = _make_search(id="fo-1", domain_key="folha", domain="folha.uol.com.br")
-    result = format_context(
-        [], {"g1": [g1], "folha": [folha]}, []
-    )
-    g1_pos = result.index("G1")
-    folha_pos = result.index("Folha")
-    assert g1_pos < folha_pos
+def test_especifico_section_appears_before_neutro():
+    especifico = _make_search(id="es-1", domain_key="especifico", domain="g1.globo.com")
+    geral = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
+    result = format_context([], {"especifico": [especifico], "geral": [geral]}, [])
+    especifico_pos = result.index("Sites específicos")
+    geral_pos = result.index("Geral")
+    assert especifico_pos < geral_pos
 
 
-def test_g1_appears_in_muito_confiavel():
-    entry = _make_search(domain_key="g1", domain="g1.globo.com")
-    result = format_context([], {"g1": [entry]}, [])
+def test_especifico_appears_in_muito_confiavel_label():
+    entry = _make_search(domain_key="especifico", domain="g1.globo.com")
+    result = format_context([], {"especifico": [entry]}, [])
     assert "Muito confiável" in result
-    assert "G1" in result
-
-
-def test_folha_appears_in_muito_confiavel():
-    entry = _make_search(domain_key="folha", domain="folha.uol.com.br")
-    result = format_context([], {"folha": [entry]}, [])
-    assert "Muito confiável" in result
-    assert "Folha" in result
+    assert "Sites específicos" in result
 
 
 # ===== build_source_reference_list tests =====
@@ -157,31 +148,29 @@ def test_ref_list_fact_check_no_claim_text():
 
 
 def test_ref_list_ordering_matches_format_context():
-    """numbering must follow the same order as format_context: fact-checks, aosfatos, g1, folha, geral, scraped."""
+    """numbering must follow the same order as format_context: fact-checks, especifico, geral, scraped."""
     fc = _make_fact_check(id="fc-1")
-    aosfatos = _make_search(id="af-1", domain_key="aosfatos", domain="aosfatos.org")
-    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
-    folha = _make_search(id="fo-1", domain_key="folha", domain="folha.uol.com.br")
+    especifico = _make_search(id="es-1", domain_key="especifico", domain="g1.globo.com")
     geral = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
     scrape = _make_scrape(id="sc-1")
 
     refs = build_source_reference_list(
         [fc],
-        {"aosfatos": [aosfatos], "g1": [g1], "folha": [folha], "geral": [geral]},
+        {"especifico": [especifico], "geral": [geral]},
         [scrape],
     )
 
     numbers = [r[0] for r in refs]
-    assert numbers == [1, 2, 3, 4, 5, 6]
+    assert numbers == [1, 2, 3, 4]
 
 
 def test_ref_list_numbering_contiguous_with_multiple_per_domain():
-    g1_a = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
-    g1_b = _make_search(id="g1-2", domain_key="g1", domain="g1.globo.com")
+    es_a = _make_search(id="es-1", domain_key="especifico", domain="g1.globo.com")
+    es_b = _make_search(id="es-2", domain_key="especifico", domain="g1.globo.com")
     geral = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
 
     refs = build_source_reference_list(
-        [], {"g1": [g1_a, g1_b], "geral": [geral]}, []
+        [], {"especifico": [es_a, es_b], "geral": [geral]}, []
     )
     numbers = [r[0] for r in refs]
     assert numbers == [1, 2, 3]
@@ -289,13 +278,12 @@ def test_format_context_and_ref_list_numbering_match():
     """[N] numbers from format_context match those from build_source_reference_list."""
     fc1 = _make_fact_check(id="fc-1")
     fc2 = _make_fact_check(id="fc-2", publisher="AosFatos")
-    aos = _make_search(id="af-1", domain_key="aosfatos", domain="aosfatos.org")
-    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
+    es = _make_search(id="es-1", domain_key="especifico", domain="g1.globo.com")
     ge1 = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
     ge2 = _make_search(id="ge-2", domain_key="geral", domain="cnn.com")
     sc = _make_scrape(id="sc-1")
 
-    search = {"aosfatos": [aos], "g1": [g1], "geral": [ge1, ge2]}
+    search = {"especifico": [es], "geral": [ge1, ge2]}
 
     formatted = format_context([fc1, fc2], search, [sc])
     formatted_numbers = sorted(set(int(m) for m in re.findall(r"\[(\d+)\]", formatted)))
@@ -309,11 +297,11 @@ def test_format_context_and_ref_list_numbering_match():
 def test_format_context_and_ref_list_urls_match():
     """URL at each [N] position matches between format_context and build_source_reference_list."""
     fc = _make_fact_check(id="fc-1")
-    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
+    es = _make_search(id="es-1", domain_key="especifico", domain="g1.globo.com")
     ge = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
     sc = _make_scrape(id="sc-1")
 
-    search = {"g1": [g1], "geral": [ge]}
+    search = {"especifico": [es], "geral": [ge]}
     refs = build_source_reference_list([fc], search, [sc])
     formatted = format_context([fc], search, [sc])
 
@@ -345,12 +333,11 @@ def test_adjudication_prompt_numbering_matches_ref_list():
     from app.agentic_ai.prompts.adjudication_prompt import build_adjudication_prompt
 
     fc = _make_fact_check(id="fc-1")
-    aos = _make_search(id="af-1", domain_key="aosfatos", domain="aosfatos.org")
-    g1 = _make_search(id="g1-1", domain_key="g1", domain="g1.globo.com")
+    es = _make_search(id="es-1", domain_key="especifico", domain="g1.globo.com")
     ge = _make_search(id="ge-1", domain_key="geral", domain="bbc.com")
     sc = _make_scrape(id="sc-1")
 
-    search = {"aosfatos": [aos], "g1": [g1], "geral": [ge]}
+    search = {"especifico": [es], "geral": [ge]}
 
     _, user_prompt = build_adjudication_prompt(
         formatted_data_sources="Test claim text",
