@@ -15,6 +15,7 @@ import httpx
 
 from app.models.agenticai import GoogleSearchContext, SourceReliability
 from app.config.trusted_domains import get_trusted_domains
+from app.clients.web_search_cache import cached_custom_search
 
 from app.agentic_ai.config import DOMAIN_SEARCHES, SEARCH_TIMEOUT_PER_QUERY
 
@@ -122,7 +123,7 @@ class WebSearchTool:
             effective_query = query
 
             # for general search, use trusted domains via server params
-            items = await _custom_search(
+            items = await _cached_custom_search(
                 query=effective_query,
                 num=min(max_results, 50),
                 domains=domains,
@@ -211,3 +212,20 @@ async def _custom_search(
         )
 
     return mapped
+
+
+async def _cached_custom_search(
+    query: str,
+    *,
+    num: int,
+    domains: list[str] | None,
+    timeout: float,
+) -> list[dict]:
+    """cache-through wrapper that delegates to cached_custom_search."""
+    return await cached_custom_search(
+        query,
+        num=num,
+        domains=domains,
+        timeout=timeout,
+        original_search_fn=_custom_search,
+    )

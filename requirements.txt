@@ -103,6 +103,7 @@ python-multipart==0.0.6
 pytz==2025.2
 PyYAML==6.0.3
 readability-lxml==0.8.4.1
+redis>=5.0.0,<6.0.0
 regex==2025.11.3
 requests==2.32.5
 requests-file==3.0.1
