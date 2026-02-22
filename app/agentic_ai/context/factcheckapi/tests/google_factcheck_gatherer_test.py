@@ -13,7 +13,7 @@ import os
 
 pytest_plugins = ('pytest_asyncio',)
 
-from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+from app.agentic_ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.models import ExtractedClaim, ClaimSource
 
 

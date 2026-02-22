@@ -18,8 +18,8 @@ import logging
 from typing import List, Optional
 from app.ai.threads.thread_utils import wait_all
 from app.models import DataSource, PipelineConfig
-from app.ai.context.web.apify_utils import scrapeGenericUrl
-from app.ai.context.web.models import WebContentResult
+from app.agentic_ai.context.web.apify_utils import scrapeGenericUrl
+from app.agentic_ai.context.web.models import WebContentResult
 from app.ai.threads.thread_utils import ThreadPoolManager, OperationType
 
 logger = logging.getLogger(__name__)

@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.ai.context.web import searchGoogleClaim
-from app.ai.context.web.apify_utils import scrapeGenericSimple
+from app.agentic_ai.context.web.apify_utils import scrapeGenericSimple
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

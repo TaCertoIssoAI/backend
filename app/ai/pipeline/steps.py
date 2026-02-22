@@ -27,7 +27,7 @@ from app.models import (
 from app.ai.context import EvidenceGatherer
 from app.ai.pipeline.no_claims_fallback import NoClaimsFallbackOutput
 
-from app.ai.context.factcheckapi import (
+from app.agentic_ai.context.factcheckapi import (
     GoogleFactCheckGatherer
 )
 

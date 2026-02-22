@@ -1,4 +1,4 @@
-from .google_factcheck_gatherer import GoogleFactCheckGatherer
+from app.agentic_ai.context.factcheckapi import GoogleFactCheckGatherer
 
 
 __all__ = [

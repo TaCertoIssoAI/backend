@@ -18,7 +18,7 @@ from app.models import (
     LLMConfig,
 )
 from app.ai.context import EvidenceGatherer
-from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+from app.agentic_ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.ai.pipeline.steps import DefaultPipelineSteps
 from app.ai.context.web import WebSearchGatherer
 from app.ai.pipeline.tests.fixtures.mock_linkexpander import hybrid_expand_link_contexts

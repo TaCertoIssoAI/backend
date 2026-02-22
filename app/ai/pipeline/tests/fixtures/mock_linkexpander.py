@@ -10,7 +10,7 @@ from typing import List
 from uuid import uuid4
 
 from app.models import DataSource, PipelineConfig
-from app.ai.context.web.apify_utils import detectPlatform, PlatformType
+from app.agentic_ai.context.web.apify_utils import detectPlatform, PlatformType
 
 
 # mock dictionary mapping URLs to their content
@@ -154,7 +154,7 @@ def hybrid_expand_link_contexts(
     # process generic URLs with simple HTTP scraping (no Apify fallback)
     if generic_urls:
         import asyncio
-        from app.ai.context.web.apify_utils import scrapeGenericSimple
+        from app.agentic_ai.context.web.apify_utils import scrapeGenericSimple
 
         # scrape each generic URL with simple HTTP only
         for url in generic_urls:
