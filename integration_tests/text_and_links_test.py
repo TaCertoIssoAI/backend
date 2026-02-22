@@ -15,6 +15,7 @@ or with pytest:
     pytest integration_tests/text_and_links_test.py -v -s
 """
 
+import os
 import requests
 import json
 import sys
@@ -22,7 +23,7 @@ import time
 
 
 # configuration
-BASE_URL = "http://localhost:8000"
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 TEXT_ENDPOINT = f"{BASE_URL}/text"
 HEALTH_ENDPOINT = f"{BASE_URL}/health"
 
