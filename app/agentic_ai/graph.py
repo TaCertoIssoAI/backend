@@ -81,8 +81,8 @@ def _make_tools(
     @tool
     async def search_web(
         queries: list[str],
-        max_results_specific_search: int = 15,
-        max_results_general: int = 5,
+        max_results_specific_search: int = 12,
+        max_results_general: int = 7,
     ) -> str:
         """search the web across general and domain-specific sources (unified).
         queries: list with exactly 1 search query string. only one query per call is allowed.

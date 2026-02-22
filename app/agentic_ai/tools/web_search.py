@@ -47,8 +47,8 @@ class WebSearchTool:
     async def search(
         self,
         queries: list[str],
-        max_results_specific_search: int = 15,
-        max_results_general: int = 4,
+        max_results_specific_search: int = 12,
+        max_results_general: int = 7,
     ) -> dict[str, list[GoogleSearchContext]]:
         """search all queries across all domain groups concurrently."""
         merged: dict[str, list[GoogleSearchContext]] = {
@@ -105,8 +105,6 @@ class WebSearchTool:
             f"web search: {total_after} result(s) across {len(per_key)} domain(s) "
             f"(dedup removed {total_before - total_after}): {per_key}"
         )
-        logger.debug("web search results: %s", merged)
-
         return merged
 
     async def _search_single(
@@ -186,7 +184,6 @@ async def _custom_search(
     for domain in domain_params:
         params.append(("domains", domain))
 
-    logger.debug("web search request: %s/search params=%s", base_url, params)
     async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.get(f"{base_url}/search", params=params)
 
@@ -195,7 +192,6 @@ async def _custom_search(
             f"search server returned {response.status_code}: {response.text[:200]}"
         )
 
-    logger.debug("web search raw response: %s", response.text)
     data = response.json()
     results = data.get("results", []) or []
 
