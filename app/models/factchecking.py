@@ -554,6 +554,10 @@ class LLMAdjudicationOutput(BaseModel):
         default="",
         description="High-level summary of all fact-check results"
     )
+    audio_summary: str = Field(
+        default="",
+        description="Resumo curto e objetivo (2-3 frases) para reprodução em áudio. Sem URLs, sem números de fonte, sem formatação."
+    )
 
 
 class ClaimVerdict(BaseModel):
@@ -631,6 +635,10 @@ class FactCheckResult(BaseModel):
     overall_summary: Optional[str] = Field(
         None,
         description="Optional high-level summary of all fact-check results"
+    )
+    audio_summary: Optional[str] = Field(
+        None,
+        description="Short audio-friendly summary from adjudication"
     )
     sources_with_claims: List[Union["DataSourceWithClaims", "DataSourceWithExtractedClaims"]] = Field(
         default_factory=list,

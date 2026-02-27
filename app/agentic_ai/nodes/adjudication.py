@@ -98,6 +98,7 @@ def _convert_to_fact_check_result(
     return FactCheckResult(
         results=[data_source_result],
         overall_summary=llm_output.overall_summary or None,
+        audio_summary=llm_output.audio_summary or None,
     )
 
 
@@ -113,6 +114,7 @@ def _make_timeout_error_result(attempts: int, timeout: float) -> FactCheckResult
             f"Erro: a adjudicação excedeu o tempo limite de {timeout}s "
             f"após {attempts} tentativa(s)."
         ),
+        audio_summary="Não foi possível completar a verificação no tempo disponível.",
     )
 
 

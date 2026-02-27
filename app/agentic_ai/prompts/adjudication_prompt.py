@@ -122,6 +122,12 @@ Retorne um objeto JSON com:
     - justification: explicacao detalhada citando fontes individualmente com [Numero-fonte]
     - citations_used: lista de citacoes usadas (cada uma com url, title, publisher, citation_text)
 - overall_summary: resumo geral conciso (3-4 linhas), sem URLs, sem caracteres *
+- audio_summary: resumo MUITO conciso (maximo 2-3 frases curtas) adequado para ser lido em voz alta.
+  Regras do audio_summary:
+  - NAO inclua URLs, numeros de fonte [N], ou caracteres especiais (* _ [ ])
+  - Comece direto com o resultado (ex: "A informação é falsa." ou "Das 3 afirmações, 2 são verdadeiras.")
+  - Inclua apenas o veredito e uma justificativa minima de 1 frase
+  - Maximo 300 caracteres
 
 Exemplo de justificativa BEM formatada:
 "Segundo o Ministerio da Saude [1], um estudo com 50.000 participantes nao encontrou \
