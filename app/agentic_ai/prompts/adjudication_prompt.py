@@ -151,11 +151,34 @@ Retorne sua analise como um objeto JSON estruturado conforme especificado.
 """
 
 
+AUDIO_SCRIPT_BLOCK = """
+
+## Roteiro de Audio (OBRIGATORIO para esta requisicao)
+
+O usuario enviou um audio. Gere um campo "audio_script" no JSON de resposta com um roteiro CURTO e SIMPLES para ser lido em voz alta.
+
+Regras do roteiro:
+- Maximo de 3 a 5 frases curtas
+- Linguagem coloquial, simples e direta, como se estivesse falando com um amigo
+- NAO inclua URLs, numeros de fontes [N], ou termos tecnicos
+- NAO repita a analise completa. Apenas diga o veredito de forma clara e breve
+- Use palavras simples: "verdade", "mentira", "nao da pra confirmar", "fora de contexto"
+- Comece direto com o resultado, sem saudacoes
+
+Exemplo de roteiro bom:
+"Essa informacao e falsa. As fontes mostram que na verdade o que aconteceu foi diferente. Pra ver todos os detalhes e as fontes, leia a resposta escrita."
+
+Exemplo de roteiro bom (multiplas alegacoes):
+"Analisamos o que voce mandou. A parte sobre o governo e verdade, mas a parte sobre os precos e mentira. Leia a resposta escrita pra ver as fontes."
+"""
+
+
 def build_adjudication_prompt(
     formatted_data_sources: str,
     fact_check_results: list[FactCheckApiContext],
     search_results: dict[str, list[GoogleSearchContext]],
     scraped_pages: list[WebScrapeContext],
+    has_audio: bool = False,
 ) -> tuple[str, str]:
     """build the (system_prompt, user_prompt) pair for the adjudication LLM."""
     current_date = get_current_date()
@@ -165,6 +188,9 @@ def build_adjudication_prompt(
     )
 
     system = ADJUDICATION_SYSTEM_PROMPT.format(current_date=current_date)
+    if has_audio:
+        system += AUDIO_SCRIPT_BLOCK
+
     user = ADJUDICATION_USER_PROMPT.format(
         formatted_data_sources=formatted_data_sources,
         formatted_context=formatted_context,

@@ -64,5 +64,8 @@ class ContextAgentState(MessagesState):
     retry_count: int
     retry_context: Optional[str]
 
+    # whether the input contains audio (used to generate audio_script in adjudication)
+    has_audio: bool
+
     # error propagation (set when adjudication times out after all retries)
     adjudication_error: Optional[str]

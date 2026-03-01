@@ -98,6 +98,7 @@ def _convert_to_fact_check_result(
     return FactCheckResult(
         results=[data_source_result],
         overall_summary=llm_output.overall_summary or None,
+        audio_script=llm_output.audio_script,
     )
 
 
@@ -122,11 +123,13 @@ def make_adjudication_node(model: Any):
     structured_model = model.with_structured_output(LLMAdjudicationOutput)
 
     async def adjudication_node(state: ContextAgentState) -> dict:
+        has_audio = state.get("has_audio", False)
         system_prompt, user_prompt = build_adjudication_prompt(
             formatted_data_sources=state.get("formatted_data_sources", ""),
             fact_check_results=state.get("fact_check_results", []),
             search_results=state.get("search_results", {}),
             scraped_pages=state.get("scraped_pages", []),
+            has_audio=has_audio,
         )
 
         fc_count = len(state.get("fact_check_results", []))

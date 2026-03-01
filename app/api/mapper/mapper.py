@@ -199,7 +199,12 @@ def fact_check_result_to_response(
         #this is for the openAI model output
         rationale = replace_markdown_links(rationale)
 
-        resp_without_links = remove_link_like_substrings(rationale)
+        # use audio_script as responseWithoutLinks when available
+        if result.audio_script:
+            resp_without_links = result.audio_script
+        else:
+            resp_without_links = remove_link_like_substrings(rationale)
+
         return AnalysisResponse(
             message_id=msg_id,
             rationale=rationale,
