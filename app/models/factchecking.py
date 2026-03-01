@@ -554,6 +554,10 @@ class LLMAdjudicationOutput(BaseModel):
         default="",
         description="High-level summary of all fact-check results"
     )
+    audio_script: Optional[str] = Field(
+        default=None,
+        description="Short script for audio response, generated only when input is audio"
+    )
 
 
 class ClaimVerdict(BaseModel):
@@ -635,5 +639,9 @@ class FactCheckResult(BaseModel):
     sources_with_claims: List[Union["DataSourceWithClaims", "DataSourceWithExtractedClaims"]] = Field(
         default_factory=list,
         description="Original data sources with claims (enriched with citations or raw extracted claims)"
+    )
+    audio_script: Optional[str] = Field(
+        default=None,
+        description="Short script for audio response, generated only when input is audio"
     )
 

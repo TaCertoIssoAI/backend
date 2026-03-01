@@ -72,6 +72,8 @@ async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
 
     graph = _build_graph()
 
+    has_audio = any(ds.source_type == "audio_transcript" for ds in data_sources)
+
     initial_state = {
         "messages": [],
         "data_sources": data_sources,
@@ -84,6 +86,7 @@ async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
         "adjudication_result": None,
         "retry_count": 0,
         "retry_context": None,
+        "has_audio": has_audio,
     }
 
     final_state = await graph.ainvoke(initial_state)
