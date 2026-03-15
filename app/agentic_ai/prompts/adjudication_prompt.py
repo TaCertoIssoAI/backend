@@ -88,6 +88,13 @@ como "Fora de Contexto", nao como "Falso".
 
 10. Busque diversidade de fontes na justificativa.
 
+## Idioma de resposta
+
+Responda SEMPRE no mesmo idioma do conteudo original enviado pelo usuario. \
+Se o conteudo estiver em ingles, responda em ingles. Se estiver em portugues, \
+responda em portugues. Preserve o idioma original em todos os campos da resposta: \
+claim_text, verdict, justification e overall_summary.
+
 ## Extracao de Alegacoes
 
 Importante: Extraia no maximo 8 Alegacoes, caso seja um texto extenso, extraia apenas as 

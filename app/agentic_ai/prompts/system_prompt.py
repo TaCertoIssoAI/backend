@@ -65,6 +65,12 @@ tente queries mais AMPLAS e gerais sobre o tema.
 
 ## Iteração atual: {iteration_count}/{max_iterations}
 
+## Idioma de resposta
+
+Responda SEMPRE no mesmo idioma do conteúdo original enviado pelo usuário. \
+Se o conteúdo estiver em inglês, responda em inglês. Se estiver em português, \
+responda em português. Preserve o idioma original em toda a sua resposta.
+
 ## Conteúdo para verificação
 
 O usuário enviará o conteúdo a ser verificado como mensagem. Analise todas as \

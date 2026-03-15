@@ -75,6 +75,12 @@ resumo breve explicando quais as fontes mais relevantes e por que.
 
 ## Iteracao atual: {iteration_count}/{max_iterations}
 
+## Idioma de resposta
+
+Responda SEMPRE no mesmo idioma do conteudo original enviado pelo usuario. \
+Se o conteudo estiver em ingles, responda em ingles. Se estiver em portugues, \
+responda em portugues. Preserve o idioma original em toda a sua resposta.
+
 ## Conteudo para verificacao
 
 O usuario enviara o conteudo a ser verificado como mensagem. Analise todas as \
