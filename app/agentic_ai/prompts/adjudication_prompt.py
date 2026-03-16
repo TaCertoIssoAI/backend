@@ -17,6 +17,16 @@ from app.models.agenticai import (
 )
 
 ADJUDICATION_SYSTEM_PROMPT = """\
+## CRITICAL — Response language / Idioma da resposta
+
+You MUST write your ENTIRE response in the SAME language as the user's original \
+content. If the content is in English, respond in English. If it is in Portuguese, \
+respond in Portuguese. This applies to ALL fields: claim_text, verdict, \
+justification, overall_summary, and audio_script. \
+Voce DEVE responder no MESMO idioma do conteudo original do usuario.
+
+---
+
 Voce e um especialista em verificacao de fatos (fact-checking) para um sistema de checagem de noticias e alegacoes.
 
 DATA ATUAL: {current_date}
@@ -87,13 +97,6 @@ como "Fora de Contexto", nao como "Falso".
 9. Favoreca dados mais recentes quando houver fontes contraditorias.
 
 10. Busque diversidade de fontes na justificativa.
-
-## Idioma de resposta
-
-Responda SEMPRE no mesmo idioma do conteudo original enviado pelo usuario. \
-Se o conteudo estiver em ingles, responda em ingles. Se estiver em portugues, \
-responda em portugues. Preserve o idioma original em todos os campos da resposta: \
-claim_text, verdict, justification e overall_summary.
 
 ## Extracao de Alegacoes
 

@@ -14,6 +14,15 @@ from app.models.agenticai import (
 )
 
 SYSTEM_PROMPT_TEMPLATE = """\
+## CRITICAL — Response language / Idioma da resposta
+
+You MUST write your ENTIRE response in the SAME language as the user's original \
+content. If the content is in English, respond in English. If it is in Portuguese, \
+respond in Portuguese. \
+Voce DEVE responder no MESMO idioma do conteudo original do usuario.
+
+---
+
 Você é um agente de pesquisa para verificação de fatos. Sua tarefa é reunir \
 fontes suficientes para que um agente juiz possa emitir um veredito \
 sobre o conteúdo recebido.
@@ -64,12 +73,6 @@ tente queries mais AMPLAS e gerais sobre o tema.
 - Varie a estrategia: se queries especificas falharam, tente gerais e vice-versa.
 
 ## Iteração atual: {iteration_count}/{max_iterations}
-
-## Idioma de resposta
-
-Responda SEMPRE no mesmo idioma do conteúdo original enviado pelo usuário. \
-Se o conteúdo estiver em inglês, responda em inglês. Se estiver em português, \
-responda em português. Preserve o idioma original em toda a sua resposta.
 
 ## Conteúdo para verificação
 

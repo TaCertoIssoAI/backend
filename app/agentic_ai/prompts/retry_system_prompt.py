@@ -10,6 +10,15 @@ from __future__ import annotations
 from app.agentic_ai.prompts.utils import get_current_date
 
 RETRY_SYSTEM_PROMPT_TEMPLATE = """\
+## CRITICAL — Response language / Idioma da resposta
+
+You MUST write your ENTIRE response in the SAME language as the user's original \
+content. If the content is in English, respond in English. If it is in Portuguese, \
+respond in Portuguese. \
+Voce DEVE responder no MESMO idioma do conteudo original do usuario.
+
+---
+
 Voce e um agente de pesquisa para verificacao de fatos. Esta e uma SEGUNDA TENTATIVA \
 de busca de fontes.
 
@@ -74,12 +83,6 @@ Se esses criterios estao atendidos, NAO chame mais ferramentas. Responda com um 
 resumo breve explicando quais as fontes mais relevantes e por que.
 
 ## Iteracao atual: {iteration_count}/{max_iterations}
-
-## Idioma de resposta
-
-Responda SEMPRE no mesmo idioma do conteudo original enviado pelo usuario. \
-Se o conteudo estiver em ingles, responda em ingles. Se estiver em portugues, \
-responda em portugues. Preserve o idioma original em toda a sua resposta.
 
 ## Conteudo para verificacao
 
