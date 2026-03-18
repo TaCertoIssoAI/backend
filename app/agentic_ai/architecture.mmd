@@ -1,0 +1,65 @@
+graph TD
+    START(["run_fact_check()"])
+
+    subgraph GRAPH["LangGraph StateGraph"]
+        FMT["format_input<br/><i>parse text + expand links</i>"]
+
+        AGENT["context_agent<br/><i>gemini-2.5-flash-lite</i>"]
+
+        TOOLS["Tool Execution"]
+
+        ADJ["adjudication<br/><i>gemini-2.5-flash-lite</i><br/><i>thinking_budget=1024</i>"]
+
+        RETRY{"sources<br/>insufficient?"}
+    end
+
+    subgraph TOOL_LIST["Bound Tools (.bind_tools)"]
+        T1["search_fact_check_api"]
+        T2["search_web"]
+        T3["scrape_pages"]
+    end
+
+    subgraph GENAI["google-genai"]
+        G1["GoogleGenerativeAI"]
+        G2[".bind_tools()"]
+        G3[".with_structured_output()"]
+        G4[".ainvoke()"]
+    end
+
+    RESULT(["FactCheckResult<br/>claims + verdicts + citations"])
+
+    %% main flow
+    START --> FMT
+    FMT --> AGENT
+    AGENT -->|"tool calls"| TOOLS
+    TOOLS -->|"results → state"| AGENT
+    AGENT -->|"no more tools needed"| ADJ
+    ADJ --> RETRY
+    RETRY -->|"yes (max 1 retry)"| AGENT
+    RETRY -->|"no"| RESULT
+
+    %% tools detail
+    TOOLS --- T1
+    TOOLS --- T2
+    TOOLS --- T3
+
+    %% gen-ai integration
+    G1 -.->|"wraps Gemini model"| AGENT
+    G1 -.->|"wraps Gemini model"| ADJ
+    G2 -.->|"enables tool calling"| AGENT
+    G3 -.->|"structured JSON output"| ADJ
+    G4 -.->|"async invocation"| AGENT
+    G4 -.->|"async invocation"| ADJ
+
+    %% styling
+    classDef google fill:#4285F4,stroke:#1a73e8,color:#fff
+    classDef tool fill:#34A853,stroke:#1e8e3e,color:#fff
+    classDef decision fill:#FBBC04,stroke:#f9ab00,color:#000
+    classDef result fill:#EA4335,stroke:#d93025,color:#fff
+    classDef node fill:#e8f0fe,stroke:#4285F4,color:#1a73e8
+
+    class G1,G2,G3,G4 google
+    class T1,T2,T3 tool
+    class RETRY decision
+    class RESULT result
+    class FMT,AGENT,ADJ,TOOLS node
