@@ -175,28 +175,42 @@ Exemplo de roteiro bom (multiplas alegacoes):
 
 DEEP_FAKE_SYSTEM_BLOCK = """
 
-## Resultados de Deteccao de Deep Fake (Instrucoes)
+## Resultados de Deteccao de Deep Fake (Instrucoes OBRIGATORIAS)
 
 Voce recebera resultados de uma analise automatizada de deep fake realizada por modelos externos.
 
-Regras para incorporar esses resultados:
-1. Se as fontes confirmam fortemente "Falso" ou "Fora de Contexto", mantenha esse veredito. \
-Os resultados de deep fake sao complementares, nao substituem a verificacao factual.
-2. Se o veredito seria "Fontes insuficientes para verificar" E qualquer resultado de deep fake tem label "fake" \
-com score > 0.6, altere o veredito para "Fora de Contexto" e explique que a analise automatizada detectou \
-indicios de manipulacao.
-3. **REGRA CRITICA — midia gerada por IA com alta confianca**: Se TODOS os modelos de deep fake \
-(considerando cada media_type separadamente: video, audio, etc.) retornam label "fake" com score > 0.7, \
-a midia e considerada gerada por IA com alta confianca. Neste caso, MESMO QUE as fontes confirmem \
-a alegacao textual como "Verdadeiro", voce DEVE alterar o veredito para "Fora de Contexto". \
-Na justificativa de CADA alegacao afetada, explique que embora a informacao textual seja corroborada \
-pelas fontes, a midia que a acompanha apresenta fortes indicios de ser gerada por inteligencia artificial. \
-Na overall_summary, inclua um aviso claro de que a midia foi detectada como provavel deep fake \
-e que o conteudo, apesar de textualmente correto, esta sendo veiculado com midia manipulada.
-4. SEMPRE mencione a maior porcentagem de confianca de deteccao de fake na overall_summary e nas justificativas \
-por alegacao quando houver resultados de deep fake.
-5. Deixe claro que a analise de deep fake e automatizada e nao constitui prova definitiva — use termos como \
-"analise automatizada indica" ou "deteccao automatica sugere".
+### PASSO 1 — Verifique se a midia e deep fake com alta confianca
+
+Olhe os resultados de deep fake. Para cada media_type (video, audio), pegue o MAIOR score com label "fake".
+Se TODOS os media_types presentes tem score "fake" > 0.7, a midia e deep fake com alta confianca.
+
+### PASSO 2 — Aplique o veredito correto
+
+**Se a midia e deep fake com alta confianca (resultado do Passo 1):**
+- O veredito de TODAS as alegacoes DEVE ser "Fora de Contexto". NUNCA use "Verdadeiro" neste caso.
+- Isso se aplica MESMO QUE as fontes textuais confirmem a alegacao. A razao: o conteudo esta sendo \
+veiculado com midia manipulada/gerada por IA, o que torna o contexto enganoso.
+- Na justificativa de CADA alegacao, escreva EXPLICITAMENTE: "Embora as fontes confirmem a informacao \
+textual, a midia que acompanha esta mensagem foi detectada como provavel deep fake (score de X.XX), \
+o que torna o conteudo fora de contexto."
+- Na overall_summary, COMECE com: "ATENCAO: A midia associada a esta mensagem foi detectada como \
+provavel deep fake com alta confianca (score X.XX). Embora o conteudo textual possa ser verdadeiro, \
+a midia e provavelmente gerada por inteligencia artificial."
+
+**Se a midia NAO e deep fake com alta confianca:**
+- Se o veredito seria "Fontes insuficientes para verificar" E qualquer resultado de deep fake tem \
+label "fake" com score > 0.6, altere o veredito para "Fora de Contexto".
+- Se as fontes confirmam fortemente "Falso" ou "Fora de Contexto", mantenha esse veredito.
+- Caso contrario, mantenha o veredito que as fontes indicam.
+
+### PASSO 3 — Mencione os scores
+
+- SEMPRE mencione a maior porcentagem de confianca de deteccao de fake na overall_summary e \
+nas justificativas por alegacao.
+- Deixe claro que a analise e automatizada — use termos como "analise automatizada indica" ou \
+"deteccao automatica sugere".
+
+### RESUMO: Se deep fake alta confianca → veredito = "Fora de Contexto", NUNCA "Verdadeiro".
 """
 
 
