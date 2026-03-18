@@ -173,12 +173,67 @@ Exemplo de roteiro bom (multiplas alegacoes):
 """
 
 
+DEEP_FAKE_SYSTEM_BLOCK = """
+
+## Resultados de Deteccao de Deep Fake (Instrucoes)
+
+Voce recebera resultados de uma analise automatizada de deep fake realizada por modelos externos.
+
+Regras para incorporar esses resultados:
+1. Se as fontes confirmam fortemente "Falso" ou "Fora de Contexto", mantenha esse veredito. \
+Os resultados de deep fake sao complementares, nao substituem a verificacao factual.
+2. Se o veredito seria "Fontes insuficientes para verificar" E qualquer resultado de deep fake tem label "fake" \
+com score > 0.6, altere o veredito para "Fora de Contexto" e explique que a analise automatizada detectou \
+indicios de manipulacao.
+3. **REGRA CRITICA — midia gerada por IA com alta confianca**: Se TODOS os modelos de deep fake \
+(considerando cada media_type separadamente: video, audio, etc.) retornam label "fake" com score > 0.7, \
+a midia e considerada gerada por IA com alta confianca. Neste caso, MESMO QUE as fontes confirmem \
+a alegacao textual como "Verdadeiro", voce DEVE alterar o veredito para "Fora de Contexto". \
+Na justificativa de CADA alegacao afetada, explique que embora a informacao textual seja corroborada \
+pelas fontes, a midia que a acompanha apresenta fortes indicios de ser gerada por inteligencia artificial. \
+Na overall_summary, inclua um aviso claro de que a midia foi detectada como provavel deep fake \
+e que o conteudo, apesar de textualmente correto, esta sendo veiculado com midia manipulada.
+4. SEMPRE mencione a maior porcentagem de confianca de deteccao de fake na overall_summary e nas justificativas \
+por alegacao quando houver resultados de deep fake.
+5. Deixe claro que a analise de deep fake e automatizada e nao constitui prova definitiva — use termos como \
+"analise automatizada indica" ou "deteccao automatica sugere".
+"""
+
+
+DEEP_FAKE_USER_BLOCK = """
+
+## Resultados de Deteccao de Deep Fake
+
+{deep_fake_results}
+"""
+
+
+def _format_deep_fake_results(deep_fake_data: dict | None) -> str:
+    """format deep-fake detection results into bullet-point text."""
+    if not deep_fake_data:
+        return ""
+    results = deep_fake_data.get("results", [])
+    if not results:
+        return ""
+    lines = []
+    for r in results:
+        line = (
+            f"- Tipo: {r.get('media_type', 'unknown')} | "
+            f"Label: {r.get('label', 'unknown')} | "
+            f"Score: {r.get('score', 0):.4f} | "
+            f"Modelo: {r.get('model_used', 'unknown')}"
+        )
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def build_adjudication_prompt(
     formatted_data_sources: str,
     fact_check_results: list[FactCheckApiContext],
     search_results: dict[str, list[GoogleSearchContext]],
     scraped_pages: list[WebScrapeContext],
     has_audio: bool = False,
+    deep_fake_verification_result: dict | None = None,
 ) -> tuple[str, str]:
     """build the (system_prompt, user_prompt) pair for the adjudication LLM."""
     current_date = get_current_date()
@@ -190,10 +245,16 @@ def build_adjudication_prompt(
     system = ADJUDICATION_SYSTEM_PROMPT.format(current_date=current_date)
     if has_audio:
         system += AUDIO_SCRIPT_BLOCK
+    if deep_fake_verification_result:
+        system += DEEP_FAKE_SYSTEM_BLOCK
 
     user = ADJUDICATION_USER_PROMPT.format(
         formatted_data_sources=formatted_data_sources,
         formatted_context=formatted_context,
     )
+    if deep_fake_verification_result:
+        formatted_df = _format_deep_fake_results(deep_fake_verification_result)
+        if formatted_df:
+            user += DEEP_FAKE_USER_BLOCK.format(deep_fake_results=formatted_df)
 
     return system, user

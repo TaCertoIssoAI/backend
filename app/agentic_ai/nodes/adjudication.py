@@ -124,12 +124,14 @@ def make_adjudication_node(model: Any):
 
     async def adjudication_node(state: ContextAgentState) -> dict:
         has_audio = state.get("has_audio", False)
+        deep_fake_data = state.get("deep_fake_verification_result")
         system_prompt, user_prompt = build_adjudication_prompt(
             formatted_data_sources=state.get("formatted_data_sources", ""),
             fact_check_results=state.get("fact_check_results", []),
             search_results=state.get("search_results", {}),
             scraped_pages=state.get("scraped_pages", []),
             has_audio=has_audio,
+            deep_fake_verification_result=deep_fake_data,
         )
 
         fc_count = len(state.get("fact_check_results", []))

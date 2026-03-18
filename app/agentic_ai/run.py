@@ -59,7 +59,10 @@ def _build_graph():
 # public API
 # ---------------------------------------------------------------------------
 
-async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
+async def run_fact_check(
+    data_sources: list[DataSource],
+    deep_fake_verification_result=None,
+) -> GraphOutput:
     """run the full agentic fact-checking graph on a list of DataSources.
 
     args:
@@ -87,6 +90,9 @@ async def run_fact_check(data_sources: list[DataSource]) -> GraphOutput:
         "retry_count": 0,
         "retry_context": None,
         "has_audio": has_audio,
+        "deep_fake_verification_result": (
+            deep_fake_verification_result.model_dump() if deep_fake_verification_result else None
+        ),
     }
 
     final_state = await graph.ainvoke(initial_state)

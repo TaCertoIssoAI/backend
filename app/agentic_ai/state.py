@@ -67,5 +67,8 @@ class ContextAgentState(MessagesState):
     # whether the input contains audio (used to generate audio_script in adjudication)
     has_audio: bool
 
+    # external deep-fake detection results (dict to avoid Pydantic serialization issues)
+    deep_fake_verification_result: Optional[dict]
+
     # error propagation (set when adjudication times out after all retries)
     adjudication_error: Optional[str]

@@ -201,8 +201,11 @@ def sanitize_request(request: Request) -> Request:
         )
         sanitized_content.append(sanitized_item)
 
-    # create new request with sanitized content
-    sanitized_request = Request(content=sanitized_content)
+    # create new request with sanitized content, preserving non-text fields
+    sanitized_request = Request(
+        content=sanitized_content,
+        deep_fake_verification_result=request.deep_fake_verification_result,
+    )
 
     return sanitized_request
 
