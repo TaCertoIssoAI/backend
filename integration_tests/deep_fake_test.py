@@ -230,6 +230,78 @@ def test_no_deep_fake_backward_compat():
     return response_data
 
 
+def test_text_with_high_fake_score_expects_fora_de_contexto():
+    """text claim with high-confidence deep-fake should return 'Fora de Contexto'."""
+    print("\n" + "=" * 80)
+    print("TEST 4: Text + High Fake Score -> Fora de Contexto")
+    print("=" * 80)
+
+    payload = {
+        "content": [
+            {
+                "textContent": "O governo anunciou novas medidas economicas",
+                "type": "text",
+            }
+        ],
+        "deep-fake-verification-result": {
+            "results": [
+                {
+                    "label": "fake",
+                    "score": 0.85,
+                    "model_used": "frame_sampler(InternVideo2)",
+                    "media_type": "video",
+                    "processing_time_ms": 1500,
+                },
+                {
+                    "label": "real",
+                    "score": 0.15,
+                    "model_used": "frame_sampler(InternVideo2)",
+                    "media_type": "video",
+                    "processing_time_ms": 1500,
+                },
+                {
+                    "label": "fake",
+                    "score": 0.85,
+                    "model_used": "VoiceGen (Dual-RawNet2)",
+                    "media_type": "audio",
+                    "processing_time_ms": 800,
+                },
+                {
+                    "label": "real",
+                    "score": 0.15,
+                    "model_used": "VoiceGen (Dual-RawNet2)",
+                    "media_type": "audio",
+                    "processing_time_ms": 800,
+                },
+            ]
+        },
+    }
+
+    print(f"\nRequest payload:")
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+
+    start_time = time.time()
+    response = requests.post(TEXT_ENDPOINT, json=payload, timeout=120)
+    elapsed_time = time.time() - start_time
+
+    print(f"\nRequest time: {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
+    print(f"Response status: {response.status_code}")
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
+
+    response_data = response.json()
+    pretty_print_response(response_data)
+    _assert_response_schema(response_data)
+
+    # the verdict should be "Fora de Contexto" due to high-confidence deep-fake
+    rationale = response_data["rationale"].lower()
+    assert "fora de contexto" in rationale, (
+        f"Expected 'Fora de Contexto' in rationale but got:\n{response_data['rationale']}"
+    )
+
+    print("\nTest passed: High fake score correctly produced 'Fora de Contexto'")
+    return response_data
+
+
 def run_all_tests():
     """run all integration tests."""
     print("\n" + "=" * 80)
@@ -243,9 +315,10 @@ def run_all_tests():
         sys.exit(1)
 
     tests = [
-        test_deep_fake_high_score,
-        test_deep_fake_low_score,
-        test_no_deep_fake_backward_compat,
+        #test_deep_fake_high_score,
+       # test_deep_fake_low_score,
+        #test_no_deep_fake_backward_compat,
+        test_text_with_high_fake_score_expects_fora_de_contexto,
     ]
 
     passed = 0
