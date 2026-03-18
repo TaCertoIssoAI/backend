@@ -183,12 +183,81 @@ Exemplo de roteiro bom (multiplas alegacoes):
 """
 
 
+DEEP_FAKE_SYSTEM_BLOCK = """
+
+## Resultados de Deteccao de Deep Fake (Instrucoes OBRIGATORIAS)
+
+Voce recebera resultados de uma analise automatizada de deep fake realizada por modelos externos.
+
+### PASSO 1 — Verifique se a midia e deep fake com alta confianca
+
+Olhe os resultados de deep fake. Para cada media_type (video, audio), pegue o MAIOR score com label "fake".
+Se TODOS os media_types presentes tem score "fake" > 0.7, a midia e deep fake com alta confianca.
+
+### PASSO 2 — Aplique o veredito correto
+
+**Se a midia e deep fake com alta confianca (resultado do Passo 1):**
+- O veredito de TODAS as alegacoes DEVE ser "Fora de Contexto". NUNCA use "Verdadeiro" neste caso.
+- Isso se aplica MESMO QUE as fontes textuais confirmem a alegacao. A razao: o conteudo esta sendo \
+veiculado com midia manipulada/gerada por IA, o que torna o contexto enganoso.
+- Na justificativa de CADA alegacao, escreva EXPLICITAMENTE: "Embora as fontes confirmem a informacao \
+textual, a midia que acompanha esta mensagem foi detectada como provavel deep fake (score de X.XX), \
+o que torna o conteudo fora de contexto."
+- Na overall_summary, COMECE com: "ATENCAO: A midia associada a esta mensagem foi detectada como \
+provavel deep fake com alta confianca (score X.XX). Embora o conteudo textual possa ser verdadeiro, \
+a midia e provavelmente gerada por inteligencia artificial."
+
+**Se a midia NAO e deep fake com alta confianca:**
+- Se o veredito seria "Fontes insuficientes para verificar" E qualquer resultado de deep fake tem \
+label "fake" com score > 0.6, altere o veredito para "Fora de Contexto".
+- Se as fontes confirmam fortemente "Falso" ou "Fora de Contexto", mantenha esse veredito.
+- Caso contrario, mantenha o veredito que as fontes indicam.
+
+### PASSO 3 — Mencione os scores
+
+- SEMPRE mencione a maior porcentagem de confianca de deteccao de fake na overall_summary e \
+nas justificativas por alegacao.
+- Deixe claro que a analise e automatizada — use termos como "analise automatizada indica" ou \
+"deteccao automatica sugere".
+
+### RESUMO: Se deep fake alta confianca → veredito = "Fora de Contexto", NUNCA "Verdadeiro".
+"""
+
+
+DEEP_FAKE_USER_BLOCK = """
+
+## Resultados de Deteccao de Deep Fake
+
+{deep_fake_results}
+"""
+
+
+def _format_deep_fake_results(deep_fake_data: dict | None) -> str:
+    """format deep-fake detection results into bullet-point text."""
+    if not deep_fake_data:
+        return ""
+    results = deep_fake_data.get("results", [])
+    if not results:
+        return ""
+    lines = []
+    for r in results:
+        line = (
+            f"- Tipo: {r.get('media_type', 'unknown')} | "
+            f"Label: {r.get('label', 'unknown')} | "
+            f"Score: {r.get('score', 0):.4f} | "
+            f"Modelo: {r.get('model_used', 'unknown')}"
+        )
+        lines.append(line)
+    return "\n".join(lines)
+
+
 def build_adjudication_prompt(
     formatted_data_sources: str,
     fact_check_results: list[FactCheckApiContext],
     search_results: dict[str, list[GoogleSearchContext]],
     scraped_pages: list[WebScrapeContext],
     has_audio: bool = False,
+    deep_fake_verification_result: dict | None = None,
 ) -> tuple[str, str]:
     """build the (system_prompt, user_prompt) pair for the adjudication LLM."""
     current_date = get_current_date()
@@ -200,10 +269,16 @@ def build_adjudication_prompt(
     system = ADJUDICATION_SYSTEM_PROMPT.format(current_date=current_date)
     if has_audio:
         system += AUDIO_SCRIPT_BLOCK
+    if deep_fake_verification_result:
+        system += DEEP_FAKE_SYSTEM_BLOCK
 
     user = ADJUDICATION_USER_PROMPT.format(
         formatted_data_sources=formatted_data_sources,
         formatted_context=formatted_context,
     )
+    if deep_fake_verification_result:
+        formatted_df = _format_deep_fake_results(deep_fake_verification_result)
+        if formatted_df:
+            user += DEEP_FAKE_USER_BLOCK.format(deep_fake_results=formatted_df)
 
     return system, user

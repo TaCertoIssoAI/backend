@@ -66,7 +66,10 @@ async def analyze_text(request: Request) -> AnalysisResponse:
         # step 2: run the agentic fact-checking graph
         logger.info(f"[{msg_id}] starting agentic fact-check graph")
         graph_start = time.time()
-        graph_output = await run_fact_check(data_sources)
+        graph_output = await run_fact_check(
+            data_sources,
+            deep_fake_verification_result=sanitized_request.deep_fake_verification_result,
+        )
         graph_duration = (time.time() - graph_start) * 1000
         logger.info(f"[{msg_id}] graph completed in {graph_duration:.0f}ms")
 
