@@ -29,6 +29,7 @@
       "Bash(./venv/bin/python -m pytest:*)",
       "Bash(pip install:*)",
       "Bash(python -m pip install:*)",
+      "Bash(git:*)"
     ],
     "deny": [],
     "ask": []
