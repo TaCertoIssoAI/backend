@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
@@ -37,6 +37,22 @@ class ErrorType(str, Enum):
     QUALITY_GATE_FAILURE = "quality_gate_failure"
 
 
+# ===== DEEP-FAKE DETECTION MODELS =====
+
+class DeepFakeResult(BaseModel):
+    """single result from an external deep-fake detection model."""
+    label: str = Field(..., description="Detection label: 'fake' or 'real'")
+    score: float = Field(..., description="Confidence score 0-1")
+    model_used: str = Field(..., description="Detection model identifier")
+    media_type: str = Field(..., description="Media type: 'video', 'audio', 'image'")
+    processing_time_ms: float = Field(..., description="Processing time in ms")
+
+
+class DeepFakeVerificationResult(BaseModel):
+    """container for external deep-fake detection results."""
+    results: List[DeepFakeResult] = Field(default_factory=list)
+
+
 # ===== API REQUEST/RESPONSE MODELS =====
 class ContentItem(BaseModel):
     """Individual content item with text and type"""
@@ -55,8 +71,14 @@ class ContentItem(BaseModel):
 class Request(BaseModel):
     """Unified request model containing array of content items"""
     content: List[ContentItem] = Field(..., description="Array of content items to be fact-checked")
+    deep_fake_verification_result: Optional[DeepFakeVerificationResult] = Field(
+        None,
+        alias="deep-fake-verification-result",
+        description="Optional external deep-fake detection results",
+    )
 
     model_config = ConfigDict(
+        populate_by_name=True,
         json_schema_extra={
             "examples": [
                 {

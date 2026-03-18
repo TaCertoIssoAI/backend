@@ -113,6 +113,21 @@ _TEXT_PAYLOAD = {
     "content": [{"textContent": "Test claim text", "type": "text"}]
 }
 
+_TEXT_PAYLOAD_WITH_DEEP_FAKE = {
+    "content": [{"textContent": "Test claim text", "type": "text"}],
+    "deep-fake-verification-result": {
+        "results": [
+            {
+                "label": "fake",
+                "score": 0.85,
+                "model_used": "frame_sampler(InternVideo2)",
+                "media_type": "video",
+                "processing_time_ms": 1500,
+            }
+        ]
+    },
+}
+
 
 # ---- test: successful request ----
 
@@ -358,3 +373,50 @@ def test_response_without_links_has_no_urls(mock_run, mock_analytics):
     data = resp.json()
 
     assert "https://" not in data["responseWithoutLinks"]
+
+
+# ---- test: deep-fake verification ----
+
+@patch("app.api.endpoints.text.send_analytics_payload", new_callable=AsyncMock)
+@patch("app.api.endpoints.text.run_fact_check", new_callable=AsyncMock)
+def test_request_with_deep_fake_returns_200(mock_run, mock_analytics):
+    """request with deep-fake verification results should return 200."""
+    mock_run.return_value = _make_graph_output()
+
+    resp = client.post("/text", json=_TEXT_PAYLOAD_WITH_DEEP_FAKE)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "message_id" in data
+
+
+@patch("app.api.endpoints.text.send_analytics_payload", new_callable=AsyncMock)
+@patch("app.api.endpoints.text.run_fact_check", new_callable=AsyncMock)
+def test_deep_fake_kwarg_passed_to_run_fact_check(mock_run, mock_analytics):
+    """run_fact_check should receive deep_fake_verification_result kwarg."""
+    mock_run.return_value = _make_graph_output()
+
+    resp = client.post("/text", json=_TEXT_PAYLOAD_WITH_DEEP_FAKE)
+    assert resp.status_code == 200
+
+    mock_run.assert_called_once()
+    call_kwargs = mock_run.call_args
+    df_arg = call_kwargs.kwargs.get("deep_fake_verification_result")
+    assert df_arg is not None
+    assert len(df_arg.results) == 1
+    assert df_arg.results[0].label == "fake"
+    assert df_arg.results[0].score == 0.85
+
+
+@patch("app.api.endpoints.text.send_analytics_payload", new_callable=AsyncMock)
+@patch("app.api.endpoints.text.run_fact_check", new_callable=AsyncMock)
+def test_no_deep_fake_kwarg_is_none(mock_run, mock_analytics):
+    """request without deep-fake field should pass None to run_fact_check."""
+    mock_run.return_value = _make_graph_output()
+
+    resp = client.post("/text", json=_TEXT_PAYLOAD)
+    assert resp.status_code == 200
+
+    call_kwargs = mock_run.call_args
+    df_arg = call_kwargs.kwargs.get("deep_fake_verification_result")
+    assert df_arg is None
