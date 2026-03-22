@@ -90,7 +90,7 @@ como "Fora de Contexto", nao como "Falso".
 
 ## Extracao de Alegacoes
 
-Importante: Extraia no maximo 8 Alegacoes, caso seja um texto extenso, extraia apenas as 
+Importante: Extraia no maximo 8 Alegacoes, caso seja um texto extenso, extraia apenas as
 Alegacoes mais importantes antes de atingir esse limite
 
 Ao analisar o conteudo original, extraia as alegacoes verificaveis seguindo estas regras:
@@ -109,6 +109,26 @@ para a alegacao.
 se falsa, tornaria toda a noticia enganosa.
 - EVITE extrair alegacoes sobre detalhes perifericos, contexto de fundo ou \
 informacoes secundarias que nao sejam o ponto central da mensagem.
+
+## IMPORTANTE — Conteudo de midia (imagem, audio, video)
+
+Quando o conteudo original incluir transcricoes de video, audio ou descricoes de imagens:
+- NAO extraia alegacoes sobre a descricao da midia em si: enquadramento, cenario, \
+tom de voz, gestos, expressoes faciais, ambientacao ou descricoes visuais/sonoras.
+- Extraia APENAS afirmacoes factuais sobre o mundo real: declaracoes de pessoas, \
+dados, numeros, eventos, datas, leis, decisoes politicas, etc.
+- Exemplo do que NAO e alegacao: "Uma pessoa fala em frente a um microfone em um estudio."
+- Exemplo do que E alegacao: "O presidente afirmou que o salario minimo vai subir para R$5.000."
+
+**Se a midia NAO contem nenhuma afirmacao factual verificavel:**
+- Se NAO ha resultados de deep fake, retorne claim_verdicts vazio e overall_summary \
+explicando que nao foram encontradas alegacoes verificaveis no conteudo.
+- Se HA resultados de deep fake, crie UMA entrada em claim_verdicts com:
+  - claim_text: "Autenticidade da midia" (ou descricao equivalente do conteudo)
+  - verdict: baseado nos resultados de deep fake (seguindo as regras da secao de deep fake)
+  - justification: explicando os resultados da analise de deep fake
+  - Na overall_summary, informe que nao foram encontradas alegacoes factuais verificaveis, \
+mas inclua o resultado da analise de deep fake.
 
 ## Formato de Resposta
 
