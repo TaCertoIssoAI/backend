@@ -124,6 +124,7 @@ def test_prompt_requires_extremely_concise_summary_and_ai_signal():
     )
     assert "EXTREMAMENTE conciso" in system
     assert "a PRIMEIRA frase do resumo deve destacar explicitamente se ha indicios de conteudo gerado por IA" in system
+    assert "escala de 0% a 100%" in system
 
 
 def test_prompt_requires_more_concise_justification():

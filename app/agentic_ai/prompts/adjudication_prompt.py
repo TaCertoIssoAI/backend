@@ -143,6 +143,7 @@ Retorne um objeto JSON com:
     - citations_used: lista de citacoes usadas (cada uma com url, title, publisher, citation_text)
 - overall_summary: resumo geral EXTREMAMENTE conciso (preferencialmente 1-2 frases curtas), sem URLs, sem caracteres *
 - a PRIMEIRA frase do resumo deve destacar explicitamente se ha indicios de conteudo gerado por IA (ou se nao ha indicios)
+- na primeira frase, informe tambem a chance estimada de conteudo gerado por IA em escala de 0% a 100% (exemplo: 20%)
 
 Exemplo de justificativa BEM formatada:
 "Segundo o Ministerio da Saude [1], um estudo com 50.000 participantes nao encontrou \

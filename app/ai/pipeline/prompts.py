@@ -779,6 +779,7 @@ Você deve retornar um objeto JSON estruturado contendo:
 - Um sumário geral sobre o output:
   - O sumário deve ser EXTREMAMENTE conciso, preferencialmente em 1-2 frases curtas
   - A PRIMEIRA frase do sumário deve destacar explicitamente se há indícios de conteúdo gerado por IA (ou se não há indícios)
+  - Na primeira frase, informe também a chance estimada de conteúdo gerado por IA em escala de 0% a 100% (exemplo: 15%)
   - Não formate o sumário com caracteres *  
 
 IMPORTANTE:
@@ -790,6 +791,7 @@ IMPORTANTE:
 - NÃO inclua URLs (https://...) diretamente no resumo geral ou nas justificativas
 - No sumário geral, seja extremamente conciso (preferencialmente 1-2 frases curtas). Não formate o sumário com caracteres *
 - A primeira frase do sumário deve destacar explicitamente se há indícios de conteúdo gerado por IA (ou se não há indícios)
+- Na primeira frase do sumário, informe a chance estimada de conteúdo gerado por IA em escala de 0% a 100%
 
 ## Exemplos de Justificação:
 
