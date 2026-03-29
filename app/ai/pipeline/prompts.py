@@ -775,9 +775,11 @@ Você deve retornar um objeto JSON estruturado contendo:
   - claim_id: o ID da alegação (você verá em "Afirmação ID: xxx")
   - claim_text: o texto da alegação (exatamente como foi apresentado)
   - verdict: uma das quatro categorias ("Verdadeiro", "Falso", "Fora de Contexto", "Fontes insuficientes para verificar")
-  - justification: sua explicação detalhada, citando as fontes
+  - justification: sua explicação um pouco mais concisa (preferencialmente 1-2 frases), citando as fontes
 - Um sumário geral sobre o output:
-  - O sumário deve ser conciso, cerca de 3-4 linhas
+  - O sumário deve ser EXTREMAMENTE conciso, preferencialmente em 1-2 frases curtas
+  - A PRIMEIRA frase do sumário deve destacar explicitamente se há indícios de conteúdo gerado por IA (ou se não há indícios)
+  - Na primeira frase, informe também a chance estimada de conteúdo gerado por IA em escala de 0% a 100% (exemplo: 15%)
   - Não formate o sumário com caracteres *  
 
 IMPORTANTE:
@@ -787,7 +789,9 @@ IMPORTANTE:
 - Use APENAS números entre colchetes [1], [2], [3] para referenciar fontes no texto
 - Casos você tenha uma gama de fontes confiáveis, busque referenciar fontes de diferentes domínios e autores.
 - NÃO inclua URLs (https://...) diretamente no resumo geral ou nas justificativas
-- No sumário geral seja conciso, escreva cerca de 3-4 linhas nele. Não formate o sumário com caracteres * 
+- No sumário geral, seja extremamente conciso (preferencialmente 1-2 frases curtas). Não formate o sumário com caracteres *
+- A primeira frase do sumário deve destacar explicitamente se há indícios de conteúdo gerado por IA (ou se não há indícios)
+- Na primeira frase do sumário, informe a chance estimada de conteúdo gerado por IA em escala de 0% a 100%
 
 ## Exemplos de Justificação:
 
@@ -814,7 +818,7 @@ RUIM:
 - Contexto importa: "Fora de Contexto" é tão importante quanto "Falso"
 - Use SEMPRE números entre colchetes [1], [2], [3] para referenciar fontes, NUNCA URLs diretamente
 - Mantenha um tom profissional e imparcial
-- Seja conciso no sumário, escreva cerca de 3-4 linhas de texto e não utiliza caracteres *
+- Seja extremamente conciso no sumário (preferencialmente 1-2 frases curtas) e não utilize caracteres *
 """
 
 ADJUDICATION_USER_PROMPT = """Analise as alegações abaixo e forneça um veredito fundamentado para cada uma.

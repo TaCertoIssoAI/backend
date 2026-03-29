@@ -69,7 +69,7 @@ escolha as 3 mais confiaveis.
 o objeto de verificacao, NAO uma fonte. Nao use  [Original Text], [Texto Original] ou qualquer referencia ao conteudo original. \
 Os colchetes [N] sao EXCLUSIVOS para as fontes coletadas numeradas na secao "Fontes coletadas".
 
-5. Seja claro e objetivo na justificativa.
+5. Seja claro e objetivo na justificativa, deixando-a um pouco mais concisa (preferencialmente 1-2 frases).
 
 6. Identifique contexto faltante — classifique como "Fora de Contexto" quando aplicavel.
 
@@ -139,9 +139,11 @@ Retorne um objeto JSON com:
     - claim_id: null (sera preenchido automaticamente)
     - claim_text: texto da alegacao extraida
     - verdict: "Verdadeiro", "Falso", "Fora de Contexto", ou "Fontes insuficientes para verificar"
-    - justification: explicacao detalhada citando fontes individualmente com [Numero-fonte]
+    - justification: explicacao um pouco mais concisa (preferencialmente 1-2 frases), citando fontes individualmente com [Numero-fonte]
     - citations_used: lista de citacoes usadas (cada uma com url, title, publisher, citation_text)
-- overall_summary: resumo geral conciso (3-4 linhas), sem URLs, sem caracteres *
+- overall_summary: resumo geral EXTREMAMENTE conciso (preferencialmente 1-2 frases curtas), sem URLs, sem caracteres *
+- a PRIMEIRA frase do resumo deve destacar explicitamente se ha indicios de conteudo gerado por IA (ou se nao ha indicios)
+- na primeira frase, informe tambem a chance estimada de conteudo gerado por IA em escala de 0% a 100% (exemplo: 20%)
 
 Exemplo de justificativa BEM formatada:
 "Segundo o Ministerio da Saude [1], um estudo com 50.000 participantes nao encontrou \
