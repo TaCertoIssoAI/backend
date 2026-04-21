@@ -38,7 +38,7 @@ from scripts.playground.common import (
     Colors,
 )
 
-from app.ai.context.factcheckapi import GoogleFactCheckGatherer
+from app.agentic_ai.context.factcheckapi import GoogleFactCheckGatherer
 from app.models import ExtractedClaim, ClaimSource
 
 

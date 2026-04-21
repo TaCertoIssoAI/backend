@@ -18,8 +18,8 @@ from typing import Optional
 from uuid import uuid4
 
 from app.agentic_ai.config import LINK_SCRAPE_TIMEOUT_PER_URL, MAX_LINKS_TO_EXPAND
-from app.ai.context.web.apify_utils import scrapeGenericUrl
-from app.ai.context.web.models import WebContentResult
+from app.agentic_ai.context.web.apify_utils import scrapeGenericUrl
+from app.agentic_ai.context.web.models import WebContentResult
 from app.models.commondata import DataSource
 
 logger = logging.getLogger(__name__)
