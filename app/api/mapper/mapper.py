@@ -5,6 +5,7 @@ this module provides functions to transform API request/response models
 into the internal pipeline data structures and vice versa.
 """
 
+import re
 import uuid
 from typing import List, cast
 from datetime import datetime
@@ -138,6 +139,87 @@ def _get_verdict_summary(all_verdicts: list) -> str:
     return f"{verdadeiro_count} de {total_claims} afirmações foram classificadas como Verdadeiras."
 
 
+MAX_WHATSAPP_SOURCES = 3
+
+_CITATION_MARKER_RE = re.compile(r'\[\d+\]')
+
+
+def _strip_citation_markers(text: str) -> str:
+    """remove [N] citation markers from text as fallback."""
+    return _CITATION_MARKER_RE.sub('', text).strip()
+
+
+def _build_top_sources(
+    result: FactCheckResult,
+    fact_check_results: list,
+    search_results: dict,
+    scraped_pages: list,
+) -> str:
+    """build a short list of the top cited sources for whatsapp."""
+    from app.agentic_ai.prompts.context_formatter import (
+        build_source_reference_list,
+        filter_cited_references,
+    )
+
+    source_refs = build_source_reference_list(fact_check_results, search_results, scraped_pages)
+    if not source_refs:
+        return ""
+
+    cited_texts = [result.overall_summary or ""]
+    for ds_result in result.results:
+        for cv in ds_result.claim_verdicts:
+            cited_texts.append(cv.justification)
+
+    cited_refs = filter_cited_references(source_refs, *cited_texts)
+    if not cited_refs:
+        return ""
+
+    top_refs = cited_refs[:MAX_WHATSAPP_SOURCES]
+    parts = []
+    for num, title, url in top_refs:
+        parts.append(f"\n[{num}] {title}")
+        parts.append(f"    {url}")
+    return "\n".join(parts)
+
+
+def _build_compact_whatsapp_rationale(
+    all_verdicts: list,
+    result: FactCheckResult,
+    analytics_url: str,
+    fact_check_results: list,
+    search_results: dict,
+    scraped_pages: list,
+) -> str:
+    """build a compact whatsapp-ready rationale with short justifications and top sources."""
+    parts = []
+
+    if result.overall_summary:
+        verdict_summary = _get_verdict_summary(all_verdicts)
+        if verdict_summary:
+            parts.append(verdict_summary)
+        parts.append(f"\n{result.overall_summary}\n")
+
+    parts.append(f"\n*Analise por afirmacao*:")
+
+    for i, verdict_item in enumerate(all_verdicts, 1):
+        short = verdict_item.short_justification or _strip_citation_markers(verdict_item.justification)
+        parts.append(f"\n*{CLAIM_SUBSTR} {i}*: {verdict_item.claim_text}")
+        parts.append(f"*{VEREDICT_SUBSTR}* {verdict_item.verdict}")
+        parts.append(short)
+
+    top_sources = _build_top_sources(
+        result, fact_check_results, search_results, scraped_pages,
+    )
+    if top_sources:
+        parts.append("\n\n*Principais fontes*:")
+        parts.append(top_sources)
+
+    parts.append(f"\nPara ver todas as fontes e a analise completa:")
+    parts.append(analytics_url)
+
+    return "\n".join(parts)
+
+
 def fact_check_result_to_response(
     msg_id: str,
     result: FactCheckResult,
@@ -202,6 +284,13 @@ def fact_check_result_to_response(
         # use audio_script as responseWithoutLinks when available
         if result.audio_script:
             resp_without_links = result.audio_script
+        elif all_verdicts:
+            resp_without_links = _build_compact_whatsapp_rationale(
+                all_verdicts, result, analytics_url,
+                fact_check_results or [],
+                search_results or {},
+                scraped_pages or [],
+            )
         else:
             resp_without_links = remove_link_like_substrings(rationale)
 
