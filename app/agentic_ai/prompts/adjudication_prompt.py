@@ -120,6 +120,7 @@ Retorne um objeto JSON com:
     - claim_text: texto da alegacao extraida
     - verdict: "Verdadeiro", "Falso", "Fora de Contexto", ou "Fontes insuficientes para verificar"
     - justification: explicacao detalhada citando fontes individualmente com [Numero-fonte]
+    - short_justification: versao curta (1 a 2 frases) sem numeros de fonte [N], sem URLs. Resuma o veredito de forma direta e simples para envio ao WhatsApp. Exemplo: "A informacao e falsa. Fontes oficiais do Ministerio da Saude contradizem essa alegacao."
     - citations_used: lista de citacoes usadas (cada uma com url, title, publisher, citation_text)
 - overall_summary: resumo geral conciso (3-4 linhas), sem URLs, sem caracteres *
 
