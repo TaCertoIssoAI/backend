@@ -19,7 +19,12 @@ class Settings:
 
         # AI Services
         self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+        # GOOGLE_API_KEY is used by the Google Fact Check Tools API (not Gemini anymore)
         self.GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
+
+        # Vertex AI (Gemini calls route through Vertex; auth via GOOGLE_APPLICATION_CREDENTIALS)
+        self.VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID", "")
+        self.VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1")
 
         # Processing Limits
         self.MAX_TEXT_LENGTH = int(os.getenv("MAX_TEXT_LENGTH", 10000))

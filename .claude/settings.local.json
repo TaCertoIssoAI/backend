@@ -29,7 +29,11 @@
       "Bash(./venv/bin/python -m pytest:*)",
       "Bash(pip install:*)",
       "Bash(python -m pip install:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(pip3 show *)",
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/pip index *)",
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/pip show *)",
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/pip install *)"
     ],
     "deny": [],
     "ask": []
