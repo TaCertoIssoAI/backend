@@ -1,30 +1,46 @@
-# LLM Implementations
+# LLM Helpers
 
-Custom LangChain model wrappers for LLM providers.
+Thin factories for LLM provider clients used in the fact-checking pipeline.
 
-## gemini.py — GeminiChatModel
+## vertex.py — `make_vertex_chat`
 
-A `BaseChatModel` implementation wrapping the Google Gemini native API (`google.genai`). Exists because the official `langchain-google-genai` package may not support all Gemini-specific features (e.g., `thinking_config`).
+Factory that builds `ChatGoogleGenerativeAI` (from `langchain-google-genai>=4.2.2`) configured for **Vertex AI** routing. Centralizes `project`, `location`, and `vertexai=True` so call sites stay compact.
 
-### Features
-- Extended thinking via `thinking_level` parameter (`"low"`, `"medium"`, `"high"`)
-- Structured output via `with_structured_output(schema)` using Gemini's native `response_schema` + `response_mime_type="application/json"`
-- Retry with exponential backoff (3 attempts) for `ServerError`, `ConnectError`, `RemoteProtocolError`
-- Both sync (`_generate`) and async (`_agenerate`) implementations
-- Configurable: `model`, `temperature`, `max_output_tokens`, `top_p`, `top_k`
+### Auth
+
+Resolves automatically via `google-auth` discovery order:
+1. `GOOGLE_APPLICATION_CREDENTIALS` env var → SA JSON path
+2. ADC default (`~/.config/gcloud/application_default_credentials.json`)
+3. GCE/GKE/Cloud Run metadata server
+
+`.env` typically sets `GOOGLE_APPLICATION_CREDENTIALS` to the SA JSON.
+
+### Required env vars
+
+- `VERTEX_PROJECT_ID` — GCP project id
+- `VERTEX_LOCATION` — Vertex region (e.g. `us-central1`)
+- `GOOGLE_APPLICATION_CREDENTIALS` — path to SA JSON (or use ADC)
 
 ### Usage
 
 ```python
-from app.llms.gemini import GeminiChatModel
+from app.llms.vertex import make_vertex_chat
 
-llm = GeminiChatModel(model="gemini-2.5-flash-lite", thinking_level="low")
+# basic
+llm = make_vertex_chat("gemini-2.5-flash-lite", temperature=0)
 response = await llm.ainvoke([HumanMessage(content="...")])
 
-# structured output
+# with extended thinking (token budget, not level)
+llm = make_vertex_chat("gemini-3-pro-preview", temperature=0, thinking_budget=8192)
+
+# structured output (pydantic schema)
 structured = llm.with_structured_output(MyPydanticModel)
-result = structured.invoke([...])  # returns MyPydanticModel instance
+result = await structured.ainvoke([...])  # returns MyPydanticModel instance
+
+# tool binding (used by the context/search agent)
+model_with_tools = llm.bind_tools(tools)
 ```
 
-### Note
-The main pipeline uses `ChatGoogleGenerativeAI` from `langchain-google-genai` for the context agent (needs tool binding), and this custom wrapper is available when native Gemini features are needed.
+### Why `ChatGoogleGenerativeAI` and not `ChatVertexAI`
+
+`ChatVertexAI` from `langchain-google-vertexai` is deprecated as of LangChain 3.2.0. LangChain has consolidated Vertex AI support into `langchain-google-genai>=4.0.0`'s `ChatGoogleGenerativeAI` via the `vertexai=True` flag. Single class for both Developer API and Vertex modes.

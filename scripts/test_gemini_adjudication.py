@@ -1,13 +1,24 @@
 """
-test script for google gemini api with adjudication prompts.
+test script for google gemini (via Vertex AI) with adjudication prompts.
 
 tests the gemini model with the same prompts used in the adjudication step
 of the fact-checking pipeline.
+
+requires the following env vars:
+    GOOGLE_APPLICATION_CREDENTIALS — path to SA JSON
+    VERTEX_PROJECT_ID              — GCP project id
+    VERTEX_LOCATION                — vertex region (e.g. us-central1)
 """
 
+import sys
 import time
-from google import genai
-from google.genai import types
+from pathlib import Path
+
+# allow imports from project root
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+from langchain_core.messages import HumanMessage, SystemMessage
+from app.llms.vertex import make_vertex_chat
 
 # adjudication system prompt (from app/ai/pipeline/prompts.py)
 ADJUDICATION_SYSTEM_PROMPT = """Você é um especialista em verificação de fatos (fact-checking) para um sistema de checagem de notícias e alegações.
@@ -228,50 +239,41 @@ Retorne sua análise como um objeto JSON estruturado conforme especificado."""
 def test_gemini_adjudication():
     """test gemini with adjudication prompts and sample claim data."""
     print("=" * 80)
-    print("testing google gemini with adjudication prompts")
+    print("testing google gemini (via Vertex AI) with adjudication prompts")
     print("=" * 80)
 
-    # initialize gemini client
-    client = genai.Client()
-
-    # create the content with system instruction and user message
-    print("\nsending request to gemini-2.0-flash-exp...")
+    model_name = "gemini-3-pro-preview"
+    print(f"\nsending request to {model_name}...")
     print(f"system prompt length: {len(ADJUDICATION_SYSTEM_PROMPT)} chars")
     print(f"user prompt length: {len(USER_PROMPT)} chars")
     print(f"total input length: ~{(len(ADJUDICATION_SYSTEM_PROMPT) + len(USER_PROMPT)) // 4} tokens (estimated)")
 
     try:
-        # start timing
+        llm = make_vertex_chat(model_name, temperature=0.0, thinking_budget=1024)
+        messages = [
+            SystemMessage(content=ADJUDICATION_SYSTEM_PROMPT),
+            HumanMessage(content=USER_PROMPT),
+        ]
+
         start_time = time.time()
-
-        response = client.models.generate_content(
-            model="gemini-3-pro-preview",
-            contents=USER_PROMPT,
-            config=types.GenerateContentConfig(
-                system_instruction=ADJUDICATION_SYSTEM_PROMPT,
-                thinking_config=types.ThinkingConfig(thinking_level="low")
-            )
-        )
-
-        # end timing
-        end_time = time.time()
-        elapsed_time = end_time - start_time
+        response = llm.invoke(messages)
+        elapsed_time = time.time() - start_time
 
         print("\n" + "=" * 80)
         print("gemini response:")
         print("=" * 80)
-        print(response.text)
+        print(response.content)
         print("\n" + "=" * 80)
 
-        # print timing information
         print(f"\nLLM call completed in {elapsed_time:.2f} seconds ({elapsed_time * 1000:.0f} ms)")
 
-        # print usage metadata if available
-        if hasattr(response, 'usage_metadata'):
+        # token usage metadata is on response.usage_metadata in langchain-google-genai 4.x
+        usage = getattr(response, "usage_metadata", None)
+        if usage:
             print("\nusage metadata:")
-            print(f"  prompt tokens: {response.usage_metadata.prompt_token_count}")
-            print(f"  response tokens: {response.usage_metadata.candidates_token_count}")
-            print(f"  total tokens: {response.usage_metadata.total_token_count}")
+            print(f"  input tokens:  {usage.get('input_tokens', 'n/a')}")
+            print(f"  output tokens: {usage.get('output_tokens', 'n/a')}")
+            print(f"  total tokens:  {usage.get('total_tokens', 'n/a')}")
 
         return response
 

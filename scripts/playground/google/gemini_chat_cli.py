@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-gemini_chat_cli.py — interactive CLI for one-off calls to GeminiChatModel.
+gemini_chat_cli.py — interactive CLI for one-off calls to ChatGoogleGenerativeAI on Vertex.
 
 usage:
     python scripts/playground/google/gemini_chat_cli.py
 
 configuration (edit in code below):
-    MODEL         — gemini model to use, e.g. "gemini-2.5-flash"
-    THINKING_LEVEL — "low", "medium", "high" or None to disable
-    TEMPERATURE   — 0.0–2.0 or None for model default
-    SYSTEM_PROMPT — optional system instruction sent with every call
+    MODEL           — gemini model to use, e.g. "gemini-2.5-flash"
+    THINKING_BUDGET — int token budget for thinking, or None to disable
+    TEMPERATURE     — 0.0–2.0 or None for model default
+    SYSTEM_PROMPT   — optional system instruction sent with every call
 
 commands (during the loop):
     /system       — enter a new system prompt (multiline, END to finish)
@@ -37,23 +37,33 @@ from scripts.playground.common import (
     prompt_multiline,
 )
 from langchain_core.messages import HumanMessage, SystemMessage
-from app.llms.gemini import GeminiChatModel
+from langchain_google_genai import ChatGoogleGenerativeAI
+from app.llms.vertex import make_vertex_chat
 
 
 # ─── configuration (edit here) ────────────────────────────────────────────────
 
 MODEL: str = "gemini-2.5-flash-lite"
-THINKING_LEVEL: str | None = None   # "low", "medium", "high" or None
-TEMPERATURE: float | None = 0.0     # 0.0–2.0 or None
-SYSTEM_PROMPT: str | None = None    # set to a string or None
+THINKING_BUDGET: int | None = None   # int token budget or None to disable
+TEMPERATURE: float | None = 0.0      # 0.0–2.0 or None
+SYSTEM_PROMPT: str | None = None     # set to a string or None
 
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 
 def _check_env() -> bool:
-    if not os.environ.get("GOOGLE_API_KEY"):
-        print_error("missing environment variable: GOOGLE_API_KEY")
-        print_info("set it before running:\n  export GOOGLE_API_KEY=...")
+    missing = [
+        v for v in ("GOOGLE_APPLICATION_CREDENTIALS", "VERTEX_PROJECT_ID")
+        if not os.environ.get(v)
+    ]
+    if missing:
+        print_error(f"missing environment variable(s): {', '.join(missing)}")
+        print_info(
+            "set them before running, e.g.:\n"
+            "  export GOOGLE_APPLICATION_CREDENTIALS=/path/to/sa.json\n"
+            "  export VERTEX_PROJECT_ID=your-gcp-project\n"
+            "  export VERTEX_LOCATION=us-central1"
+        )
         return False
     return True
 
@@ -61,27 +71,27 @@ def _check_env() -> bool:
 def _print_config(system_prompt: str | None) -> None:
     print_section("active configuration")
     rows = {
-        "model":          MODEL,
-        "thinking level": THINKING_LEVEL or "(disabled)",
-        "temperature":    TEMPERATURE if TEMPERATURE is not None else "(model default)",
-        "system prompt":  f"{system_prompt[:60]}..." if system_prompt and len(system_prompt) > 60
-                          else (system_prompt or "(none)"),
+        "model":           MODEL,
+        "thinking budget": THINKING_BUDGET if THINKING_BUDGET is not None else "(disabled)",
+        "temperature":     TEMPERATURE if TEMPERATURE is not None else "(model default)",
+        "system prompt":   f"{system_prompt[:60]}..." if system_prompt and len(system_prompt) > 60
+                           else (system_prompt or "(none)"),
     }
     max_k = max(len(k) for k in rows)
     for k, v in rows.items():
         print(f"  {Colors.BOLD}{k.ljust(max_k)}{Colors.END}  {v}")
 
 
-def _build_model() -> GeminiChatModel:
-    return GeminiChatModel(
-        model=MODEL,
-        google_api_key=os.environ.get("GOOGLE_API_KEY"),
-        thinking_level=THINKING_LEVEL,
-        temperature=TEMPERATURE,
-    )
+def _build_model() -> ChatGoogleGenerativeAI:
+    kwargs: dict = {}
+    if TEMPERATURE is not None:
+        kwargs["temperature"] = TEMPERATURE
+    if THINKING_BUDGET is not None:
+        kwargs["thinking_budget"] = THINKING_BUDGET
+    return make_vertex_chat(MODEL, **kwargs)
 
 
-def _call_model(llm: GeminiChatModel, prompt: str, system_prompt: str | None) -> tuple[str, float]:
+def _call_model(llm: ChatGoogleGenerativeAI, prompt: str, system_prompt: str | None) -> tuple[str, float]:
     """invoke the model and return (response_text, elapsed_seconds)."""
     messages = []
     if system_prompt:

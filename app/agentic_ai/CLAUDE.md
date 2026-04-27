@@ -49,6 +49,8 @@ The `ToolNode` wrapper in `graph.py` (`_make_tool_node_with_state_update`) runs 
 
 - Context agent: `gemini-2.5-flash-lite` (temperature 0)
 - Adjudication: `gemini-2.5-flash-lite` with `thinking_budget=1024`
+- Provider: **Vertex AI** via `app.llms.vertex.make_vertex_chat` (wraps `ChatGoogleGenerativeAI` with `vertexai=True`)
+- Auth: SA JSON path in `GOOGLE_APPLICATION_CREDENTIALS`; project/region in `VERTEX_PROJECT_ID` / `VERTEX_LOCATION`
 - Search timeout: 35s per query
 - Scrape timeout: 30s per page
 - Adjudication timeout: 20s per attempt, up to 2 retries

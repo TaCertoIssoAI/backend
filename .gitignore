@@ -135,6 +135,10 @@ json_dump_analytics.json
 instagram_search_results.json
 **analytics**.json
 app_default_credentials.json
+# Google Cloud service-account keys
+sitegrupysanca-*.json
+*-service-account*.json
+*-credentials*.json
 
 
 # Pyre type checker
