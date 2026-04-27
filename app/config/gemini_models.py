@@ -15,7 +15,7 @@ def get_gemini_fallback_llm_config() -> LLMConfig:
     """
     create and return an LLMConfig using Gemini for no-claims fallback.
 
-    uses gemini-2.5-flash model optimized for generating friendly explanations
+    uses gemini-2.5-flash-lite model optimized for generating friendly explanations
     when no verifiable claims are found in user input.
 
     returns:
@@ -25,11 +25,11 @@ def get_gemini_fallback_llm_config() -> LLMConfig:
         >>> from app.config.gemini_models import get_gemini_fallback_llm_config
         >>> config = get_gemini_fallback_llm_config()
         >>> config.llm.model
-        'gemini-2.5-flash'
+        'gemini-2.5-flash-lite'
     """
     return LLMConfig(
         llm=make_vertex_chat(
-            model="gemini-2.5-flash",
+            model="gemini-2.5-flash-lite",
             temperature=0.3,  # slightly higher for more natural, friendly responses
         )
     )
@@ -57,14 +57,14 @@ def get_gemini_default_pipeline_config() -> PipelineConfig:
         # adjudication uses gemini
         adjudication_llm_config=LLMConfig(
             llm=make_vertex_chat(
-                model="gemini-2.5-flash",
+                model="gemini-2.5-flash-lite",
                 temperature=0.0,
             )
         ),
         # fallback uses gemini for friendly explanations
         fallback_llm_config=LLMConfig(
             llm=make_vertex_chat(
-                model="gemini-2.5-flash",
+                model="gemini-2.5-flash-lite",
                 temperature=0.0,
             )
         ),
@@ -105,14 +105,14 @@ def get_gemini_fast_pipeline_config() -> PipelineConfig:
         ),
         adjudication_llm_config=LLMConfig(
             llm=make_vertex_chat(
-                model="gemini-3-pro-preview",
+                model="gemini-2.5-flash-lite",
                 temperature=0.0,
                 thinking_budget=1024,  # low thinking budget for fast responses
             )
         ),
         fallback_llm_config=LLMConfig(
             llm=make_vertex_chat(
-                model="gemini-2.5-flash",
+                model="gemini-2.5-flash-lite",
                 temperature=0.0,
             )
         ),
@@ -151,14 +151,14 @@ def get_gemini_thorough_pipeline_config() -> PipelineConfig:
         ),
         adjudication_llm_config=LLMConfig(
             llm=make_vertex_chat(
-                model="gemini-3-pro-preview",
+                model="gemini-2.5-flash-lite",
                 temperature=0.0,
                 thinking_budget=8192,  # high thinking budget for thorough analysis
             )
         ),
         fallback_llm_config=LLMConfig(
             llm=make_vertex_chat(
-                model="gemini-2.5-flash",
+                model="gemini-2.5-flash-lite",
                 temperature=0.0,
             )
         ),

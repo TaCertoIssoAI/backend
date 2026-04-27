@@ -35,7 +35,8 @@
       "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/pip show *)",
       "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/pip install *)",
       "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python -c ' *)",
-      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python -m pytest app/agentic_ai/tests/ -x --tb=short)"
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python -m pytest app/agentic_ai/tests/ -x --tb=short)",
+      "Bash(/Users/caue.lira/Desktop/facul/TaCertoIssoAI/venv/bin/python -m pytest app/agentic_ai/tests/ -x --tb=short -q)"
     ],
     "deny": [],
     "ask": []

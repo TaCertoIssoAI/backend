@@ -6,7 +6,7 @@ usage:
     python scripts/playground/google/gemini_chat_cli.py
 
 configuration (edit in code below):
-    MODEL           — gemini model to use, e.g. "gemini-2.5-flash"
+    MODEL           — gemini model to use, e.g. "gemini-2.5-flash-lite"
     THINKING_BUDGET — int token budget for thinking, or None to disable
     TEMPERATURE     — 0.0–2.0 or None for model default
     SYSTEM_PROMPT   — optional system instruction sent with every call

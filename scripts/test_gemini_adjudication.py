@@ -242,7 +242,7 @@ def test_gemini_adjudication():
     print("testing google gemini (via Vertex AI) with adjudication prompts")
     print("=" * 80)
 
-    model_name = "gemini-3-pro-preview"
+    model_name = "gemini-2.5-flash-lite"
     print(f"\nsending request to {model_name}...")
     print(f"system prompt length: {len(ADJUDICATION_SYSTEM_PROMPT)} chars")
     print(f"user prompt length: {len(USER_PROMPT)} chars")
