@@ -9,6 +9,7 @@ also handles link extraction and async expansion:
 
 from __future__ import annotations
 
+import re
 import uuid
 
 from langchain_core.messages import HumanMessage
@@ -18,8 +19,36 @@ from app.agentic_ai.utils.link_expander import (
     expand_all_links,
     fire_link_expansion,
 )
-from app.ai.pipeline.link_context_expander import extract_links
 from app.models.commondata import DataSource
+
+
+def extract_links(text: str) -> list[str]:
+    """
+    Extract all URLs from text using regex.
+
+    Supports http, https protocols and common URL patterns.
+    Returns list of unique URLs found in the text, preserving order.
+    """
+    url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
+
+    urls = re.findall(url_pattern, text)
+
+    trailing_punctuation = '.,:;!?)]}'
+    cleaned_urls: list[str] = []
+    for url in urls:
+        while url and url[-1] in trailing_punctuation:
+            url = url[:-1]
+        if url:
+            cleaned_urls.append(url)
+
+    seen: set[str] = set()
+    unique_urls: list[str] = []
+    for url in cleaned_urls:
+        if url not in seen:
+            seen.add(url)
+            unique_urls.append(url)
+
+    return unique_urls
 
 
 def _is_links_only(text: str, urls: list[str]) -> bool:

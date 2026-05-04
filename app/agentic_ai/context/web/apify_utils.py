@@ -14,7 +14,7 @@ import httpx
 from bs4 import BeautifulSoup
 from apify_client import ApifyClientAsync
 
-from app.ai.context.web.news_scrapers import (
+from app.agentic_ai.context.web.news_scrapers import (
     scrape_g1_article,
     scrape_estadao_article,
     scrape_folha_article,

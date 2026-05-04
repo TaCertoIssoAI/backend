@@ -1,7 +1,7 @@
 """
 fact-check search tool — wraps the Google Fact-Check API.
 
-reuses parsing logic from app.ai.context.factcheckapi.google_factcheck_gatherer.
+reuses parsing logic from app.agentic_ai.context.factcheckapi.google_factcheck_gatherer.
 """
 
 import asyncio
@@ -13,7 +13,7 @@ from typing import Optional
 import httpx
 
 from app.models.agenticai import FactCheckApiContext, SourceReliability
-from app.ai.context.factcheckapi.google_factcheck_gatherer import (
+from app.agentic_ai.context.factcheckapi.google_factcheck_gatherer import (
     map_english_rating_to_portuguese,
 )
 

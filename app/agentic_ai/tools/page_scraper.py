@@ -1,7 +1,7 @@
 """
 page scraper tool — extracts content from web pages.
 
-reuses scrapeGenericUrl() from app.ai.context.web.apify_utils.
+reuses scrapeGenericUrl() from app.agentic_ai.context.web.apify_utils.
 """
 
 import asyncio
@@ -9,7 +9,7 @@ import logging
 from uuid import uuid4
 
 from app.models.agenticai import ScrapeTarget, WebScrapeContext, SourceReliability
-from app.ai.context.web.apify_utils import scrapeGenericUrl
+from app.agentic_ai.context.web.apify_utils import scrapeGenericUrl
 
 from app.agentic_ai.config import SCRAPE_TIMEOUT_PER_PAGE
 
