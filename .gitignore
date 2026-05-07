@@ -192,6 +192,8 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+
+
 # Windows
 Thumbs.db
 Thumbs.db:encryptable
@@ -257,6 +259,7 @@ staticfiles/
 # Configuration files with sensitive data
 config.ini
 secrets.json
+app_default_credentials.json
 credentials.json
 
 # API keys and tokens

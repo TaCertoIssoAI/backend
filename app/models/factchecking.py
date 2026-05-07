@@ -502,6 +502,10 @@ class LLMClaimVerdict(BaseModel):
     claim_text: str = Field(..., description="The claim text (for fallback matching)")
     verdict: VerdictType = Field(..., description="The verdict for this claim")
     justification: str = Field(..., description="Detailed justification citing evidence sources")
+    short_justification: Optional[str] = Field(
+        None,
+        description="1-2 sentence summary for WhatsApp, no citation numbers [N]"
+    )
     citations_used: List[Citation] = Field(
         default_factory=list,
         description="List of citations that were used to make this verdict decision"
@@ -575,6 +579,10 @@ class ClaimVerdict(BaseModel):
     claim_text: str = Field(..., description="The claim text")
     verdict: VerdictType = Field(..., description="The verdict for this claim")
     justification: str = Field(..., description="Detailed justification citing evidence sources")
+    short_justification: Optional[str] = Field(
+        None,
+        description="1-2 sentence summary for WhatsApp, no citation numbers [N]"
+    )
     citations_used: List[Citation] = Field(
         default_factory=list,
         description="List of citations that were actually used to make this verdict decision"

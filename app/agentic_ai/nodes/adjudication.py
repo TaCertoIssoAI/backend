@@ -85,6 +85,7 @@ def _convert_to_fact_check_result(
                     claim_text=cv.claim_text,
                     verdict=cv.verdict,
                     justification=cv.justification,
+                    short_justification=cv.short_justification,
                     citations_used=cv.citations_used or [],
                 )
             )

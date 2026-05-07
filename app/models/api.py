@@ -125,7 +125,7 @@ class AnalysisResponse(BaseModel):
     """Response from fact-checking analysis"""
     message_id: str = Field(..., description="Unique identifier for this analysis")
     rationale: str = Field(..., description="Complete analysis text with context, verdicts, and citations")
-    responseWithoutLinks: str = Field(..., description="Analysis text before sources section (before 'Fontes de apoio:')")
+    responseWithoutLinks: str = Field(..., description="Compact WhatsApp-ready response with short justifications and top sources. Uses audio_script for audio inputs.")
 
     model_config = ConfigDict(
         json_schema_extra={

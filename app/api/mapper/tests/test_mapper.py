@@ -9,7 +9,7 @@ covers:
 - no verdicts → fallback message
 - overall_summary inclusion
 - verdict count summary generation
-- responseWithoutLinks strips URLs
+- responseWithoutLinks uses compact whatsapp rationale with short justifications
 """
 
 from __future__ import annotations
@@ -624,12 +624,15 @@ def test_build_citations_returns_empty_for_no_references():
     assert text == ""
 
 
-# ---- test: responseWithoutLinks ----
+# ---- test: responseWithoutLinks (compact whatsapp rationale) ----
 
-def test_response_without_links_strips_urls():
-    """responseWithoutLinks should not contain any URLs."""
-    fc = _make_fc_context(url="https://example.com/strip-me")
-    verdict = _make_verdict(justification="See [1].")
+def test_response_without_links_uses_compact_rationale():
+    """responseWithoutLinks should use compact format with short justifications."""
+    fc = _make_fc_context(url="https://example.com/source")
+    verdict = _make_verdict(
+        claim_text="Test claim",
+        justification="See [1] for details about this claim.",
+    )
     result = _make_fact_check_result(verdicts=[verdict])
 
     resp = fact_check_result_to_response(
@@ -637,7 +640,65 @@ def test_response_without_links_strips_urls():
         fact_check_results=[fc], search_results={}, scraped_pages=[],
     )
 
-    assert "https://" not in resp.responseWithoutLinks
+    # compact rationale includes claim text and verdict
+    assert "Test claim" in resp.responseWithoutLinks
+    assert "Veredito:" in resp.responseWithoutLinks
+    # citation markers [N] should be stripped from justification (fallback)
+    assert "[1]" not in resp.responseWithoutLinks.split("Principais fontes")[0] if "Principais fontes" in resp.responseWithoutLinks else "[1]" not in resp.responseWithoutLinks.split("Para ver todas")[0]
+    # analytics link is present
+    assert "analise completa" in resp.responseWithoutLinks
+
+
+def test_response_without_links_uses_short_justification():
+    """responseWithoutLinks should prefer short_justification when available."""
+    verdict = ClaimVerdict(
+        claim_id="claim-1",
+        claim_text="Test claim",
+        verdict="Falso",
+        justification="Detailed explanation with [1] and [2] references.",
+        short_justification="A informacao e falsa segundo fontes oficiais.",
+    )
+    result = _make_fact_check_result(verdicts=[verdict])
+
+    resp = fact_check_result_to_response("msg-short", result)
+
+    assert "A informacao e falsa segundo fontes oficiais." in resp.responseWithoutLinks
+    assert "Detailed explanation" not in resp.responseWithoutLinks
+
+
+def test_response_without_links_fallback_strips_markers():
+    """when short_justification is None, fallback strips [N] markers."""
+    verdict = _make_verdict(justification="Evidence from [1] and [2] confirms this.")
+    result = _make_fact_check_result(verdicts=[verdict])
+
+    resp = fact_check_result_to_response("msg-fallback", result)
+
+    # the compact section before sources should not have [N]
+    compact_section = resp.responseWithoutLinks.split("Para ver todas")[0]
+    assert "[1]" not in compact_section
+    assert "[2]" not in compact_section
+    assert "Evidence from" in compact_section
+
+
+def test_response_without_links_top_sources_limited():
+    """compact rationale should include at most 3 top sources."""
+    # create 5 fact check sources
+    fcs = [
+        _make_fc_context(publisher=f"Pub{i}", claim_text=f"claim {i}", url=f"https://fc{i}.com")
+        for i in range(1, 6)
+    ]
+    verdict = _make_verdict(justification="See [1][2][3][4][5].")
+    result = _make_fact_check_result(verdicts=[verdict])
+
+    resp = fact_check_result_to_response(
+        "msg-top3", result,
+        fact_check_results=fcs, search_results={}, scraped_pages=[],
+    )
+
+    fontes_section = resp.responseWithoutLinks.split("Principais fontes")[-1] if "Principais fontes" in resp.responseWithoutLinks else ""
+    # at most 3 sources
+    source_count = fontes_section.count("https://fc")
+    assert source_count <= 3
 
 
 # ---- test: backward compatibility ----
