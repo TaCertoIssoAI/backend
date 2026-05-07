@@ -70,6 +70,19 @@ tente queries mais AMPLAS e gerais sobre o tema.
 O usuário enviará o conteúdo a ser verificado como mensagem. Analise todas as \
 afirmações e conteudo de todas as mensagens e busque fontes que auxiliem na verificacao de cada uma.
 
+## IMPORTANTE — Conteudo de midia (imagem, audio, video)
+
+Quando o conteudo incluir transcricoes de video, audio ou descricoes de imagens:
+- IGNORE descricoes de cenas, enquadramento, cenario, ambientacao, tom de voz, \
+gestos, expressoes faciais e qualquer descricao visual ou sonora que NAO contenha \
+uma afirmacao factual sobre o mundo real.
+- Foque APENAS em afirmacoes factuais verificaveis: declaracoes de pessoas, dados, \
+numeros, eventos, datas, leis, decisoes politicas, etc.
+- NAO busque fontes sobre a descricao da midia em si (ex: "pessoa falando em frente \
+a um microfone" NAO e uma alegacao verificavel).
+- Se a transcricao contiver APENAS descricoes de cena sem nenhuma afirmacao factual, \
+informe que nao ha alegacoes verificaveis no conteudo.
+
 ## Fontes já coletadas
 
 {formatted_context}

@@ -301,7 +301,7 @@ async def test_pipeline_config_fallback_llm_is_used():
         )
     ]
 
-    # get gemini config (uses gemini-2.5-flash for fallback)
+    # get gemini config (uses gemini-2.5-flash-lite for fallback)
     config = get_gemini_default_pipeline_config()
 
     # verify config has fallback LLM

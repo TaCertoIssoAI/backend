@@ -36,15 +36,15 @@ logger = get_logger(__name__)
 
 def _build_graph():
     """build the context agent graph with real tool implementations."""
-    from langchain_google_genai import ChatGoogleGenerativeAI
+    from app.llms.vertex import make_vertex_chat
     from app.agentic_ai.graph import build_graph
     from app.agentic_ai.tools.fact_check_search import FactCheckSearchTool
     from app.agentic_ai.tools.web_search import WebSearchTool
     from app.agentic_ai.tools.page_scraper import PageScraperTool
 
-    model = ChatGoogleGenerativeAI(model=DEFAULT_MODEL, temperature=0)
-    adj_model = ChatGoogleGenerativeAI(
-        model=ADJUDICATION_MODEL,
+    model = make_vertex_chat(DEFAULT_MODEL, temperature=0)
+    adj_model = make_vertex_chat(
+        ADJUDICATION_MODEL,
         temperature=0,
         thinking_budget=ADJUDICATION_THINKING_BUDGET,
     )

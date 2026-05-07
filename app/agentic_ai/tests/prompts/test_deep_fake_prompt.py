@@ -113,3 +113,25 @@ def test_prompt_with_audio_and_deep_fake_both_blocks():
     assert "audio_script" in system  # audio block
     assert "Deep Fake" in system  # deep-fake block
     assert "Resultados de Deteccao de Deep Fake" in user
+
+
+def test_prompt_requires_extremely_concise_summary_and_ai_signal():
+    system, _ = build_adjudication_prompt(
+        formatted_data_sources="some text",
+        fact_check_results=[],
+        search_results={},
+        scraped_pages=[],
+    )
+    assert "EXTREMAMENTE conciso" in system
+    assert "a PRIMEIRA frase do resumo deve destacar explicitamente se ha indicios de conteudo gerado por IA" in system
+    assert "escala de 0% a 100%" in system
+
+
+def test_prompt_requires_more_concise_justification():
+    system, _ = build_adjudication_prompt(
+        formatted_data_sources="some text",
+        fact_check_results=[],
+        search_results={},
+        scraped_pages=[],
+    )
+    assert "justificativa, deixando-a um pouco mais concisa" in system

@@ -69,7 +69,7 @@ escolha as 3 mais confiaveis.
 o objeto de verificacao, NAO uma fonte. Nao use  [Original Text], [Texto Original] ou qualquer referencia ao conteudo original. \
 Os colchetes [N] sao EXCLUSIVOS para as fontes coletadas numeradas na secao "Fontes coletadas".
 
-5. Seja claro e objetivo na justificativa.
+5. Seja claro e objetivo na justificativa, deixando-a um pouco mais concisa (preferencialmente 1-2 frases).
 
 6. Identifique contexto faltante — classifique como "Fora de Contexto" quando aplicavel.
 
@@ -90,7 +90,7 @@ como "Fora de Contexto", nao como "Falso".
 
 ## Extracao de Alegacoes
 
-Importante: Extraia no maximo 8 Alegacoes, caso seja um texto extenso, extraia apenas as 
+Importante: Extraia no maximo 8 Alegacoes, caso seja um texto extenso, extraia apenas as
 Alegacoes mais importantes antes de atingir esse limite
 
 Ao analisar o conteudo original, extraia as alegacoes verificaveis seguindo estas regras:
@@ -110,6 +110,26 @@ se falsa, tornaria toda a noticia enganosa.
 - EVITE extrair alegacoes sobre detalhes perifericos, contexto de fundo ou \
 informacoes secundarias que nao sejam o ponto central da mensagem.
 
+## IMPORTANTE — Conteudo de midia (imagem, audio, video)
+
+Quando o conteudo original incluir transcricoes de video, audio ou descricoes de imagens:
+- NAO extraia alegacoes sobre a descricao da midia em si: enquadramento, cenario, \
+tom de voz, gestos, expressoes faciais, ambientacao ou descricoes visuais/sonoras.
+- Extraia APENAS afirmacoes factuais sobre o mundo real: declaracoes de pessoas, \
+dados, numeros, eventos, datas, leis, decisoes politicas, etc.
+- Exemplo do que NAO e alegacao: "Uma pessoa fala em frente a um microfone em um estudio."
+- Exemplo do que E alegacao: "O presidente afirmou que o salario minimo vai subir para R$5.000."
+
+**Se a midia NAO contem nenhuma afirmacao factual verificavel:**
+- Se NAO ha resultados de deep fake, retorne claim_verdicts vazio e overall_summary \
+explicando que nao foram encontradas alegacoes verificaveis no conteudo.
+- Se HA resultados de deep fake, crie UMA entrada em claim_verdicts com:
+  - claim_text: "Autenticidade da midia" (ou descricao equivalente do conteudo)
+  - verdict: baseado nos resultados de deep fake (seguindo as regras da secao de deep fake)
+  - justification: explicando os resultados da analise de deep fake
+  - Na overall_summary, informe que nao foram encontradas alegacoes factuais verificaveis, \
+mas inclua o resultado da analise de deep fake.
+
 ## Formato de Resposta
 
 Retorne um objeto JSON com:
@@ -119,10 +139,11 @@ Retorne um objeto JSON com:
     - claim_id: null (sera preenchido automaticamente)
     - claim_text: texto da alegacao extraida
     - verdict: "Verdadeiro", "Falso", "Fora de Contexto", ou "Fontes insuficientes para verificar"
-    - justification: explicacao detalhada citando fontes individualmente com [Numero-fonte]
-    - short_justification: versao curta (1 a 2 frases) sem numeros de fonte [N], sem URLs. Resuma o veredito de forma direta e simples para envio ao WhatsApp. Exemplo: "A informacao e falsa. Fontes oficiais do Ministerio da Saude contradizem essa alegacao."
+    - justification: explicacao um pouco mais concisa (preferencialmente 1-2 frases), citando fontes individualmente com [Numero-fonte]
     - citations_used: lista de citacoes usadas (cada uma com url, title, publisher, citation_text)
-- overall_summary: resumo geral conciso (3-4 linhas), sem URLs, sem caracteres *
+- overall_summary: resumo geral EXTREMAMENTE conciso (preferencialmente 1-2 frases curtas), sem URLs, sem caracteres *
+- a PRIMEIRA frase do resumo deve destacar explicitamente se ha indicios de conteudo gerado por IA (ou se nao ha indicios)
+- na primeira frase, informe tambem a chance estimada de conteudo gerado por IA em escala de 0% a 100% (exemplo: 20%)
 
 Exemplo de justificativa BEM formatada:
 "Segundo o Ministerio da Saude [1], um estudo com 50.000 participantes nao encontrou \

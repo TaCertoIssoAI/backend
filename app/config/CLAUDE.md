@@ -20,7 +20,10 @@ Used by the web search tool to classify source reliability. Domains in this list
 The main settings class lives in `core/config.py` (not here). It reads environment variables via `os.getenv()` with sensible defaults. Access via `get_settings()` which is `@lru_cache`d.
 
 Key env vars:
-- `GOOGLE_API_KEY` — Gemini API
+- `GOOGLE_APPLICATION_CREDENTIALS` — SA JSON path; auth for all Vertex AI / Gemini calls
+- `VERTEX_PROJECT_ID` — GCP project for Vertex AI
+- `VERTEX_LOCATION` — Vertex region (e.g. `us-central1`)
+- `GOOGLE_API_KEY` — Google **Fact Check Tools** API (separate from Gemini auth)
 - `GOOGLE_SEARCH_API_KEY` — Custom Search API
 - `APIFY_TOKEN` — web scraping
 - `ANALYTICS_SERVICE_URL` — telemetry endpoint

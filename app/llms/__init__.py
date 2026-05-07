@@ -1,7 +1,5 @@
-"""
-custom llm implementations for the fact-checking pipeline.
-"""
+"""custom llm helpers for the fact-checking pipeline."""
 
-from app.llms.gemini import GeminiChatModel
+from app.llms.vertex import make_vertex_chat
 
-__all__ = ["GeminiChatModel"]
+__all__ = ["make_vertex_chat"]
