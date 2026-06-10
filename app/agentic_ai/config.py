@@ -54,6 +54,10 @@ ADJUDICATION_THINKING_BUDGET = 1024
 ADJUDICATION_TIMEOUT = 20.0        # seconds per attempt
 ADJUDICATION_MAX_RETRIES = 2       # max retry attempts on timeout
 
+# feature flag: when False, the deep-fake detection module is not used and
+# nothing about deep-fake is written in the adjudication
+DEEP_FAKE_DETECTION_ENABLED = False
+
 
 # suppress verbose debug logs from trafilatura (HTML processing library)
 logging.getLogger("trafilatura").setLevel(logging.WARNING)

@@ -18,6 +18,7 @@ from app.agentic_ai.config import (
     DEFAULT_MODEL,
     ADJUDICATION_MODEL,
     ADJUDICATION_THINKING_BUDGET,
+    DEEP_FAKE_DETECTION_ENABLED,
 )
 from app.observability.logger.logger import get_logger
 
@@ -76,6 +77,10 @@ async def run_fact_check(
     graph = _build_graph()
 
     has_audio = any(ds.source_type == "audio_transcript" for ds in data_sources)
+
+    # drop deep-fake data entirely when the feature is off — no processing downstream
+    if not DEEP_FAKE_DETECTION_ENABLED:
+        deep_fake_verification_result = None
 
     initial_state = {
         "messages": [],

@@ -1,5 +1,6 @@
 """tests for deep-fake prompt building in adjudication_prompt.py."""
 
+from app.agentic_ai.prompts import adjudication_prompt
 from app.agentic_ai.prompts.adjudication_prompt import (
     build_adjudication_prompt,
     _format_deep_fake_results,
@@ -71,9 +72,25 @@ def test_prompt_without_deep_fake_no_deep_fake_content():
     assert "Deep Fake" not in user
 
 
-# ---- build_adjudication_prompt with deep-fake ----
+# ---- build_adjudication_prompt with deep-fake disabled (default flag) ----
 
-def test_prompt_with_deep_fake_system_contains_instructions():
+def test_prompt_with_deep_fake_disabled_no_deep_fake_content():
+    """with the flag off (default), deep-fake data must not reach the prompt."""
+    system, user = build_adjudication_prompt(
+        formatted_data_sources="some text",
+        fact_check_results=[],
+        search_results={},
+        scraped_pages=[],
+        deep_fake_verification_result=_SAMPLE_DEEP_FAKE_DATA,
+    )
+    assert "Deep Fake" not in system
+    assert "Deep Fake" not in user
+
+
+# ---- build_adjudication_prompt with deep-fake enabled ----
+
+def test_prompt_with_deep_fake_system_contains_instructions(monkeypatch):
+    monkeypatch.setattr(adjudication_prompt, "DEEP_FAKE_DETECTION_ENABLED", True)
     system, _ = build_adjudication_prompt(
         formatted_data_sources="some text",
         fact_check_results=[],
@@ -86,7 +103,8 @@ def test_prompt_with_deep_fake_system_contains_instructions():
     assert "automatizada" in system
 
 
-def test_prompt_with_deep_fake_user_contains_results():
+def test_prompt_with_deep_fake_user_contains_results(monkeypatch):
+    monkeypatch.setattr(adjudication_prompt, "DEEP_FAKE_DETECTION_ENABLED", True)
     _, user = build_adjudication_prompt(
         formatted_data_sources="some text",
         fact_check_results=[],
@@ -101,7 +119,8 @@ def test_prompt_with_deep_fake_user_contains_results():
 
 # ---- both has_audio and deep-fake ----
 
-def test_prompt_with_audio_and_deep_fake_both_blocks():
+def test_prompt_with_audio_and_deep_fake_both_blocks(monkeypatch):
+    monkeypatch.setattr(adjudication_prompt, "DEEP_FAKE_DETECTION_ENABLED", True)
     system, user = build_adjudication_prompt(
         formatted_data_sources="some text",
         fact_check_results=[],

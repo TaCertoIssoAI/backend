@@ -8,6 +8,7 @@ the LLM must extract claims AND adjudicate them in a single pass.
 
 from __future__ import annotations
 
+from app.agentic_ai.config import DEEP_FAKE_DETECTION_ENABLED
 from app.agentic_ai.prompts.context_formatter import format_context
 from app.agentic_ai.prompts.utils import get_current_date
 from app.models.agenticai import (
@@ -327,14 +328,15 @@ def build_adjudication_prompt(
     system = ADJUDICATION_SYSTEM_PROMPT.format(current_date=current_date)
     if has_audio:
         system += AUDIO_SCRIPT_BLOCK
-    if deep_fake_verification_result:
+    # deep-fake handling only runs when the feature flag is on
+    if DEEP_FAKE_DETECTION_ENABLED and deep_fake_verification_result:
         system += DEEP_FAKE_SYSTEM_BLOCK
 
     user = ADJUDICATION_USER_PROMPT.format(
         formatted_data_sources=formatted_data_sources,
         formatted_context=formatted_context,
     )
-    if deep_fake_verification_result:
+    if DEEP_FAKE_DETECTION_ENABLED and deep_fake_verification_result:
         formatted_df = _format_deep_fake_results(deep_fake_verification_result)
         if formatted_df:
             user += DEEP_FAKE_USER_BLOCK.format(deep_fake_results=formatted_df)
