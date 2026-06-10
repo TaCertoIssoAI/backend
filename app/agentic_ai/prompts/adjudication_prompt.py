@@ -28,22 +28,44 @@ Sua tarefa sera:
 
 ## Categorias de Veredito
 
+Premissa fundamental: uma alegacao e a MENOR unidade verificavel de uma noticia e recebe \
+EXATAMENTE UM veredito. Uma mesma alegacao nunca tem mais de uma classificacao: ou e \
+Verdadeiro, ou Falso, ou Fora de Contexto. Quando uma frase combina um fato verdadeiro com \
+uma afirmacao falsa, separe-a em alegacoes distintas e classifique cada uma individualmente \
+(ver secao "Extracao de Alegacoes").
+
 Classifique cada alegacao em UMA das seguintes categorias:
 
-1. **Verdadeiro**: A alegacao e comprovadamente verdadeira com base nas evidencias. \
-As fontes sao confiaveis e concordam que a alegacao e factual. A afirmacao nao pode \
-estar fora de contexto, interpretada de forma errada ou faltando informacoes cruciais.
+1. **Verdadeiro**: A alegacao e comprovadamente verdadeira com base nas evidencias E esta \
+apresentada em seu contexto correto, sem ser usada para sugerir uma causa, consequencia ou \
+conclusao falsa. As fontes sao confiaveis e concordam que a alegacao e factual.
 
 2. **Falso**: A alegacao e comprovadamente falsa com base nas evidencias. As fontes \
 confiaveis contradizem diretamente a alegacao.
 
-3. **Fora de Contexto**: A alegacao contem elementos verdadeiros, mas foi apresentada \
-de forma enganosa, omitindo contexto importante, ou misturando fatos verdadeiros com \
-interpretacoes falsas. Inclui descontextualizacao temporal/espacial. \
-**Tambem se aplica quando a alegacao apresenta como fato consumado algo que as fontes \
-descrevem como incerto, em andamento, investigado ou ainda nao confirmado** — ex: \
-afirmar "X foi condenado" quando as fontes indicam que o processo ainda corre; \
-afirmar "X aconteceu" quando as fontes dizem "pode acontecer" ou "esta sendo investigado".
+3. **Fora de Contexto**: A alegacao (ou a midia que a acompanha) e VERDADEIRA isoladamente, \
+mas esta sendo usada para dar autoridade ou credibilidade a uma alegacao FALSA. O fato em si \
+e real, mas o modo como e empregado cria uma relacao falsa — por isso NAO pode ser \
+classificado como "Verdadeiro". Ha duas formas tipicas:
+
+   a) **Falsa causa/consequencia**: o fato verdadeiro aparece ligado a uma alegacao falsa \
+por um conector de causa/consequencia ("apos", "depois de", "por causa de", "gracas a", \
+"em razao de", "como resultado de"), sugerindo uma relacao que nao existe.
+      Exemplo: "As vesperas da Copa, Endrick esta fora da selecao apos marcar gol contra o Egito."
+      - "Endrick esta fora da selecao" → **Falso** (ele nao esta fora).
+      - "Endrick marcou gol contra o Egito" → **Fora de Contexto** (o gol e verdadeiro, mas \
+o "apos" o emprega como causa da saida, sugerindo uma consequencia que nao existe).
+
+   b) **Descontextualizacao temporal ou espacial**: um evento, video, foto ou dado REAL e \
+apresentado fora da sua data ou do seu local de origem para sustentar uma alegacao falsa \
+sobre quando ou onde algo acontece. A midia/fato e autentica, mas a moldura de tempo ou \
+lugar e falsa.
+      Exemplo: um video real de uma guerra, gravado ha 10 anos, divulgado como se a guerra \
+estivesse acontecendo agora.
+      - "Este video mostra a guerra acontecendo agora" → **Fora de Contexto** (o video e \
+autentico, mas e antigo; a data foi distorcida para parecer atual).
+      - Uma afirmacao factual isolada e falsa (ex: "a guerra comecou ontem") recebe **Falso** \
+separadamente.
 
 4. **Fontes insuficientes para verificar**: Nao ha evidencias suficientes nas fontes \
 fornecidas para confirmar ou refutar a alegacao.
@@ -71,16 +93,26 @@ Os colchetes [N] sao EXCLUSIVOS para as fontes coletadas numeradas na secao "Fon
 
 5. Seja claro e objetivo na justificativa, deixando-a um pouco mais concisa (preferencialmente 1-2 frases).
 
-6. Identifique contexto faltante — classifique como "Fora de Contexto" quando aplicavel.
+6. **Fora de Contexto (regra principal)**: use "Fora de Contexto" SOMENTE quando o fato \
+(ou a midia) for verdadeiro isoladamente E estiver sendo usado para dar autoridade a uma \
+alegacao falsa, em uma destas formas:
+   - **Causa/consequencia falsa**: um fato verdadeiro ligado a uma afirmacao falsa por um \
+conector de consequencia ("apos", "depois de", "por causa de", etc.). Separe as duas: a \
+afirmacao falsa recebe "Falso" e o fato verdadeiro mal-empregado recebe "Fora de Contexto".
+   - **Descontextualizacao temporal/espacial**: um evento, video, foto ou dado real \
+apresentado com data ou local falsos (ex: imagens antigas divulgadas como atuais, ou de \
+outro lugar). A midia autentica, mas com moldura de tempo/lugar falsa, recebe "Fora de \
+Contexto".
 
-7. Verifique descontextualizacao temporal/espacial entre alegacoes.
+7. Uma alegacao verdadeira apresentada em seu contexto correto e SEMPRE "Verdadeiro". Nao \
+use "Fora de Contexto" para fatos verdadeiros que nao estejam sustentando nenhuma afirmacao \
+falsa.
 
-7a. **Certeza vs. incerteza — use "Fora de Contexto" quando a alegacao apresenta \
-como definitivo algo que as fontes tratam como incerto ou em curso.** Sinais de alerta \
-nas fontes: "pode", "esta sendo investigado", "aguarda julgamento", "ainda nao confirmado", \
-"segundo suspeitas", "ha possibilidade de". Se a alegacao afirma um fato consumado mas \
-as fontes descrevem um processo ainda aberto ou resultado ainda incerto, classifique \
-como "Fora de Contexto", nao como "Falso".
+7a. **Certeza vs. incerteza**: se a alegacao afirma como fato consumado algo que as fontes \
+tratam como incerto, em andamento ou nao confirmado (ex: "X foi condenado" enquanto o \
+processo ainda corre), a alegacao e FALSA como enunciada — classifique como "Falso" (ou \
+"Fontes insuficientes para verificar" se as fontes nao permitirem concluir). NAO use \
+"Fora de Contexto" para esse caso.
 
 8. Reconheca limitacoes — prefira "Fontes insuficientes para verificar" a suposicoes.
 
@@ -95,6 +127,11 @@ Alegacoes mais importantes antes de atingir esse limite
 
 Ao analisar o conteudo original, extraia as alegacoes verificaveis seguindo estas regras:
 - Extraia o MENOR numero de alegacoes possivel, com o MAXIMO de contexto em cada uma
+- EXCECAO IMPORTANTE: quando uma frase combina um fato verdadeiro e uma afirmacao falsa \
+ligados por um conector de causa/consequencia ("apos", "depois de", "por causa de", \
+"gracas a"), SEPARE-A em duas alegacoes distintas — a parte falsa para receber "Falso" e a \
+parte verdadeira mal-empregada para receber "Fora de Contexto". Nunca junte um fato \
+verdadeiro e uma afirmacao falsa numa unica alegacao.
 - Cada alegacao deve ser autocontida (compreensivel sem o texto original)
 - Inclua QUEM, O QUE, QUANDO, ONDE quando aplicavel
 - Preserve o idioma original
