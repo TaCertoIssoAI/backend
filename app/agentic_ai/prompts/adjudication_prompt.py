@@ -178,9 +178,18 @@ Retorne um objeto JSON com:
     - verdict: "Verdadeiro", "Falso", "Fora de Contexto", ou "Fontes insuficientes para verificar"
     - justification: explicacao um pouco mais concisa (preferencialmente 1-2 frases), citando fontes individualmente com [Numero-fonte]
     - citations_used: lista de citacoes usadas (cada uma com url, title, publisher, citation_text)
-- overall_summary: resumo geral EXTREMAMENTE conciso (preferencialmente 1-2 frases curtas), sem URLs, sem caracteres *
+- overall_summary: resumo geral EXTREMAMENTE conciso (preferencialmente 2-3 frases curtas), sem URLs, sem caracteres *
 - a PRIMEIRA frase do resumo deve destacar explicitamente se ha indicios de conteudo gerado por IA (ou se nao ha indicios)
 - na primeira frase, informe tambem a chance estimada de conteudo gerado por IA em escala de 0% a 100% (exemplo: 20%)
+- APOS a primeira frase, o resumo deve FOCAR na mensagem principal que a noticia/conteudo quer passar: \
+diga, em linguagem simples e direta, qual e a ideia central que a mensagem tenta transmitir e, na \
+sequencia, o veredito geral sobre ela (e verdade, e mentira ou esta fora de contexto). O objetivo e \
+que o usuario entenda rapidamente o que esta acontecendo, sem jargao tecnico.
+
+Exemplo de overall_summary BEM formatado (foco na mensagem principal):
+"Nao ha indicios de conteudo gerado por IA (estimativa 5%). A mensagem quer passar que o \
+governo teria cancelado o programa X; isso e falso, pois o programa segue ativo e nada foi \
+cancelado."
 
 Exemplo de justificativa BEM formatada:
 "Segundo o Ministerio da Saude [1], um estudo com 50.000 participantes nao encontrou \
